@@ -120,13 +120,6 @@ public class OrdersPage {
         }
     }
 
-    private void scrollAndClickText(String visibleText) {
-        driver.findElement(AppiumBy.androidUIAutomator(
-                "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                        ".setAsVerticalList()" +
-                        ".scrollIntoView(new UiSelector().textContains(\"" + visibleText + "\").instance(0));"));
-    }
-
     public void scrollDownPixels(int pixels) {
         PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
         Sequence swipe = new Sequence(finger, 1);
@@ -420,25 +413,6 @@ public class OrdersPage {
 
         throw new RuntimeException("No se pudo hacer click en " + targetLocator + " tras " + maxAttempts + " intentos.",
                 lastError);
-    }
-
-    private void clickComposeDropdownVerified(By dropdownLocator, By proofOfOpenLocator) {
-        int maxAttempts = 3;
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(dropdownLocator));
-                dropdown.click();
-
-                // Postcondición: algo del listado de opciones debe aparecer en <3s
-                new WebDriverWait(driver, Duration.ofSeconds(3))
-                        .until(ExpectedConditions.visibilityOfElementLocated(proofOfOpenLocator));
-                return; // el dropdown sí se abrió
-            } catch (Exception e) {
-                sleep(300); // el dropdown no abrió, reintenta el click
-            }
-        }
-        throw new RuntimeException("El dropdown " + dropdownLocator + " no abrió tras " + maxAttempts + " intentos.");
     }
 
     public void preliminaryConsultation(String idType, long numberId, String country, String firstName, String name,
