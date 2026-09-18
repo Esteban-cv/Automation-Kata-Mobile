@@ -43,23 +43,20 @@ public class FlujoCompletoTest extends BaseTest {
 
         System.out.println("--- FASE 2: Creación de Orden (Procesando fila del Excel) ---");
 
-        long parsedId = new BigDecimal(numberId).longValue();
-        long parsedPhone = new BigDecimal(numberPhone).longValue();
-
         // 1. Iniciar la orden
         ordersPage.createOrder(orderType, personType);
 
         // 2. Ejecutar consulta preliminar, validaciones y vistas
         ordersPage.preliminaryConsultation(
                 idType,
-                parsedId,
+                numberId,
                 country,
                 firstName,
                 name,
                 Integer.parseInt(birthDay.replace(".0", "")),
                 Integer.parseInt(birthMonth.replace(".0", "")),
                 Integer.parseInt(birthYear.replace(".0", "")),
-                String.valueOf(parsedPhone),
+                numberPhone,
                 Integer.parseInt(corpDay.replace(".0", "")),
                 Integer.parseInt(corpMonth.replace(".0", "")),
                 Integer.parseInt(corpYear.replace(".0", "")),
@@ -70,7 +67,7 @@ public class FlujoCompletoTest extends BaseTest {
         // 3. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
         ordersPage.closeOrder();
 
-        String successMessage = "Orden procesada y guardada correctamente para la cédula: " + parsedId;
+        String successMessage = "Orden procesada y guardada correctamente para la cédula: " + numberId;
         System.out.println(successMessage);
         Reporter.log(successMessage, true);
     }
