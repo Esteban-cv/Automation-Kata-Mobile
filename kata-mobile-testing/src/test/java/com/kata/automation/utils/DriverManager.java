@@ -25,7 +25,7 @@ public class DriverManager {
                 options.setNoReset(true);
                 options.setFullReset(false);
                 options.setCapability("appium:dontStopAppOnReset", true);
-                options.setCapability("appium:forceAppLaunch", true);
+                //options.setCapability("appium:forceAppLaunch", true);
 
                 String appiumUrl = System.getenv("APPIUM_SERVER_URL");
                 if (appiumUrl == null || appiumUrl.isBlank()) {
