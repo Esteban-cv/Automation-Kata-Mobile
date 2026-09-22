@@ -19,8 +19,8 @@ public class OrdersTest extends BaseTest {
 
     @DataProvider(name = "excelData")
     public Object[][] getData() {
-        String excelPath = "src/test/resources/datos_solicitudes.xlsx";
-        return ExcelUtils.getTestData(excelPath, "Hoja1");
+    String excelPath = "src/test/resources/datos_solicitudes.xlsx";
+    return ExcelUtils.getTestData(excelPath, "Hoja1");
     }
 
     // @Test(groups = "smoke")
@@ -36,47 +36,45 @@ public class OrdersTest extends BaseTest {
     // // 2. Consulta preliminar con los datos de prueba de Esteban
     // ordersPage.preliminaryConsultation(
     // "Cedula ciudadanía",
-    // "1116070669",
+    // "38569302",
     // "COLOMBIA",
-    // "Colorado",
-    // "Esteban",
+    // "Hernandez",
+    // "Naren",
     // 10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
     // "3185551310",
     // 17, 9, 2020,
     // "60",
     // "Gestión front o contact center",
-    // "Continuar"
-    // );
+    // "Continuar");
 
     // // 3. Cerrar la orden
-    // ordersPage.closeOrder();
+    // //ordersPage.closeOrder();
     // }
 
     @Test(dataProvider = "excelData")
     public void createWholeOrderFromExcel(String orderType, String personType,
-            String idType, String numberId, String country,
-            String firstName, String name, String birthDay,
-            String birthMonth, String birthYear, String numberPhone,
-            String corpDay, String corpMonth, String corpYear,
-            String longevity, String origin, String decision) {
+    String idType, String numberId, String country,
+    String firstName, String name, String birthDay,
+    String birthMonth, String birthYear, String numberPhone,
+    String corpDay, String corpMonth, String corpYear,
+    String longevity, String origin, String decision) {
 
-        ordersPage.setScreenDensity(350);
-        ordersPage.createOrder(orderType, personType);
+    ordersPage.setScreenDensity(350);
+    ordersPage.createOrder(orderType, personType);
 
-        // Se pasan los datos pasándolos por los métodos auxiliares para limpiarlos al
-        // vuelo
-        ordersPage.preliminaryConsultation(
-                idType,
-                clean(numberId),
-                country,
-                firstName,
-                name,
-                toInt(birthDay), toInt(birthMonth), toInt(birthYear),
-                clean(numberPhone),
-                toInt(corpDay), toInt(corpMonth), toInt(corpYear),
-                clean(longevity),
-                origin,
-                decision);
+    // Se pasan los datos pasándolos por los métodos auxiliares para limpiarlos al vuelo
+    ordersPage.preliminaryConsultation(
+    idType,
+    clean(numberId),
+    country,
+    firstName,
+    name,
+    toInt(birthDay), toInt(birthMonth), toInt(birthYear),
+    clean(numberPhone),
+    toInt(corpDay), toInt(corpMonth), toInt(corpYear),
+    clean(longevity),
+    origin,
+    decision);
     }
 
     // --- MÉTODOS AUXILIARES (Ponlos al final de tu clase OrdersTest) ---
