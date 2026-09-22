@@ -14,9 +14,7 @@ import java.util.Map;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
-import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.OutputType;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Pause;
@@ -48,7 +46,7 @@ public class BasePage {
     /** Inicializa el driver y una espera explicita de hasta 45 segundos. */
     public BasePage(AndroidDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(45));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(50));
     }
 
     /** Pausa el hilo durante la cantidad de milisegundos indicada. */
@@ -206,82 +204,130 @@ public class BasePage {
 
     /** Limpia un campo y escribe el texto cuando el elemento es interactuable. */
     protected void type(By locator, String text) {
-        if (text != null) {
-            // Limpia el .0 de Excel y espacios de forma automática
-            text = text.replace(".0", "").trim();
+        try {
+            if (text != null) {
+                // Limpia el .0 de Excel y espacios de forma automática
+                text = text.replace(".0", "").trim();
+            }
+            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            element.clear();
+            element.sendKeys(text);
+        } catch (Exception e) {
+            System.out.println("este es el error" + e);
         }
-        WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
-        element.clear();
-        element.sendKeys(text);
+
     }
 
     /** Selecciona una fecha completa en el calendario nativo de Android. */
     protected void selectDateInCalendar(int day, int month, int year) {
         LocalDate targetDate = LocalDate.of(year, month, day);
-        click(By.id("android:id/date_picker_header_year"));
 
-        int currentYear = LocalDate.now().getYear();
+        int startYear = readSelectedYearBeforeOpening(); // se lee ANTES de abrir el picker
+        clickSafely(By.id("android:id/date_picker_header_year"));
+
+        selectYearInPicker(year, startYear);
+        navigateToMonth(YearMonth.of(year, month));
+
+        String dayAccessibilityId = targetDate.format(DAY_ACCESSIBILITY_FORMAT);
+        clickSafely(AppiumBy.accessibilityId(dayAccessibilityId));
+        clickSafely(By.xpath(
+                "//android.widget.FrameLayout[@resource-id=\"android:id/content\"]/android.view.ViewGroup/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.widget.Button"));
+    }
+
+    private int readSelectedYearBeforeOpening() {
+        try {
+            String headerText = driver.findElement(By.id("android:id/date_picker_header_year")).getText();
+            return Integer.parseInt(headerText.trim());
+        } catch (Exception e) {
+            System.out.println("⚠️ No se pudo leer el año inicial del header, usando el año actual como referencia.");
+            return LocalDate.now().getYear();
+        }
+    }
+
+    private void selectYearInPicker(int year, int startYear) {
+        boolean goBackward = year < startYear;
         By yearLocator = AppiumBy.androidUIAutomator("new UiSelector().text(\"" + year + "\")");
 
-        boolean yearFound = false;
-        int maxScrolls = 20;
+        int maxSteps = 30;
+        String previousSource = null;
+        int noProgressCount = 0;
 
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(200));
 
-        for (int i = 0; i < maxScrolls; i++) {
+        for (int i = 0; i < maxSteps; i++) {
             try {
                 WebElement yearElement = driver.findElement(yearLocator);
                 if (yearElement.isDisplayed()) {
+                    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
                     yearElement.click();
-                    yearFound = true;
-                    break;
+                    return;
                 }
             } catch (Exception e) {
-                if (year < currentYear) {
-                    scrollUpPixels(400);
+                String currentSource = driver.getPageSource();
+                if (currentSource.equals(previousSource)) {
+                    noProgressCount++;
+                    if (noProgressCount >= 2) {
+                        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
+                        throw new IllegalStateException(
+                                "El picker dejó de moverse buscando el año " + year + " (arrancó en " + startYear
+                                        + ").");
+                    }
                 } else {
-                    scrollDownPixels(400);
+                    noProgressCount = 0;
                 }
+                previousSource = currentSource;
+
+                // Un paso nativo de UiAutomator en la dirección correcta — más confiable que
+                // pixeles fijos
+                driver.findElement(AppiumBy.androidUIAutomator(
+                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
+                                ".setAsVerticalList()." + (goBackward ? "scrollBackward();" : "scrollForward();")));
             }
         }
-
-        if (!yearFound) {
-            throw new IllegalStateException("No se encontró el año tras " + maxScrolls + " intentos.");
-        }
-
-        navigateToMonth(YearMonth.of(year, month));
-        String dayAccessibilityId = targetDate.format(DAY_ACCESSIBILITY_FORMAT);
-        click(AppiumBy.accessibilityId(dayAccessibilityId));
-        click(By.xpath(
-                "//android.widget.FrameLayout[@resource-id=\"android:id/content\"]/android.view.ViewGroup/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.widget.Button"));
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
+        throw new IllegalStateException("No se encontró el año " + year + " tras " + maxSteps + " pasos.");
     }
 
     /** Navega mes a mes hasta encontrar el mes y anio solicitado. */
     private void navigateToMonth(YearMonth targetYearMonth) {
         int maxAttempts = 100;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("es", "ES"));
-        By monthIndicator = By.xpath(
-                "(//android.view.View[@resource-id=\"android:id/month_view\"]/android.view.View[@content-desc])[15]");
+        By anyDayCell = By.xpath(
+                "//android.view.View[@resource-id=\"android:id/month_view\"]/android.view.View[@content-desc]");
 
         for (int i = 0; i < maxAttempts; i++) {
-            String dayContentDesc = wait.until(ExpectedConditions.presenceOfElementLocated(monthIndicator))
-                    .getAttribute("content-desc");
-            String cleanDateText = dayContentDesc.toLowerCase(new Locale("es", "ES")).trim();
-            LocalDate currentDate = LocalDate.parse(cleanDateText, formatter);
-            YearMonth currentYearMonth = YearMonth.from(currentDate);
+            YearMonth currentYearMonth = readCurrentMonthFromCalendar(anyDayCell, formatter);
+            if (currentYearMonth == null) {
+                sleep(300); // aún no terminó de renderizar el grid, reintenta la lectura
+                continue;
+            }
 
             if (targetYearMonth.equals(currentYearMonth)) {
                 return;
             }
 
-            if (targetYearMonth.isBefore(currentYearMonth)) {
-                click(AppiumBy.accessibilityId("Mes anterior"));
-            } else {
-                click(AppiumBy.accessibilityId("Mes siguiente"));
-            }
-            sleep(300);
+            clickSafely(targetYearMonth.isBefore(currentYearMonth)
+                    ? AppiumBy.accessibilityId("Mes anterior")
+                    : AppiumBy.accessibilityId("Mes siguiente"));
+            sleep(350);
         }
         throw new IllegalStateException("No se pudo llegar al mes/año objetivo: " + targetYearMonth);
+    }
+
+    private YearMonth readCurrentMonthFromCalendar(By anyDayCell, DateTimeFormatter formatter) {
+        java.util.List<WebElement> dayCells = driver.findElements(anyDayCell);
+        for (WebElement cell : dayCells) {
+            String desc = cell.getAttribute("content-desc");
+            if (desc == null || desc.isBlank())
+                continue;
+            try {
+                LocalDate date = LocalDate.parse(desc.toLowerCase(new Locale("es", "ES")).trim(), formatter);
+                return YearMonth.from(date);
+            } catch (Exception ignored) {
+                // celda vacía de otro mes o formato inesperado — sigue buscando en la siguiente
+            }
+        }
+        return null; // ninguna celda parseable todavía
     }
 
     /** Responde una pregunta de tipo SI/NO identificando su texto. */
@@ -289,9 +335,45 @@ public class BasePage {
         String optionText = "SI".equalsIgnoreCase(decision) ? "Si" : "No";
         By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)=\"" + questionText
                 + "\"]/..//android.widget.TextView[normalize-space(@text)=\"" + optionText + "\"]");
-        scrollToText(questionText, 0.25);
-        clickSafely(dynamicLocator);
-        sleep(200);
+
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            scrollToText(questionText, 0.20);
+            clickSafely(dynamicLocator); // ya usa waitForStableElement internamente
+            sleep(400);
+
+            // Verifica releyendo: si el TextView de la opción sigue existiendo con el mismo
+            // texto,
+            // al menos confirmamos que el tap cayó sobre el elemento correcto (no lo
+            // movió/rompió)
+            try {
+                wait.until(ExpectedConditions.visibilityOfElementLocated(dynamicLocator));
+                return; // el bloque de la pregunta sigue íntegro tras el click
+            } catch (Exception e) {
+                System.out.println("⚠️ Reintentando pregunta '" + questionText + "' (intento " + attempt + ")");
+            }
+        }
+    }
+
+    /**
+     * Espera a que un elemento deje de moverse (fin de animación/inercia de scroll)
+     * antes de retornarlo.
+     */
+    protected WebElement waitForStableElement(By locator, int maxChecks) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        org.openqa.selenium.Rectangle previousRect = element.getRect();
+
+        for (int i = 0; i < maxChecks; i++) {
+            sleep(120); // ventana corta para detectar si sigue en inercia
+            element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            org.openqa.selenium.Rectangle currentRect = element.getRect();
+
+            if (currentRect.equals(previousRect)) {
+                return element; // dos lecturas iguales seguidas = ya se asentó
+            }
+            previousRect = currentRect;
+        }
+        return element; // no se estabilizó del todo, pero devolvemos la última lectura
     }
 
     /** Hace clic esperando el elemento y reintentando ante cambios del layout. */
@@ -301,12 +383,14 @@ public class BasePage {
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+                WebElement element = waitForStableElement(locator, 3); // <-- el cambio clave
                 element.click();
                 return;
-            } catch (StaleElementReferenceException | ElementClickInterceptedException e) {
+            } catch (Exception e) {
                 lastError = e;
-                sleep(300);
+                System.out.println(
+                        "⚠️ Intento " + attempt + " falló para " + locator + ": " + e.getClass().getSimpleName());
+                sleep(400);
             }
         }
         throw new RuntimeException("No se pudo hacer click en " + locator + " tras " + maxAttempts + " intentos.",

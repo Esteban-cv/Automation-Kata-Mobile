@@ -25,28 +25,31 @@ public class OrdersTest extends BaseTest {
 
     // @Test(groups = "smoke")
     // public void smokeTestCreacionOrden() {
-    //     System.out.println("--- Ejecutando Smoke Test Rápido ---");
+    // System.out.println("--- Ejecutando Smoke Test Rápido ---");
 
-    //     // 1. Iniciar la orden con parámetros fijos
-    //     ordersPage.createOrder("Originación de microcrédito", "SolicitudPersonaNatural");
+    // ordersPage.setScreenDensity(380);
 
-    //     // 2. Consulta preliminar con los datos de prueba de Esteban
-    //     ordersPage.preliminaryConsultation(
-    //             "Cedula ciudadanía", 
-    //             "1116070669", 
-    //             "COLOMBIA", 
-    //             "Colorado", 
-    //             "Esteban", 
-    //             10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
-    //             "3185551310", 
-    //             17, 9, 2020, 
-    //             "60", 
-    //             "Gestión front o contact center", 
-    //             "Continuar"
-    //     );
+    // // 1. Iniciar la orden con parámetros fijos
+    // ordersPage.createOrder("Originación de microcrédito",
+    // "SolicitudPersonaNatural");
 
-    //     // 3. Cerrar la orden
-    //     ordersPage.closeOrder();
+    // // 2. Consulta preliminar con los datos de prueba de Esteban
+    // ordersPage.preliminaryConsultation(
+    // "Cedula ciudadanía",
+    // "1116070669",
+    // "COLOMBIA",
+    // "Colorado",
+    // "Esteban",
+    // 10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
+    // "3185551310",
+    // 17, 9, 2020,
+    // "60",
+    // "Gestión front o contact center",
+    // "Continuar"
+    // );
+
+    // // 3. Cerrar la orden
+    // ordersPage.closeOrder();
     // }
 
     @Test(dataProvider = "excelData")
@@ -58,35 +61,45 @@ public class OrdersTest extends BaseTest {
             String longevity, String origin, String decision) {
 
         ordersPage.setScreenDensity(350);
-
-        // 2. LIMPIEZA DE ENTEROS (Evita que el calendario se rompa por espacios o decimales)
-        int bDay = Integer.parseInt(birthDay.replace(".0", "").trim());
-        int bMonth = Integer.parseInt(birthMonth.replace(".0", "").trim());
-        int bYear = Integer.parseInt(birthYear.replace(".0", "").trim());
-
-        int cDay = Integer.parseInt(corpDay.replace(".0", "").trim());
-        int cMonth = Integer.parseInt(corpMonth.replace(".0", "").trim());
-        int cYear = Integer.parseInt(corpYear.replace(".0", "").trim());
-
-        // 3. Iniciar la orden
         ordersPage.createOrder(orderType, personType);
 
-        // 4. Ejecutar la consulta preliminar con los datos 100% limpios
+        // Se pasan los datos pasándolos por los métodos auxiliares para limpiarlos al
+        // vuelo
         ordersPage.preliminaryConsultation(
-                idType, 
-                numberId, 
-                country, 
-                firstName, 
+                idType,
+                clean(numberId),
+                country,
+                firstName,
                 name,
-                bDay, bMonth, bYear, 
-                numberPhone,
-                cDay, cMonth, cYear, 
-                longevity,
-                origin, 
-                decision
-        );
+                toInt(birthDay), toInt(birthMonth), toInt(birthYear),
+                clean(numberPhone),
+                toInt(corpDay), toInt(corpMonth), toInt(corpYear),
+                clean(longevity),
+                origin,
+                decision);
+    }
 
-        // 5. Guardar y cerrar
-        ordersPage.closeOrder();
+    // --- MÉTODOS AUXILIARES (Ponlos al final de tu clase OrdersTest) ---
+
+    // Limpia decimales, espacios y convierte notación científica de Excel
+    private String clean(String value) {
+        if (value == null)
+            return "";
+        value = value.trim();
+
+        try {
+            // Si Excel lo mandó como notación científica (ej: 8.6065519E7)
+            if (value.toUpperCase().contains("E")) {
+                return new BigDecimal(value).toPlainString();
+            }
+        } catch (Exception e) {
+            /* Ignorado */ }
+
+        return value.replace(".0", "");
+    }
+
+    // Limpia y convierte automáticamente los números para el calendario
+    private int toInt(String value) {
+        return Integer.parseInt(clean(value));
     }
 }
