@@ -47,6 +47,7 @@ public class BasePage {
     public BasePage(AndroidDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(50));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(50));
     }
 
     /** Pausa el hilo durante la cantidad de milisegundos indicada. */
@@ -204,6 +205,18 @@ public class BasePage {
 
     /** Limpia un campo y escribe el texto cuando el elemento es interactuable. */
     protected void type(By locator, String text) {
+        try {
+            if (text != null) {
+                // Limpia el .0 de Excel y espacios de forma automática
+                text = text.replace(".0", "").trim();
+            }
+            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            element.clear();
+            element.sendKeys(text);
+        } catch (Exception e) {
+            System.out.println("este es el error" + e);
+        }
+
         try {
             if (text != null) {
                 // Limpia el .0 de Excel y espacios de forma automática
