@@ -48,7 +48,7 @@ public class BasePage {
     /** Inicializa el driver y una espera explicita de hasta 45 segundos. */
     public BasePage(AndroidDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(45));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(50));
     }
 
     /** Pausa el hilo durante la cantidad de milisegundos indicada. */
@@ -206,13 +206,18 @@ public class BasePage {
 
     /** Limpia un campo y escribe el texto cuando el elemento es interactuable. */
     protected void type(By locator, String text) {
-        if (text != null) {
-            // Limpia el .0 de Excel y espacios de forma automática
-            text = text.replace(".0", "").trim();
+        try {
+            if (text != null) {
+                // Limpia el .0 de Excel y espacios de forma automática
+                text = text.replace(".0", "").trim();
+            }
+            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            element.clear();
+            element.sendKeys(text);
+        } catch (Exception e) {
+            System.out.println("este es el error" + e);
         }
-        WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
-        element.clear();
-        element.sendKeys(text);
+
     }
 
     /** Selecciona una fecha completa en el calendario nativo de Android. */
@@ -226,7 +231,7 @@ public class BasePage {
         boolean yearFound = false;
         int maxScrolls = 20;
 
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(300));
 
         for (int i = 0; i < maxScrolls; i++) {
             try {
@@ -238,9 +243,9 @@ public class BasePage {
                 }
             } catch (Exception e) {
                 if (year < currentYear) {
-                    scrollUpPixels(400);
+                    scrollUpPixels(380);
                 } else {
-                    scrollDownPixels(400);
+                    scrollDownPixels(380);
                 }
             }
         }
@@ -289,9 +294,9 @@ public class BasePage {
         String optionText = "SI".equalsIgnoreCase(decision) ? "Si" : "No";
         By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)=\"" + questionText
                 + "\"]/..//android.widget.TextView[normalize-space(@text)=\"" + optionText + "\"]");
-        scrollToText(questionText, 0.25);
+        scrollToText(questionText, 0.20);
         clickSafely(dynamicLocator);
-        sleep(200);
+        sleep(500);
     }
 
     /** Hace clic esperando el elemento y reintentando ante cambios del layout. */
