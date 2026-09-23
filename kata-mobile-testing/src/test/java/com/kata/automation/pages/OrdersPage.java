@@ -9,37 +9,55 @@ import io.appium.java_client.android.AndroidDriver;
 public class OrdersPage extends BasePage {
 
         // --- LOCALIZADORES DE ELEMENTOS ---
+
+        // ⚠️ Nota: Buscar solo por "Button" puede fallar si hay otro botón (como "Ir
+        // atrás") en pantalla. Si falla, cámbialo por texto.
         private static final By CREATE_ORDER_BUTTON = By.xpath("//android.widget.Button");
+
+        // ⚠️ Nota: XPath absoluto. Si la estructura cambia, este se romperá. Ideal
+        // pedir un testTag al equipo de desarrollo en el futuro.
         private static final By NEW_ORDER_BUTTON = By.xpath(
                         "//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button");
+
+        // ✅ Corregidos a following + [1]
         private static final By OPEN_ID_TYPE_DROPDOWN = By.xpath(
-                        "//android.widget.TextView[@text=\"Tipo de identificación\"]/following-sibling::android.view.View[@content-desc=\"Menú desplegable\"]");
+                        "//android.widget.TextView[@text=\"Tipo de identificación\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
         private static final By NUMBER_ID_INPUT = By.xpath(
-                        "//android.widget.TextView[@text=\"Número de identificación del solicitante\"]/following-sibling::android.widget.EditText");
+                        "//android.widget.TextView[@text=\"Número de identificación del solicitante\"]/following::android.widget.EditText[1]");
         private static final By NUMBER_ID_CONFIRM_INPUT = By.xpath(
-                        "//android.widget.TextView[@text=\"Confirmar número de identificación del solicitante\"]/following-sibling::android.widget.EditText");
+                        "//android.widget.TextView[@text=\"Confirmar número de identificación del solicitante\"]/following::android.widget.EditText[1]");
+
+        // Este ya estaba perfecto
         private static final By OPEN_HOME_COUNTRY_DROPDOWN = By.xpath(
                         "//android.widget.TextView[@text=\"País de origen de la identificación del solicitante\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
+
+        // ✅ Corregidos a following + [1]
         private static final By FIRST_NAME_INPUT = By.xpath(
-                        "//android.widget.TextView[@text=\"Primer apellido solicitante\"]/following-sibling::android.widget.EditText");
+                        "//android.widget.TextView[@text=\"Primer apellido solicitante\"]/following::android.widget.EditText[1]");
         private static final By NAME_INPUT = By.xpath(
-                        "//android.widget.TextView[@text=\"Primer nombre solicitante\"]/following-sibling::android.widget.EditText");
-        private static final By SELECT_DATE = By
-                        .xpath("//android.widget.TextView[@text=\"Fecha de nacimiento del solicitante\"]/following-sibling::android.view.View");
+                        "//android.widget.TextView[@text=\"Primer nombre solicitante\"]/following::android.widget.EditText[1]");
+        private static final By SELECT_DATE = By.xpath(
+                        "//android.widget.TextView[@text=\"Fecha de nacimiento del solicitante\"]/following::android.view.View[1]");
+
+        // Este ya estaba perfecto
         private static final By SELECT_BIRTH_CLIENT = By.xpath(
                         "//android.widget.TextView[@text=\"País de nacimiento del solicitante\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
+
+        // ✅ Corregidos a following + [1]
         private static final By NUMBER_PHONE_CLIENT = By.xpath(
-                        "//android.widget.TextView[@text=\"Celular del solicitante\"]/following-sibling::android.widget.EditText");
+                        "//android.widget.TextView[@text=\"Celular del solicitante\"]/following::android.widget.EditText[1]");
         private static final By CONFIRM_PHONE_CLIENT = By.xpath(
-                        "//android.widget.TextView[@text=\"Confirmar Celular solicitante\"]/following-sibling::android.widget.EditText");
-        private static final By BUSSINESS_INCORPORATION_DATE = By
-                        .xpath("//android.widget.TextView[@text=\"Fecha de constitución del negocio\"]/following-sibling::android.view.View");
+                        "//android.widget.TextView[@text=\"Confirmar Celular solicitante\"]/following::android.widget.EditText[1]");
+        private static final By BUSSINESS_INCORPORATION_DATE = By.xpath(
+                        "//android.widget.TextView[@text=\"Fecha de constitución del negocio\"]/following::android.view.View[1]");
         private static final By BUSSINESS_LONGEVITY_LOCATION = By.xpath(
-                        "//android.widget.TextView[@text=\"Antiguedad del negocio en la ubicación actual (meses)\"]/following-sibling::android.widget.EditText");
-        private static final By ORIGIN_ORDER = By
-                        .xpath("//android.widget.TextView[@text=\"Origen de solicitud\"]/following-sibling::android.view.View");
-        private static final By CONSULT_CLIENT_BUTTON = By
-                        .xpath("//android.widget.TextView[@text=\"Consultar cliente\"]/following-sibling::android.view.View[1]");
+                        "//android.widget.TextView[@text=\"Antiguedad del negocio en la ubicación actual (meses)\"]/following::android.widget.EditText[1]");
+        private static final By ORIGIN_ORDER = By.xpath(
+                        "//android.widget.TextView[@text=\"Origen de solicitud\"]/following::android.view.View[1]");
+        private static final By CONSULT_CLIENT_BUTTON = By.xpath(
+                        "//android.widget.TextView[@text=\"Consultar cliente\"]/following::android.view.View[1]");
+
+        // Lógica condicional, se mantienen igual
         private static final By CONSULTATION_RESULT = By.xpath(
                         "//*[contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'consulta exitosa') "
                                         + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'mora mayor') "
@@ -47,19 +65,25 @@ public class OrdersPage extends BasePage {
         private static final By VIEW360_CONSULTED_MESSAGE = By.xpath("//*[contains(@text,'Consulta Exitosa')]");
         private static final By ACCEPT_CONSULT_CLIENT_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
         private static final By GO_BACK = AppiumBy.accessibilityId("Ir atrás");
+
+        // ⚠️ Nota: XPath absoluto
         private static final By YES_BUTTON_GO_BACK = By.xpath(
                         "//android.view.ViewGroup/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.widget.Button");
+
+        // Estos ya estaban blindados y perfectos
         private static final By GENERATE_VIEW360_BUTTON = By.xpath(
                         "//android.widget.TextView[@text=\"Vista 360 del cliente\"]/following::android.view.View[.//android.widget.Button][1]");
-        private static final By DECISION_DROPDOWN = By
-                        .xpath("//android.widget.TextView[@text=\"Decisión\"]/..//android.widget.TextView[@text=\"Seleccionar\"]");
-        private static final By SAVE_DECISION_BUTTON = By
-                        .xpath("//android.widget.TextView[@text=\"Guardar decisión\"]/following-sibling::android.view.View[1]");
-        private static final By SUCCESS_UPDATING = By.xpath("//*[contains(@text,'Actualización exitosa')]");
+        private static final By DECISION_DROPDOWN = By.xpath(
+                        "//android.widget.TextView[@text=\"Decisión\"]/..//android.widget.TextView[@text=\"Seleccionar\"]");
 
+        // ✅ Corregido a following + [1]
+        private static final By SAVE_DECISION_BUTTON = By.xpath(
+                        "//android.widget.TextView[@text=\"Guardar decisión\"]/following::android.view.View[1]");
+
+        // Ya estaban perfectos
+        private static final By SUCCESS_UPDATING = By.xpath("//*[contains(@text,'Actualización exitosa')]");
         private static final By REJECTION_CAUSAL_DROPDOWN = By.xpath(
                         "//android.widget.TextView[@text=\"Causal de rechazo\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
-
         private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
                         "//*[contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tiempo excedido') or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tiempo de espera') or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'timeout')]");
 
@@ -183,7 +207,6 @@ public class OrdersPage extends BasePage {
         }
 
         public void closeOrder() {
-                wait.until(ExpectedCondition.visibilityOfElementLocated());
                 click(GO_BACK);
                 sleep(500);
                 click(YES_BUTTON_GO_BACK);

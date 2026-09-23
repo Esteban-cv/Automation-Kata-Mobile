@@ -473,17 +473,23 @@ public class BasePage {
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
+                System.out.println("Buscando elemento " + targetLocator + " (intento " + attempt + " de "
+                        + maxAttempts + ").");
                 scrollToText(anchorText, jumpPercent);
                 WebElement target = wait.until(ExpectedConditions.visibilityOfElementLocated(targetLocator));
 
                 if (!isFullyInViewport(target)) {
                     scrollDownPercent(-0.08);
-                    target = wait.until(ExpectedConditions.visibilityOfElementLocated(targetLocator));
                 }
-                target.click();
+
+                // Usa el clic normal y, si falla por Compose/layout, el fallback nativo.
+                clickSafely(targetLocator);
+                System.out.println("Clic ejecutado para " + targetLocator + ".");
                 return;
             } catch (Exception e) {
                 lastError = e;
+                System.out.println("No se pudo hacer clic en " + targetLocator + " durante el intento " + attempt
+                        + ": " + e.getClass().getSimpleName());
                 sleep(400);
             }
         }

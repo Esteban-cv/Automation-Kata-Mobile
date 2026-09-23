@@ -31,36 +31,41 @@ public class FlujoCompletoTest extends BaseTest {
 
     @Test(groups = "smoke")
     public void wholeFlowSmoke() {
-        System.out.println("--- Ejecutando Smoke Test Rápido ---");
+        try {
+            System.out.println("--- Ejecutando Smoke Test Rápido ---");
 
-        ordersPage.setScreenDensity(380);
+            ordersPage.setScreenDensity(380);
 
-        // 1. Iniciar la orden con parámetros fijos
-        ordersPage.createOrder("Originación de microcrédito", "SolicitudPersonaNatural");
+            // 1. Iniciar la orden con parámetros fijos
+            ordersPage.createOrder("Originación de microcrédito", "SolicitudPersonaNatural");
 
-        System.out.println("Iniciando consulta preliminar");
-        ordersPage.preliminaryConsultation(
-                "Cedula ciudadanía",
-                "38569302",
-                "COLOMBIA",
-                "Hernandez",
-                "Naren",
-                10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
-                "3185551310",
-                17, 9, 2020,
-                "60",
-                "Gestión front o contact center",
-                "Continuar");
+            System.out.println("Iniciando consulta preliminar");
+            ordersPage.preliminaryConsultation(
+                    "Cedula ciudadanía",
+                    "38569302",
+                    "COLOMBIA",
+                    "Hernandez",
+                    "Naren",
+                    10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
+                    "3185551310",
+                    17, 9, 2020,
+                    "60",
+                    "Gestión front o contact center",
+                    "Continuar");
 
-        System.out.println("Finalizando consulta preliminar");
-        System.out.println("Iniciando Radicación");
-        radicationPage.completeRadicationExistingClient("38569302", "10",
-                "SISBEN", "Hogar", "ecolorado@greensqa.com", "VALLE DEL CAUCA",
-                "EL CERRITO", "LA ESTRELLA", "3185551311");
-        System.out.println("Finalizando Radicacion");
-        System.out.println("Cerrando Orden");
-        ordersPage.closeOrder();
-        System.out.println("Flujo finalizado correctamente");
+            System.out.println("Finalizando consulta preliminar");
+            System.out.println("Iniciando Radicación");
+            radicationPage.completeRadicationExistingClient("38569302", "10",
+                    "SISBEN", "Hogar", "ecolorado@greensqa.com", "VALLE DEL CAUCA",
+                    "EL CERRITO", "LA ESTRELLA", "3185551311");
+            System.out.println("Finalizando Radicacion");
+            System.out.println("Cerrando Orden");
+            ordersPage.closeOrder();
+            System.out.println("Flujo finalizado correctamente");
+        } catch (Exception e) {
+            takeScreenshot("flujo_completo_error");
+            throw new RuntimeException("El flujo completo falló.", e);
+        }
     }
 
     // @DataProvider(name = "excelData")
