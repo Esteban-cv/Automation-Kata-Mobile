@@ -495,4 +495,6 @@ public class BasePage {
             System.err.println("No se pudo restablecer la densidad: " + e.getMessage());
         }
     }
+
+    
 }

@@ -17,7 +17,7 @@ public class OrdersPage extends BasePage {
     private static final By NUMBER_ID_CONFIRM_INPUT = By.xpath(
             "//android.widget.TextView[@text=\"Confirmar número de identificación del solicitante\"]/following-sibling::android.widget.EditText");
     private static final By OPEN_HOME_COUNTRY_DROPDOWN = By.xpath(
-            "//android.widget.TextView[@text=\"País de origen de la identificación del solicitante\"]/following-sibling::android.view.View[@content-desc=\"Menú desplegable\"]");
+            "//android.widget.TextView[@text=\"País de origen de la identificación del solicitante\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
     private static final By FIRST_NAME_INPUT = By.xpath(
             "//android.widget.TextView[@text=\"Primer apellido solicitante\"]/following-sibling::android.widget.EditText");
     private static final By NAME_INPUT = By.xpath(
@@ -169,8 +169,6 @@ public class OrdersPage extends BasePage {
 
             takeEvidence(numberId, "03_resultado_decisión");
             clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
-
-            closeOrder();
         }
     }
 
