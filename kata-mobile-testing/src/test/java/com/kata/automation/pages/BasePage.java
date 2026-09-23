@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -344,7 +345,7 @@ public class BasePage {
     }
 
     private YearMonth readCurrentMonthFromCalendar(By anyDayCell, DateTimeFormatter formatter) {
-        java.util.List<WebElement> dayCells = driver.findElements(anyDayCell);
+        List<WebElement> dayCells = driver.findElements(anyDayCell);
         for (WebElement cell : dayCells) {
             String desc = cell.getAttribute("content-desc");
             if (desc == null || desc.isBlank())
@@ -406,7 +407,7 @@ public class BasePage {
         return element; // no se estabilizó del todo, pero devolvemos la última lectura
     }
 
-    /** Hace clic esperando el elemento y reintentando ante cambios del layout. */
+    /** Hace clic y usa un toque nativo como respaldo si el clic WebDriver falla. */
     protected void clickSafely(By locator) {
         int maxAttempts = 5;
         Exception lastError = null;
@@ -420,7 +421,19 @@ public class BasePage {
                 lastError = e;
                 System.out.println(
                         "⚠️ Intento " + attempt + " falló para " + locator + ": " + e.getClass().getSimpleName());
-                sleep(400);
+
+                try {
+                    WebElement element = waitForStableElement(locator, 3);
+                    driver.executeScript("mobile: clickGesture", Map.of(
+                            "elementId", ((org.openqa.selenium.remote.RemoteWebElement) element).getId()));
+                    System.out.println("Clic nativo ejecutado para " + locator + ".");
+                    return;
+                } catch (Exception fallbackError) {
+                    lastError = fallbackError;
+                    System.out.println("⚠️ También falló el clic nativo para " + locator + ": "
+                            + fallbackError.getClass().getSimpleName());
+                    sleep(400);
+                }
             }
         }
         throw new RuntimeException("No se pudo hacer click en " + locator + " tras " + maxAttempts + " intentos.",

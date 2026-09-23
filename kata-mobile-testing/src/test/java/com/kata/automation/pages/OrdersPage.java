@@ -27,7 +27,7 @@ public class OrdersPage extends BasePage {
         private static final By SELECT_DATE = By
                         .xpath("//android.widget.TextView[@text=\"Fecha de nacimiento del solicitante\"]/following-sibling::android.view.View");
         private static final By SELECT_BIRTH_CLIENT = By.xpath(
-                        "//android.widget.TextView[@text=\"País de nacimiento del solicitante\"]/following-sibling::android.view.View[@content-desc=\"Menú desplegable\"]");
+                        "//android.widget.TextView[@text=\"País de nacimiento del solicitante\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
         private static final By NUMBER_PHONE_CLIENT = By.xpath(
                         "//android.widget.TextView[@text=\"Celular del solicitante\"]/following-sibling::android.widget.EditText");
         private static final By CONFIRM_PHONE_CLIENT = By.xpath(

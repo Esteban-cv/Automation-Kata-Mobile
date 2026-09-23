@@ -153,15 +153,15 @@ public class RadicationPage extends BasePage {
 
         answerQuestion("¿El solicitante tiene otra nacionalidad?", "No");
 
-        scrollToText("Último año cursado del solicitante", 0.20);
+        scrollToText("Último año cursado del solicitante", 0.15);
         type(LAST_YEAR_COMPLETED, lastYearCompleted);
 
         scrollAndClickReliable("Afiliación salud del solicitante",
-                AFFILIATION_CLIENT, 0.20);
+                AFFILIATION_CLIENT, 0.15);
         click(byVisibleText(affiliation));
 
         scrollAndClickReliable("Acceso a internet del solicitante",
-                NETWOK_ACCESS_CLIENT, 0.20);
+                NETWOK_ACCESS_CLIENT, 0.150);
         click(byVisibleText(networkAccess));
 
         sleep(100);
