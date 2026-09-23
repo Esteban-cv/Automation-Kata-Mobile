@@ -1,5 +1,7 @@
 package com.kata.automation.tests;
 
+import java.util.Map;
+
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 
@@ -13,6 +15,12 @@ public class BaseTest {
     @BeforeSuite
     public void globalSetUp() {
         driver = DriverManager.getDriver();
+        try {
+            // Activa la ubicación en modo de alta precisión por ADB
+            driver.executeScript("mobile: shell", Map.of("command", "settings put secure location_mode 3"));
+        } catch (Exception e) {
+            /* Ignorado */
+        }
     }
 
     @AfterSuite

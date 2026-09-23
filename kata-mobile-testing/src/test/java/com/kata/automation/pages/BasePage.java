@@ -16,6 +16,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
@@ -128,22 +129,26 @@ public class BasePage {
 
     /** Busca un texto realizando scroll y deja el elemento listo para usarlo. */
     protected void scrollToTextAndClick(String text) {
-        By locator = By.xpath("//android.widget.TextView[contains(@text, '" + text + "')]");
-        int maxScrolls = 5;
+        By locator = By.xpath("//*[normalize-space(@text)=\"" + text
+            + "\" or normalize-space(@content-desc)=\"" + text + "\"]");
+        int maxScrolls = 20;
         driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
-        for (int i = 0; i < maxScrolls; i++) {
-            try {
-                WebElement element = driver.findElement(locator);
-                if (element.isDisplayed()) {
-                    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
-                    return;
+        try {
+            for (int i = 0; i < maxScrolls; i++) {
+                for (WebElement element : driver.findElements(locator)) {
+                    if (element.isDisplayed() && isFullyInViewport(element)) {
+                        clickSafely(locator);
+                        return;
+                    }
                 }
-            } catch (Exception e) {
-                scrollDownPercent(0.35);
+                scrollDownPercent(0.25);
+                sleep(250);
             }
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
         }
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
+
         throw new RuntimeException("No se encontró el texto '" + text + "' tras " + maxScrolls + " scrolls.");
     }
 
@@ -201,6 +206,17 @@ public class BasePage {
         }
         throw new RuntimeException("No se pudo abrir el dropdown " + locator + " tras " + maxAttempts + " intentos.",
                 lastError);
+    }
+
+    /**
+     * Simula un toque físico real en el centro del elemento usando gestos nativos de Android.
+     * Ideal para evadir los clics fantasmas de Jetpack Compose.
+     */
+    protected void forceClick(By locator) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        driver.executeScript("mobile: clickGesture", java.util.Map.of(
+                "elementId", ((org.openqa.selenium.remote.RemoteWebElement) element).getId()
+        ));
     }
 
     /** Limpia un campo y escribe el texto cuando el elemento es interactuable. */
@@ -346,8 +362,9 @@ public class BasePage {
     /** Responde una pregunta de tipo SI/NO identificando su texto. */
     protected void answerQuestion(String questionText, String decision) {
         String optionText = "SI".equalsIgnoreCase(decision) ? "Si" : "No";
-        By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)=\"" + questionText
-                + "\"]/..//android.widget.TextView[normalize-space(@text)=\"" + optionText + "\"]");
+        // Se usan comillas simples (') para envolver las variables en lugar de (\" )
+        By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)='" + questionText
+                + "']/..//android.widget.TextView[normalize-space(@text)='" + optionText + "']");
 
         int maxAttempts = 3;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -450,7 +467,6 @@ public class BasePage {
                     scrollDownPercent(-0.08);
                     target = wait.until(ExpectedConditions.visibilityOfElementLocated(targetLocator));
                 }
-
                 target.click();
                 return;
             } catch (Exception e) {
@@ -465,12 +481,20 @@ public class BasePage {
     // Método auxiliar en BasePage o OrdersPage para leer alertas dinámicas
     public String getAlertMessageText() {
         try {
-            // Buscamos cualquier modal de alerta genérico que contenga texto de respuesta
+            String uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ";
+            String lowercase = "abcdefghijklmnopqrstuvwxyzáéíóúü";
             WebElement alertElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
                     By.xpath(
-                            "//android.widget.TextView[contains(@text, 'Consulta exitosa') or contains(@text, 'Cliente con mora mayor a 30 dias') or contains(@text, 'Cliente registrado en listas')]")));
+                            "//android.widget.TextView["
+                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
+                                    + "'), 'consulta exitosa') or "
+                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
+                                    + "'), 'mora mayor') or "
+                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
+                                    + "'), 'registrado en listas')]")));
             return alertElement.getText();
         } catch (Exception e) {
+            System.err.println("No se pudo leer el mensaje de consulta: " + e.getMessage());
             return "DESCONOCIDO";
         }
     }
@@ -496,5 +520,54 @@ public class BasePage {
         }
     }
 
-    
+    /** Hace hasta dos intentos y reintenta cuando la consulta no devuelve respuesta. */
+    protected void clickWithRetry(By buttonLocator, By resultLocator, By timeoutLocator) {
+        Exception lastError = null;
+        int maxAttempts = 2;
+        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+
+        try {
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    System.out.println("Consulta de cliente: intento " + attempt + " de " + maxAttempts);
+                    clickSafely(buttonLocator);
+
+                    WebDriverWait consultationWait = new WebDriverWait(driver, Duration.ofMinutes(1));
+                    consultationWait.until(currentDriver -> {
+                        boolean resultFound = !currentDriver.findElements(resultLocator).isEmpty();
+                        boolean timeoutFound = !currentDriver.findElements(timeoutLocator).isEmpty();
+                        return resultFound || timeoutFound;
+                    });
+
+                    if (!driver.findElements(resultLocator).isEmpty()) {
+                        System.out.println("Consulta de cliente respondida en el intento " + attempt + ".");
+                        return;
+                    }
+
+                    System.out.println("La aplicación informó timeout en el intento " + attempt + ".");
+                } catch (TimeoutException e) {
+                    lastError = e;
+                    System.out.println("La consulta no respondió en el intento " + attempt + ".");
+                } catch (Exception e) {
+                    lastError = e;
+                    System.out.println("Falló el intento " + attempt + " de consulta: " + e.getMessage());
+                }
+
+                if (attempt < maxAttempts) {
+                    sleep(1000);
+                }
+            }
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
+        }
+
+        throw new RuntimeException("La consulta de cliente no devolvió resultado tras " + maxAttempts
+                + " intentos.", lastError);
+    }
+
+    public void findTextInDropDown(By locator, String location) {
+        sleep(1000);
+        clickComposeDropdown(locator);
+        scrollToTextAndClick(location);
+    }
 }

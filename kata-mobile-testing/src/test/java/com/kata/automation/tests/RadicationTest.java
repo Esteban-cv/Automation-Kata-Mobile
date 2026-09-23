@@ -16,7 +16,12 @@ public class RadicationTest extends BaseTest{
     @Test(groups = "smoke")
     public void smokeTestRadicationOrder(){
         System.out.println("Ejecutando smoke");
+        
 
-        radicationPage.radicationProcess("ANTIOQUIA","MEDELLÍN",18,9,26);
+        radicationPage.completeRadicationExistingClient("38569302", "10",
+         "SISBEN", "Hogar", "ecolorado@greensqa.com", "VALLE DEL CAUCA",
+          "CALI","TERRON COLORADO","3185551311");
+
+        //radicationPage.radicationProcess("ANTIOQUIA","MEDELLÍN",18,9,26);
     }
 }
