@@ -98,11 +98,11 @@ public class OrdersPage extends BasePage {
                 click(CREATE_ORDER_BUTTON);
         }
 
-        public void preliminaryConsultation(String idType, String numberId, String country, String firstName,
+        public boolean preliminaryConsultation(String idType, String numberId, String country, String firstName,
                         String name,
                         int birthDay, int birthMonth, int birthYear, String numberPhone, int corporationDay,
                         int corporationMonth,
-                        int corporationYear, String bussinessLongevity, String originOrderText, String decision) {
+                        int corporationYear, String bussinessLongevity, String originOrderText) {
 
                 click(OPEN_ID_TYPE_DROPDOWN);
                 click(byVisibleText(idType));
@@ -176,9 +176,12 @@ public class OrdersPage extends BasePage {
                         clickSafely(SAVE_DECISION_BUTTON);
                         waitForVisibility(SUCCESS_UPDATING);
                         takeEvidence(numberId, "03_resultado_decisión");
+                        System.out.println("primer clic de cerrar ventana con boton aceptar");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
+                        System.out.println("Segundo clic de cerrar ventana con boton aceptar");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
-                        return;
+                        System.out.println("Cerrando orden...RECHAZADA");
+                        return false;
                 } else {
                         System.out.println(
                                         "✅ Cliente apto para continuar el flujo (Acepta mora menor o sin restricciones).");
@@ -195,7 +198,7 @@ public class OrdersPage extends BasePage {
                         sleep(200);
 
                         clickComposeDropdown(DECISION_DROPDOWN);
-                        clickSafely(byVisibleText(decision));
+                        clickSafely(byVisibleText("Continuar"));
                         sleep(200);
 
                         clickSafely(SAVE_DECISION_BUTTON);
@@ -203,12 +206,16 @@ public class OrdersPage extends BasePage {
 
                         takeEvidence(numberId, "03_resultado_decisión");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
+                        return true;
                 }
         }
 
         public void closeOrder() {
+                System.out.println("boton atras de cerrar order");
                 click(GO_BACK);
-                sleep(500);
+                System.out.println("Esperando visibilidad de elemento go back");
+                waitForVisibility(YES_BUTTON_GO_BACK);
+                System.out.println("clic en elemento go back");
                 click(YES_BUTTON_GO_BACK);
                 sleep(1000);
         }

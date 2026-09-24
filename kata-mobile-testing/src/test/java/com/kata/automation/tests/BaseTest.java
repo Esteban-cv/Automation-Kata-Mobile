@@ -24,6 +24,9 @@ public class BaseTest {
     public void globalSetUp() {
         driver = DriverManager.getDriver();
         try {
+            // Activa el modo "No Molestar" en Android (2 = Silencio Total)
+            driver.executeScript("mobile: shell", java.util.Map.of(
+                    "command", "settings put global zen_mode 2"));
             // Activa la ubicación en modo de alta precisión por ADB
             driver.executeScript("mobile: shell", Map.of("command", "settings put secure location_mode 3"));
         } catch (Exception e) {
@@ -34,6 +37,14 @@ public class BaseTest {
     @AfterSuite
     public void globalTearDown() {
         DriverManager.quitDriver();
+        try {
+            // Desactiva el modo "No Molestar" (0 = Apagado)
+            driver.executeScript("mobile: shell", java.util.Map.of(
+                    "command", "settings put global zen_mode 0"
+            ));
+        } catch (Exception e) {
+            /* Ignorado */
+        }
     }
 
     protected void takeScreenshot(String name) {

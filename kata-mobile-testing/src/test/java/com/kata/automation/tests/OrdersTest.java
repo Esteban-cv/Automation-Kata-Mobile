@@ -36,8 +36,7 @@ public class OrdersTest extends BaseTest {
                 "3185551310",
                 17, 9, 2020,
                 "60",
-                "Gestión front o contact center",
-                "Continuar");
+                "Gestión front o contact center");
     }
 
     // @Test(groups = "smoke")

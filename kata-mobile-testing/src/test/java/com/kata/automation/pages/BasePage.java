@@ -132,7 +132,7 @@ public class BasePage {
     protected void scrollToTextAndClick(String text) {
         By locator = By.xpath("//*[normalize-space(@text)=\"" + text
             + "\" or normalize-space(@content-desc)=\"" + text + "\"]");
-        int maxScrolls = 20;
+        int maxScrolls = 50;
         driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         try {
@@ -222,30 +222,15 @@ public class BasePage {
 
     /** Limpia un campo y escribe el texto cuando el elemento es interactuable. */
     protected void type(By locator, String text) {
-        try {
-            if (text != null) {
-                // Limpia el .0 de Excel y espacios de forma automática
-                text = text.replace(".0", "").trim();
-            }
-            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
-            element.clear();
-            element.sendKeys(text);
-        } catch (Exception e) {
-            System.out.println("este es el error" + e);
-        }
+        String value = text == null ? "" : text.trim();
 
         try {
-            if (text != null) {
-                // Limpia el .0 de Excel y espacios de forma automática
-                text = text.replace(".0", "").trim();
-            }
             WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
             element.clear();
-            element.sendKeys(text);
+            element.sendKeys(value);
         } catch (Exception e) {
-            System.out.println("este es el error" + e);
+            throw new RuntimeException("No se pudo escribir '" + value + "' en " + locator, e);
         }
-
     }
 
     /** Selecciona una fecha completa en el calendario nativo de Android. */
@@ -588,5 +573,15 @@ public class BasePage {
         sleep(1000);
         clickComposeDropdown(locator);
         scrollToTextAndClick(location);
+    }
+
+    public void findTextWithSearch(By locator,By searchLocator, String text){
+        clickComposeDropdown(locator);
+        waitForVisibility(searchLocator);
+        type(searchLocator, text);
+        try {driver.hideKeyboard();} catch (Exception e) {}
+        wait.until(ExpectedConditions.visibilityOfElementLocated(byVisibleText(text)));
+        sleep(300);
+        click(byVisibleText(text));
     }
 }

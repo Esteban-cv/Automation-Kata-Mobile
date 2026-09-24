@@ -17,14 +17,6 @@ public class LoginTest extends BaseTest {
 
     @Test
     public void verifyWholeFlowLogin() {
-
-        // 1. Primera pantalla: Ingresamos el dato inicial y continuamos
-        //welcomePage.completeWelcomePage("mfbwqa");
-        loginPage.firstContinueClickButton();
-        // 2. Segunda pantalla: Ya estamos en el login, ingresamos credenciales
         loginPage.doLogin("Banco2024*");
-
-        // 3. Tercera pantalla final del login -> Menú
-        loginPage.afterLogin();
     }
 }

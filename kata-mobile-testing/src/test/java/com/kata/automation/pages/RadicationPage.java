@@ -137,6 +137,9 @@ public class RadicationPage extends BasePage {
         private static final By PROCCESS_DECISION = By.xpath(
                         "//android.widget.TextView[@text=\"Procesar la decisión\"]/following::android.view.View[.//android.widget.Button][1]");
 
+        // Atrapa el único campo de texto disponible en esa ventana de búsqueda
+        private static final By SEARCH_INPUT = By.xpath("//android.widget.EditText");
+
         public void fillFamilyComposition(By openSectionLocator) {
                 if (openSectionLocator != null) {
                         scrollAndClickReliable("Composición familiar", openSectionLocator, 0.15);
@@ -234,7 +237,7 @@ public class RadicationPage extends BasePage {
 
                 findTextInDropDown(BUSSINESS_DEPARTMENT_CLIENT, bussinessDepartmentAnalist);
                 findTextInDropDown(BUSSINESS_CITY_CLIENT, bussinessCityAnalist);
-                findTextInDropDown(BUSSINESS_NEIGHBORHOOD_CLIENT, bussinessNeighborhoodAnalist);
+                findTextWithSearch(BUSSINESS_NEIGHBORHOOD_CLIENT, SEARCH_INPUT, bussinessNeighborhoodAnalist);
 
                 // Hace scroll hasta que el botón sea visible
                 scrollToText("Coordenadas del negocio", 0.15);
