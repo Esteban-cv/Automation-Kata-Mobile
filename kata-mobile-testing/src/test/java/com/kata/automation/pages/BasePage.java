@@ -238,9 +238,10 @@ public class BasePage {
         LocalDate targetDate = LocalDate.of(year, month, day);
 
         int startYear = readSelectedYearBeforeOpening(); // se lee ANTES de abrir el picker
-        clickSafely(By.id("android:id/date_picker_header_year"));
-
-        selectYearInPicker(year, startYear);
+        if (year != startYear) {
+            clickSafely(By.id("android:id/date_picker_header_year"));
+            selectYearInPicker(year, startYear);
+        }
         navigateToMonth(YearMonth.of(year, month));
 
         String dayAccessibilityId = targetDate.format(DAY_ACCESSIBILITY_FORMAT);
