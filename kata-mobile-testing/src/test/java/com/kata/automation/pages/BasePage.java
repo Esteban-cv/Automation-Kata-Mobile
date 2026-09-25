@@ -3,6 +3,7 @@ package com.kata.automation.pages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -428,14 +430,26 @@ public class BasePage {
 
     /**
      * Guarda una captura en evidencias/orden_<identificador> con el nombre del
-     * paso.
+     * paso y un consecutivo independiente por orden.
      */
     protected void takeEvidence(String orderIdentifier, String stepName) {
         try {
             String folderPath = "evidencias/orden_" + orderIdentifier;
-            Files.createDirectories(Paths.get(folderPath));
+            java.nio.file.Path folder = Paths.get(folderPath);
+            Files.createDirectories(folder);
+
+            int evidenceNumber;
+            try (Stream<Path> files = Files.list(folder)) {
+                evidenceNumber = (int) files
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".png"))
+                        .count() + 1;
+            }
+
             File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-            File destFile = new File(folderPath + "/" + stepName + "_" + System.currentTimeMillis() + ".png");
+            String cleanStepName = stepName.replaceFirst("^\\d+_", "");
+            File destFile = new File(folderPath + "/" + String.format("%02d_%s_%d.png",
+                    evidenceNumber, cleanStepName, System.currentTimeMillis()));
             Files.copy(srcFile.toPath(), destFile.toPath());
             System.out.println("Evidencia guardada: " + destFile.getAbsolutePath());
         } catch (IOException e) {
