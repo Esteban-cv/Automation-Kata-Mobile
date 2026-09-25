@@ -267,8 +267,8 @@ public class AnalysisPage extends BasePage {
                 System.out.println("--- Iniciando formulario: Análisis Cualitativo y Cuantitativo ---");
                 click(ANALYSIS_BUTTON);
 
-                fillGeoReferences(OPEN_GEO_REFERENCES);
-                fillReferences(OPEN_ENTRY_REFERENCES);
+                // fillGeoReferences(OPEN_GEO_REFERENCES);
+                // fillReferences(OPEN_ENTRY_REFERENCES);
 
                 // 1. Textos Cualitativos[cite: 8, 9]
                 scrollToText("Observaciones de reputación", 0.15);
@@ -292,30 +292,30 @@ public class AnalysisPage extends BasePage {
 
                 // 3. Información Financiera Básica[cite: 9, 10]
                 scrollToText("Total Ventas", 0.15);
-                type(TOTAL_SALES, "3500000"); // 3.5M (Coherente para microcrédito)
-                type(TOTAL_PURCHASES, "1200000"); // 1.2M
+                type(TOTAL_SALES, "40000000"); // 40M (Coherente para microcrédito)
+                type(TOTAL_PURCHASES, "15000000"); // 1.2M
 
                 scrollToText("Gastos del negocio", 0.15);
-                type(BUSINESS_EXPENSES, "600000");
-                type(FINANCIAL_EXPENSES, "150000");
+                type(BUSINESS_EXPENSES, "6000000");
+                type(FINANCIAL_EXPENSES, "1500000");
 
                 // 4. Ingresos adicionales (En 0 por defecto)[cite: 10]
                 scrollToText("Total otros ingresos", 0.15);
-                type(TOTAL_OTHER_INCOME, "0");
+                type(TOTAL_OTHER_INCOME, "2000000");
                 type(OTHER_CASH_FLOW_INCOME, "0");
 
                 // 5. Entorno Familiar[cite: 10, 11]
                 scrollToText("Total aportes familiares(según políticas)", 0.15);
-                type(TOTAL_FAMILY_CONTRIBUTIONS, "0");
+                type(TOTAL_FAMILY_CONTRIBUTIONS, "2000000");
                 type(FAMILY_EXPENSES, "800000"); // Gastos de manutención básicos
 
                 // 6. Activos y Pasivos[cite: 11, 12]
                 scrollToText("Total bienes del negocio", 0.15);
                 type(TOTAL_BUSINESS_ASSETS, "5000000");
-                type(BUSINESS_LIABILITIES, "0");
+                type(BUSINESS_LIABILITIES, "2000000");
 
                 scrollToText("Cuentas W", 0.15);
-                type(W_ACCOUNTS, "0");
+                type(W_ACCOUNTS, "1000000");
 
                 scrollToText("Total de activos", 0.15);
                 type(TOTAL_ASSETS, "10000000");

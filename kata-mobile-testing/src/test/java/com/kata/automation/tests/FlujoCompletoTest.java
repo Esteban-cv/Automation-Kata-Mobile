@@ -2,7 +2,10 @@ package com.kata.automation.tests;
 
 import com.kata.automation.pages.LoginPage;
 import com.kata.automation.pages.OrdersPage;
+import com.kata.automation.pages.ProductRegistrationPage;
 import com.kata.automation.pages.RadicationPage;
+import com.kata.automation.pages.AnalysisDecisionPage;
+import com.kata.automation.pages.AnalysisPage;
 import com.kata.automation.utils.ExcelUtils;
 
 import org.testng.annotations.BeforeClass;
@@ -15,12 +18,18 @@ public class FlujoCompletoTest extends BaseTest {
     private LoginPage loginPage;
     private OrdersPage ordersPage;
     private RadicationPage radicationPage;
+    private ProductRegistrationPage productRegistrationPage;
+    private AnalysisPage analysisPage;
+    private AnalysisDecisionPage analysisDecisionPage;
 
     @BeforeClass
     public void setUpPages() {
         loginPage = new LoginPage(driver);
         ordersPage = new OrdersPage(driver);
         radicationPage = new RadicationPage(driver);
+        productRegistrationPage = new ProductRegistrationPage(driver);
+        analysisPage = new AnalysisPage(driver);
+        analysisDecisionPage = new AnalysisDecisionPage(driver);
 
         System.out.println("--- FASE 1: Autenticación única ---");
         //loginPage.doLogin("Banco2025*");
@@ -73,14 +82,26 @@ public class FlujoCompletoTest extends BaseTest {
         return ExcelUtils.getTestData(excelPath, "Hoja1");
     }
 
-    @Test(dataProvider = "excelData")
+        @Test(dataProvider = "excelData")
     public void verificarCreacionDeOrdenMicrocredito(String orderType, String personType,
             String idType, String numberId, String country,
             String firstName, String name, String birthDay,
             String birthMonth, String birthYear, String numberPhone,
             String corpDay, String corpMonth, String corpYear,
             String longevity, String origin, String email, String analystDept,
-            String analysCity, String analystNeighborhood) {
+            String analysCity, String analystNeighborhood,
+            String lastYearCompleted, String affiliation, String networkAccess,
+            String businessPhone,
+            String productType, String product, String amount, String term,
+            String paymentFreq, String destination, String hasFNG,
+            String hasBail, String hasRealGuarantee, String comprehensiveInsurance,
+            String coDebtors, String hasFamilyInsurance,
+            String hasHomeBussinessInsurance, String hasMicroEntrepreneursInsurance,
+            String hasLifeInsurance, String hasFuneralPlanning,
+            String disbDay, String disbMonth, String disbYear, String hasSavings,
+            String interviewPlace, String interviewResult,
+            String contractualPurpose, String extractsInfo, String analystConcept,
+            String analysisDecision) {
 
         System.out.println("--- Ejecutando flujo completo con datos del Excel ---");
 
@@ -111,15 +132,36 @@ public class FlujoCompletoTest extends BaseTest {
         }
 
         // 3. Completar radicación solo si la consulta preliminar fue aprobada
-        radicationPage.completeRadicationExistingClient(numberId, "10",
-                "SISBEN", "Hogar", email, analystDept,
-                analysCity, analystNeighborhood, "3185551311");
+        radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
+            affiliation, networkAccess, email, analystDept,
+            analysCity, analystNeighborhood, businessPhone);
 
-        // 4. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
+        // 4. Completar el análisis cualitativo y cuantitativo
+        analysisPage.fillQualitativeAndQuantitativeAnalysis();
+
+        // 5. Registrar y simular el producto
+        productRegistrationPage.fillProductRegistration(
+            numberId, productType, product, amount, term, paymentFreq,
+            destination, hasFNG, hasBail, hasRealGuarantee,
+            comprehensiveInsurance, coDebtors, hasFamilyInsurance,
+            hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
+            hasLifeInsurance, hasFuneralPlanning,
+            parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
+
+        // 6. Procesar la decisión final del análisis
+        analysisDecisionPage.fillAnalysisDecision(
+            interviewPlace, interviewResult, contractualPurpose,
+            extractsInfo, analystConcept, analysisDecision, numberId);
+
+        // 7. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
         ordersPage.closeOrder();
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;
         System.out.println(successMessage);
         Reporter.log(successMessage, true);
+    }
+
+    private int parseInt(String value) {
+        return Integer.parseInt(value.replace(".0", ""));
     }
 }
