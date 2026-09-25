@@ -185,7 +185,7 @@ public class RadicationPage extends BasePage {
                         String bussinessCityAnalist,
                         String bussinessNeighborhoodAnalist, String bussinesNumberPhone) {
                 clickSafely(RADICATE_BUTTON);
-                takeEvidence(numberId, "04_radicacion");
+                takeEvidence(numberId, "radicacion");
 
                 scrollToText("El solicitante tiene otra nacionalidad", 0.30);
 
@@ -215,7 +215,7 @@ public class RadicationPage extends BasePage {
                 type(EMAIL, email);
                 type(CONFIRM_EMAIL, email);
 
-                takeEvidence(numberId, "05_correo_electronico_registrado");
+                takeEvidence(numberId, "correo_electronico_registrado");
 
                 try {
                         driver.hideKeyboard();
@@ -301,7 +301,7 @@ public class RadicationPage extends BasePage {
                 scrollToText("Faltan por completar campos esperados para poder continuar con esta consulta", 0.10);
 
                 click(PROCCESS_DECISION);
-                takeEvidence(numberId, "06_decision_radicacion");
+                takeEvidence(numberId, "decision_radicacion");
                 click(ACCEPT_CONSULT_CLIENT_BUTTON);
         }
 

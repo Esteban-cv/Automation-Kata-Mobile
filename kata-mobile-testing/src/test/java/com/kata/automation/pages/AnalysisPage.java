@@ -60,8 +60,6 @@ public class AnalysisPage extends BasePage {
 
         // Ojo: Se deja "Opinion" sin tilde porque así está en el código fuente de la
         // app.
-        private static final By REF_OPINION = By.xpath(
-                        "//android.widget.TextView[@text=\"Opinion del solicitante\"]/following::android.view.View[@content-desc=\"Menú desplegable\"]");
         private static final By REF_ACTIVITY = By.xpath(
                         "//android.widget.TextView[@text=\"¿Qué actividad tiene o realiza el solicitante?\"]/following::android.widget.EditText");
         private static final By REF_ACTIVITY_TIME = By.xpath(
@@ -267,10 +265,10 @@ public class AnalysisPage extends BasePage {
          */
         public void fillQualitativeAndQuantitativeAnalysis() {
                 System.out.println("--- Iniciando formulario: Análisis Cualitativo y Cuantitativo ---");
-                // click(ANALYSIS_BUTTON);
+                click(ANALYSIS_BUTTON);
 
-                // fillGeoReferences(OPEN_GEO_REFERENCES);
-                // fillReferences(OPEN_ENTRY_REFERENCES);
+                fillGeoReferences(OPEN_GEO_REFERENCES);
+                fillReferences(OPEN_ENTRY_REFERENCES);
 
                 // 1. Textos Cualitativos[cite: 8, 9]
                 scrollToText("Observaciones de reputación", 0.15);

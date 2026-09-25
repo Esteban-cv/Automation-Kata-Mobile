@@ -17,10 +17,27 @@ public class ProductRegistrationTest extends BaseTest {
     public void smokeTestProductRegister () {
         System.out.println("Iniciando prueba en registro de producto");
         
-        productRegistrationPage.fillProductRegistration("38569302","Microcrédito",
-        "Crédito productivo urbano360","20000000","24",
-        "30","Capital de Trabajo",28,9,2026,
-        "No");
-
+        productRegistrationPage.fillProductRegistration(
+            "38569302",
+            "Microcrédito",
+            "Crédito productivo urbano360",
+            "20000000",
+            "24",
+            "30",
+            "Capital de Trabajo",
+            "No",
+            "No",
+            "No",
+            "No",
+            "No",
+            "SI",
+            "si",
+            "Si",
+            "si",
+            "SI",
+            28,
+            9,
+            2026,
+            "No");
     }
 }

@@ -115,7 +115,7 @@ public class OrdersPage extends BasePage {
                 } catch (Exception e) {
                         /* Ignorado */ }
 
-                takeEvidence(numberId, "01_cedula_ingresada");
+                takeEvidence(numberId, "cedula_ingresada");
 
                 scrollAndClickReliable("País de origen de la identificación del solicitante",
                                 OPEN_HOME_COUNTRY_DROPDOWN, 0.10);
@@ -168,14 +168,14 @@ public class OrdersPage extends BasePage {
 
                 if (systemMessage.contains("mora mayor") || systemMessage.contains("listas")) {
                         System.out.println("❌ Cliente bloqueado por políticas de riesgo (Mora mayor / SARLAFT).");
-                        takeEvidence(numberId, "02_bloqueo_mora");
+                        takeEvidence(numberId, "bloqueo_mora");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
                         sleep(200);
                         scrollAndClickReliable("Causal de rechazo", REJECTION_CAUSAL_DROPDOWN, 0.30);
                         click(byVisibleText("Cliente dio información falsa"));
                         clickSafely(SAVE_DECISION_BUTTON);
                         waitForVisibility(SUCCESS_UPDATING);
-                        takeEvidence(numberId, "03_resultado_decisión");
+                        takeEvidence(numberId, "resultado_decisión");
                         System.out.println("primer clic de cerrar ventana con boton aceptar");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
                         System.out.println("Segundo clic de cerrar ventana con boton aceptar");
@@ -185,7 +185,7 @@ public class OrdersPage extends BasePage {
                 } else {
                         System.out.println(
                                         "✅ Cliente apto para continuar el flujo (Acepta mora menor o sin restricciones).");
-                        takeEvidence(numberId, "02_consulta_exitosa");
+                        takeEvidence(numberId, "consulta_exitosa");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
 
                         scrollToText("Decisión consulta preliminar", 0.40);
@@ -204,7 +204,7 @@ public class OrdersPage extends BasePage {
                         clickSafely(SAVE_DECISION_BUTTON);
                         waitForVisibility(SUCCESS_UPDATING);
 
-                        takeEvidence(numberId, "03_resultado_decisión");
+                        takeEvidence(numberId, "resultado_decisión");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
                         return true;
                 }
