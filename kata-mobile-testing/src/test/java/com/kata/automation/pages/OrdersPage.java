@@ -1,7 +1,6 @@
 package com.kata.automation.pages;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
@@ -136,7 +135,7 @@ public class OrdersPage extends BasePage {
                 scrollAndClickReliable("País de nacimiento del solicitante", SELECT_BIRTH_CLIENT, 0.20);
                 click(byVisibleText(country));
 
-                scrollToText("Aceptación políticas", 0.25);
+                scrollToText("Aceptación políticas", 0.15);
                 System.out.println("Antes de escribir numero de telefono");
                 type(NUMBER_PHONE_CLIENT, numberPhone);
                 type(CONFIRM_PHONE_CLIENT, numberPhone);
@@ -148,12 +147,12 @@ public class OrdersPage extends BasePage {
                 answerQuestion("¿Acepta Autorización de canales, horarios de contacto y visitas?", "SI");
                 answerQuestion("¿La solicitud de crédito es una refinanciación o reestructuración?", "NO");
 
-                scrollToText("Fecha de constitución del negocio", 0.20);
+                scrollToText("Fecha de constitución del negocio", 0.15);
                 clickSafely(BUSSINESS_INCORPORATION_DATE);
                 selectDateInCalendar(corporationDay, corporationMonth, corporationYear);
                 type(BUSSINESS_LONGEVITY_LOCATION, bussinessLongevity);
 
-                scrollToText("Origen de solicitud", 0.20);
+                scrollToText("Origen de solicitud", 0.15);
                 sleep(200);
                 clickComposeDropdown(ORIGIN_ORDER);
                 click(byVisibleText(originOrderText));

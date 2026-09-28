@@ -542,7 +542,7 @@ public class BasePage {
     /** Hace hasta dos intentos y reintenta cuando la consulta no devuelve respuesta. */
     protected void clickWithRetry(By buttonLocator, By resultLocator, By timeoutLocator) {
         Exception lastError = null;
-        int maxAttempts = 2;
+        int maxAttempts = 3;
         driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         try {
@@ -551,7 +551,7 @@ public class BasePage {
                     System.out.println("Consulta de cliente: intento " + attempt + " de " + maxAttempts);
                     clickSafely(buttonLocator);
 
-                    WebDriverWait consultationWait = new WebDriverWait(driver, Duration.ofMinutes(1));
+                    WebDriverWait consultationWait = new WebDriverWait(driver, Duration.ofMinutes(3));
                     consultationWait.until(currentDriver -> {
                         boolean resultFound = !currentDriver.findElements(resultLocator).isEmpty();
                         boolean timeoutFound = !currentDriver.findElements(timeoutLocator).isEmpty();
@@ -577,7 +577,7 @@ public class BasePage {
                 }
             }
         } finally {
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         }
 
         throw new RuntimeException("La consulta de cliente no devolvió resultado tras " + maxAttempts

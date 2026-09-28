@@ -116,7 +116,13 @@ public class RadicationPage extends BasePage {
         // GENERAR VITA360
         private static final By GENERATE_VIEW360_BUTTON = By.xpath(
                         "//android.widget.TextView[@text=\"Vista 360 del cliente\"]/following::android.view.View[.//android.widget.Button][1]");
-        private static final By ACCEPT_CONSULT_CLIENT_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
+        // Busca cualquier componente en el modal que tenga el texto exacto de
+        // confirmación
+        // Anclamos el XPath al título del modal para garantizar que le dé al ACEPTAR
+        // correcto
+        private static final By ACCEPT_CONSULT_VIEW360_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
+        private static final By ACCEPT_CONSULT_CLIENT_BUTTON = By.xpath(
+                        "//*[@text=\"Actualización exitosa\"]/following::*[@text=\"ACEPTAR\"][1]");
 
         // ACTIVIDADES ECONOMICAS
         private static final By MAIN_SECTOR_ACTIVITY = By.xpath(
@@ -139,6 +145,13 @@ public class RadicationPage extends BasePage {
 
         // Atrapa el único campo de texto disponible en esa ventana de búsqueda
         private static final By SEARCH_INPUT = By.xpath("//android.widget.EditText");
+
+        // IMPLEMENTACION DE REINTENTO SI FALLA EL BOTON DE PROCESAR DECISION EN
+        // RADICACION
+        private static final By CONSULTATION_RESULT = By.xpath("//*[@text=\"Actualización exitosa\"]");
+        // Se simplifica el timeout para no colapsar el motor de búsqueda
+    private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
+            "//*[contains(@text, 'tiempo excedido') or contains(@text, 'tiempo de espera') or contains(@text, 'timeout')]");
 
         public void fillFamilyComposition(By openSectionLocator) {
                 if (openSectionLocator != null) {
@@ -267,7 +280,7 @@ public class RadicationPage extends BasePage {
                 type(CONFIRM_BUSSINESS_NUMBER_PHONE, bussinesNumberPhone);
 
                 scrollAndClickReliable("Vista 360 del cliente", GENERATE_VIEW360_BUTTON, 0.15);
-                click(ACCEPT_CONSULT_CLIENT_BUTTON);
+                click(ACCEPT_CONSULT_VIEW360_BUTTON);
 
                 scrollAndClickReliable("Sector actividad económica principal", MAIN_SECTOR_ACTIVITY, 0.15);
                 click(byVisibleText("SERVICIOS"));
@@ -300,9 +313,12 @@ public class RadicationPage extends BasePage {
 
                 scrollToText("Faltan por completar campos esperados para poder continuar con esta consulta", 0.10);
 
-                click(PROCCESS_DECISION);
+                clickWithRetry(PROCCESS_DECISION, CONSULTATION_RESULT, TIMEOUT_ERROR_MESSAGE);
                 takeEvidence(numberId, "decision_radicacion");
-                click(ACCEPT_CONSULT_CLIENT_BUTTON);
+                System.out.println("Esperando modal de Actualización exitosa...");
+                waitForVisibility(ACCEPT_CONSULT_CLIENT_BUTTON);
+                clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
+                System.out.println("✅ Modal cerrado correctamente.");
         }
 
         public void radicationProcess(String departmentBirth, String cityBirth, int expDay, int expMounth,

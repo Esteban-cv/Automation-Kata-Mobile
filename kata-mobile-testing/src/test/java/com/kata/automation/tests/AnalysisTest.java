@@ -29,7 +29,7 @@ public class AnalysisTest extends BaseTest {
             Reporter.log(successMessage, true);
 
         } catch (Exception e) {
-            takeScreenshot("error_pestana_analisis");
+            takeScreenshot("error_pestana_analisis_" + e);
             throw new RuntimeException("❌ Falló la ejecución en la pestaña de Análisis.", e);
         }
     }

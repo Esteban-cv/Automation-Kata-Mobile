@@ -78,8 +78,9 @@ public class FlujoCompletoTest extends BaseTest {
 
     @DataProvider(name = "excelData", parallel = false)
     public Object[][] getData() {
-        String excelPath = "src/test/resources/datos_solicitudes.xlsx";
-        return ExcelUtils.getTestData(excelPath, "Hoja1");
+        String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes.xlsx");
+        String sheetName = System.getProperty("kata.excel.sheet", "Hoja1");
+        return ExcelUtils.getTestData(excelPath, sheetName);
     }
 
         @Test(dataProvider = "excelData")
@@ -153,8 +154,8 @@ public class FlujoCompletoTest extends BaseTest {
             interviewPlace, interviewResult, contractualPurpose,
             extractsInfo, analystConcept, analysisDecision, numberId);
 
-        // 7. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
-        ordersPage.closeOrder();
+        // // 7. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
+        // ordersPage.closeOrder();
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;
         System.out.println(successMessage);

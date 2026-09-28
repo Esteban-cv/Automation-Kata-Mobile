@@ -102,6 +102,8 @@ public class AnalysisPage extends BasePage {
         // L. Se deja así para que funcione.
         private static final By OTHER_CASH_FLOW_INCOME = By.xpath(
                         "//android.widget.TextView[@text=\"Otros ingresos fllujo de caja (según políticas)\"]/following::android.widget.EditText");
+        private static final By OTHER_CASH_DESCRIPTION = By.xpath(
+                        "//android.widget.TextView[@text=\"Descripción de otros ingresos\"]/following::android.widget.EditText");
 
         // Nota: Falta espacio antes del paréntesis en la app.
         private static final By TOTAL_FAMILY_CONTRIBUTIONS = By.xpath(
@@ -185,7 +187,7 @@ public class AnalysisPage extends BasePage {
          */
         public void fillReferences(By openSectionLocator) {
                 if (openSectionLocator != null) {
-                        scrollAndClickReliable("Ingreso Referencias", openSectionLocator, 0.15);
+                        click(openSectionLocator);
                 }
                 sleep(1000);
 
@@ -267,21 +269,20 @@ public class AnalysisPage extends BasePage {
                 System.out.println("--- Iniciando formulario: Análisis Cualitativo y Cuantitativo ---");
                 click(ANALYSIS_BUTTON);
 
-                // fillGeoReferences(OPEN_GEO_REFERENCES);
-                // fillReferences(OPEN_ENTRY_REFERENCES);
+                fillGeoReferences(OPEN_GEO_REFERENCES);
+                fillReferences(OPEN_ENTRY_REFERENCES);
 
                 // 1. Textos Cualitativos[cite: 8, 9]
-                scrollToText("Observaciones de reputación", 0.15);
                 type(REPUTATION_OBSERVATIONS, "Cliente con buena reputación en el sector comercial.");
 
-                scrollToText("Estabilidad", 0.15);
                 type(STABILITY, "Negocio estable con ubicación fija.");
 
-                scrollToText("Habilidad empresarial", 0.15);
                 type(BUSINESS_ABILITY, "Adecuada administración y conocimiento del negocio.");
 
                 scrollToText("Comportamiento de pagos", 0.15);
                 type(PAYMENT_BEHAVIOR, "Buen hábito de pago, al día con proveedores.");
+
+                sleep(300);
 
                 // 2. Selección de Opciones[cite: 9]
                 scrollToText("¿Cliente es exclusivo?", 0.15);
@@ -302,11 +303,20 @@ public class AnalysisPage extends BasePage {
                 // 4. Ingresos adicionales (En 0 por defecto)[cite: 10]
                 scrollToText("Total otros ingresos", 0.15);
                 type(TOTAL_OTHER_INCOME, "2000000");
-                type(OTHER_CASH_FLOW_INCOME, "0");
+                //type(OTHER_CASH_FLOW_INCOME, "0");
+
+                scrollToText("Total aportes familiares(según políticas)", 0.15);
+
+                //scrollToText("Descripción de otros ingresos", 0.15);
+                type(OTHER_CASH_DESCRIPTION, "Ahorros");
+
+                type(OTHER_CASH_FLOW_INCOME, "1000000");
 
                 // 5. Entorno Familiar[cite: 10, 11]
-                scrollToText("Total aportes familiares(según políticas)", 0.15);
+                //scrollToText("Total aportes familiares(según políticas)", 0.15);
                 type(TOTAL_FAMILY_CONTRIBUTIONS, "2000000");
+
+                scrollToText("Gastos Familiares", 0.15);
                 type(FAMILY_EXPENSES, "800000"); // Gastos de manutención básicos
 
                 // 6. Activos y Pasivos[cite: 11, 12]
