@@ -3,6 +3,7 @@ package com.kata.automation.gui;
 import com.kata.automation.tests.FlujoCompletoTest;
 import com.kata.automation.utils.DriverManager;
 import com.kata.automation.utils.ExcelUtils;
+import com.kata.automation.utils.ExecutionTelemetry;
 import org.testng.TestNG;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
@@ -44,6 +45,7 @@ import java.util.List;
 public final class AutomationDashboard extends JFrame {
     private final JTextArea logArea = new JTextArea();
     private final JLabel selectedFileLabel = new JLabel("Ningún archivo seleccionado");
+    private final JLabel loadedRowsLabel = new JLabel("Filas cargadas: 0");
     private final JSpinner repetitionsSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JButton runButton = new JButton("Ejecutar solicitudes");
     private final JButton stopButton = new JButton("Detener ejecución");
@@ -55,6 +57,7 @@ public final class AutomationDashboard extends JFrame {
     private final JLabel failedLabel = new JLabel("0");
     private final JLabel skippedLabel = new JLabel("0");
     private final JLabel completedLabel = new JLabel("0 / 0");
+    private final JLabel stageStatusLabel = new JLabel("Sin etapa activa");
     private final JProgressBar progressBar = new JProgressBar();
     private final DefaultTableModel statisticsModel = new DefaultTableModel(
             new Object[] {"Corrida", "Estado", "Duración", "Pasaron", "Fallaron", "Omitidas"}, 0);
@@ -72,6 +75,14 @@ public final class AutomationDashboard extends JFrame {
     private int livePassed;
     private int liveFailed;
     private int liveSkipped;
+    private int totalPlannedStages;
+    private int completedStages;
+    private int livePassedStages;
+    private int liveFailedStages;
+    private int liveSkippedStages;
+    private int currentStageNumber;
+    private Instant runStarted;
+    private Instant currentStageStarted;
     private final javax.swing.Timer elapsedTimer = new javax.swing.Timer(250, event -> refreshElapsedTime());
 
     private AutomationDashboard() {
@@ -106,7 +117,11 @@ public final class AutomationDashboard extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Ejecutar", buildExecutionPanel());
         tabs.addTab("Estadísticas", buildStatisticsPanel());
-        root.add(tabs, BorderLayout.CENTER);
+        JScrollPane tabsScroll = new JScrollPane(tabs,
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        tabsScroll.setBorder(BorderFactory.createEmptyBorder());
+        tabsScroll.getVerticalScrollBar().setUnitIncrement(16);
+        root.add(tabsScroll, BorderLayout.CENTER);
         return root;
     }
 
@@ -138,6 +153,15 @@ public final class AutomationDashboard extends JFrame {
         constraints.weightx = 1;
         configuration.add(repetitionsSpinner, constraints);
 
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.weightx = 0;
+        configuration.add(new JLabel("Datos disponibles:"), constraints);
+        constraints.gridx = 1;
+        constraints.weightx = 1;
+        loadedRowsLabel.setForeground(new Color(24, 105, 145));
+        configuration.add(loadedRowsLabel, constraints);
+
         runButton.setBackground(new Color(24, 105, 145));
         runButton.setForeground(Color.WHITE);
         runButton.addActionListener(event -> startExecution());
@@ -146,7 +170,7 @@ public final class AutomationDashboard extends JFrame {
         stopButton.setEnabled(false);
         stopButton.addActionListener(event -> requestStop());
         constraints.gridx = 0;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         configuration.add(runButton, constraints);
         constraints.gridx = 1;
         configuration.add(stopButton, constraints);
@@ -176,18 +200,23 @@ public final class AutomationDashboard extends JFrame {
         executionStatusLabel.setFont(new Font("SansSerif", Font.BOLD, 15));
         executionStatusLabel.setForeground(new Color(24, 105, 145));
         currentRequestLabel.setForeground(new Color(85, 95, 105));
+        stageStatusLabel.setForeground(new Color(85, 95, 105));
         statusLine.add(executionStatusLabel, BorderLayout.WEST);
         statusLine.add(currentRequestLabel, BorderLayout.CENTER);
-        statusLine.add(liveTimerLabel, BorderLayout.EAST);
+        JPanel statusDetails = new JPanel(new java.awt.GridLayout(2, 1));
+        statusDetails.setOpaque(false);
+        statusDetails.add(stageStatusLabel);
+        statusDetails.add(liveTimerLabel);
+        statusLine.add(statusDetails, BorderLayout.EAST);
         panel.add(statusLine, BorderLayout.NORTH);
 
         JPanel cards = new JPanel(new java.awt.GridLayout(1, 5, 8, 0));
         cards.setOpaque(false);
-        cards.add(createMetricCard("Completadas", completedLabel, new Color(24, 105, 145)));
-        cards.add(createMetricCard("Exitosas", passedLabel, new Color(36, 145, 106)));
-        cards.add(createMetricCard("Fallidas", failedLabel, new Color(212, 91, 72)));
-        cards.add(createMetricCard("Omitidas", skippedLabel, new Color(190, 125, 35)));
-        cards.add(createMetricCard("Tiempo actual", elapsedLabel, new Color(104, 77, 160)));
+        cards.add(createMetricCard("Etapas completadas", completedLabel, new Color(24, 105, 145)));
+        cards.add(createMetricCard("Etapas superadas", passedLabel, new Color(36, 145, 106)));
+        cards.add(createMetricCard("Etapas fallidas", failedLabel, new Color(212, 91, 72)));
+        cards.add(createMetricCard("Etapas omitidas", skippedLabel, new Color(190, 125, 35)));
+        cards.add(createMetricCard("Tiempo etapa", elapsedLabel, new Color(104, 77, 160)));
         panel.add(cards, BorderLayout.CENTER);
 
         progressBar.setStringPainted(true);
@@ -234,7 +263,23 @@ public final class AutomationDashboard extends JFrame {
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             selectedFile = chooser.getSelectedFile();
             selectedFileLabel.setText(selectedFile.getAbsolutePath());
+            updateLoadedRowCount();
             appendLog("Archivo seleccionado: " + selectedFile.getName());
+        }
+    }
+
+    private void updateLoadedRowCount() {
+        try {
+            Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), "Hoja1");
+            int rowCount = data == null ? 0 : data.length;
+            loadedRowsLabel.setText("Filas cargadas: " + rowCount);
+            loadedRowsLabel.setForeground(rowCount > 0 ? new Color(36, 145, 106) : new Color(212, 91, 72));
+            loadedRowsLabel.setToolTipText(rowCount + " solicitud(es) disponibles en la hoja Hoja1");
+        } catch (RuntimeException exception) {
+            loadedRowsLabel.setText("No se pudo leer el Excel");
+            loadedRowsLabel.setForeground(new Color(212, 91, 72));
+            loadedRowsLabel.setToolTipText(exception.getMessage());
+            appendLog("No se pudo leer el archivo: " + exception.getMessage());
         }
     }
 
@@ -247,6 +292,8 @@ public final class AutomationDashboard extends JFrame {
         int repetitions = (Integer) repetitionsSpinner.getValue();
         resetLiveMetrics(repetitions);
         stopRequested = false;
+        runStarted = Instant.now();
+        elapsedTimer.start();
         runButton.setEnabled(false);
         stopButton.setEnabled(true);
         appendLog("Iniciando " + repetitions + " corrida(s)...");
@@ -259,20 +306,28 @@ public final class AutomationDashboard extends JFrame {
         Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), "Hoja1");
         int requestsPerRun = data == null ? 0 : data.length;
         totalPlannedRequests = requestsPerRun * repetitions;
+        totalPlannedStages = totalPlannedRequests * ExecutionTelemetry.TOTAL_STAGES;
         completedRequests = 0;
         livePassed = 0;
         liveFailed = 0;
         liveSkipped = 0;
+        completedStages = 0;
+        livePassedStages = 0;
+        liveFailedStages = 0;
+        liveSkippedStages = 0;
+        currentStageNumber = 0;
         currentRequestStarted = null;
+        currentStageStarted = null;
         elapsedTimer.stop();
-        progressBar.setMaximum(Math.max(1, totalPlannedRequests));
+        progressBar.setMaximum(Math.max(1, totalPlannedStages));
         progressBar.setValue(0);
-        progressBar.setString(totalPlannedRequests == 0 ? "Sin solicitudes" : "0 / " + totalPlannedRequests);
+        progressBar.setString(totalPlannedStages == 0 ? "Sin etapas" : "0 / " + totalPlannedStages + " etapas");
         executionStatusLabel.setText("Preparando ejecución");
         currentRequestLabel.setText("Leyendo solicitudes del Excel");
+        stageStatusLabel.setText("Etapa 0/5");
         liveTimerLabel.setText("00:00");
         elapsedLabel.setText("00:00");
-        completedLabel.setText("0 / " + totalPlannedRequests);
+        completedLabel.setText("0 / " + totalPlannedStages);
         passedLabel.setText("0");
         failedLabel.setText("0");
         skippedLabel.setText("0");
@@ -312,7 +367,12 @@ public final class AutomationDashboard extends JFrame {
                 TestNG testng = new TestNG();
                 testng.setTestClasses(new Class<?>[] {FlujoCompletoTest.class});
                 testng.addListener(listener);
-                testng.run();
+                ExecutionTelemetry.setListener(listener);
+                try {
+                    testng.run();
+                } finally {
+                    ExecutionTelemetry.clearListener(listener);
+                }
                 Duration duration = Duration.between(started, Instant.now());
                 String status = stopRequested
                         ? "DETENIDA"
@@ -330,8 +390,10 @@ public final class AutomationDashboard extends JFrame {
             stopButton.setEnabled(false);
             elapsedTimer.stop();
             currentRequestStarted = null;
+            currentStageStarted = null;
             executionStatusLabel.setText(stopRequested ? "Ejecución detenida" : "Ejecución finalizada");
             currentRequestLabel.setText("Sin solicitud activa");
+            stageStatusLabel.setText("Etapa 0/5");
             liveTimerLabel.setText("00:00");
         });
         appendLog(stopRequested ? "Ejecución detenida por el usuario." : "Ejecución finalizada.");
@@ -351,13 +413,12 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private void refreshElapsedTime() {
-        Instant started = currentRequestStarted;
-        if (started == null) {
-            return;
+        if (runStarted != null) {
+            liveTimerLabel.setText(formatDuration(Duration.between(runStarted, Instant.now())));
         }
-        String elapsed = formatDuration(Duration.between(started, Instant.now()));
-        elapsedLabel.setText(elapsed);
-        liveTimerLabel.setText(elapsed);
+        if (currentStageStarted != null) {
+            elapsedLabel.setText(formatDuration(Duration.between(currentStageStarted, Instant.now())));
+        }
     }
 
     private void requestStarted(ITestResult result, int runNumber) {
@@ -365,8 +426,9 @@ public final class AutomationDashboard extends JFrame {
         SwingUtilities.invokeLater(() -> {
             executionStatusLabel.setText("Ejecutando solicitud");
             currentRequestLabel.setText("Corrida " + runNumber + " | " + result.getName());
+            stageStatusLabel.setText("Etapa 0/5 | preparando");
             elapsedLabel.setText("00:00");
-            liveTimerLabel.setText("00:00");
+            responseChart.clear();
             elapsedTimer.start();
         });
     }
@@ -384,27 +446,57 @@ public final class AutomationDashboard extends JFrame {
             } else {
                 liveSkipped++;
             }
-            completedLabel.setText(completedRequests + " / " + totalPlannedRequests);
-            passedLabel.setText(String.valueOf(livePassed));
-            failedLabel.setText(String.valueOf(liveFailed));
-            skippedLabel.setText(String.valueOf(liveSkipped));
-            progressBar.setValue(Math.min(completedRequests, progressBar.getMaximum()));
-            progressBar.setString(totalPlannedRequests == 0
-                    ? String.valueOf(completedRequests)
-                    : completedRequests + " / " + totalPlannedRequests);
-            responseChart.addPoint(durationMillis, status);
+            currentRequestLabel.setText("Última solicitud: " + formatDuration(Duration.ofMillis(durationMillis)));
             elapsedLabel.setText(formatDuration(Duration.ofMillis(durationMillis)));
-            liveTimerLabel.setText(formatDuration(Duration.ofMillis(durationMillis)));
             executionStatusLabel.setText("Solicitud " + status.toLowerCase(Locale.ROOT));
-            currentRequestLabel.setText("Última respuesta: " + formatDuration(Duration.ofMillis(durationMillis)));
+        });
+    }
+
+    private void stageStarted(String stageName, int stageNumber, int totalStages) {
+        currentStageNumber = stageNumber;
+        currentStageStarted = Instant.now();
+        appendLog("Etapa " + stageNumber + "/" + totalStages + " iniciada: " + stageName);
+        SwingUtilities.invokeLater(() -> {
+            executionStatusLabel.setText("Ejecutando etapa");
+            stageStatusLabel.setText("Etapa " + stageNumber + "/" + totalStages + " | " + stageName);
+            currentRequestLabel.setText("En progreso: " + stageName);
+            elapsedLabel.setText("00:00:00");
+            responseChart.startStage(stageNumber, stageName);
+        });
+    }
+
+    private void stageFinished(String stageName, int stageNumber, boolean successful,
+            String detail, long durationMillis) {
+        SwingUtilities.invokeLater(() -> {
+            completedStages++;
+            if (successful) {
+                livePassedStages++;
+            } else {
+                liveFailedStages++;
+            }
+            completedLabel.setText(completedStages + " / " + totalPlannedStages);
+            passedLabel.setText(String.valueOf(livePassedStages));
+            failedLabel.setText(String.valueOf(liveFailedStages));
+            skippedLabel.setText(String.valueOf(liveSkippedStages));
+            progressBar.setValue(Math.min(completedStages, progressBar.getMaximum()));
+            progressBar.setString(totalPlannedStages == 0
+                    ? String.valueOf(completedStages)
+                    : completedStages + " / " + totalPlannedStages + " etapas");
+            responseChart.finishStage(stageNumber, durationMillis, successful);
+            stageStatusLabel.setText("Etapa " + stageNumber + "/5 "
+                    + (successful ? "superada" : "fallida") + " | " + stageName);
+            currentRequestLabel.setText(detail == null || detail.isBlank() ? stageName : detail);
+            elapsedLabel.setText(formatDuration(Duration.ofMillis(durationMillis)));
+                appendLog("Etapa " + stageNumber + "/5 " + (successful ? "superada" : "fallida")
+                    + ": " + stageName + " (" + formatDuration(Duration.ofMillis(durationMillis)) + ")");
         });
     }
 
     private static String formatDuration(Duration duration) {
-        return String.format("%02dm %02ds", duration.toMinutes(), duration.toSecondsPart());
+        return String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart());
     }
 
-    private final class ExecutionListener implements ITestListener {
+    private final class ExecutionListener implements ITestListener, ExecutionTelemetry.Listener {
         private final int runNumber;
         private int passed;
         private int failed;
@@ -443,74 +535,111 @@ public final class AutomationDashboard extends JFrame {
         @Override public void onFinish(ITestContext context) { }
         @Override public void onTestStart(ITestResult result) { requestStarted(result, runNumber); }
         @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) { }
+
+        @Override
+        public void onStageStarted(String stageName, int stageNumber, int totalStages) {
+            stageStarted(stageName, stageNumber, totalStages);
+        }
+
+        @Override
+        public void onStageFinished(String stageName, int stageNumber, boolean successful,
+                String detail, long durationMillis) {
+            stageFinished(stageName, stageNumber, successful, detail, durationMillis);
+        }
     }
 
     private static final class LiveResponseChartPanel extends JPanel {
-        private final List<Long> responseTimes = new ArrayList<>();
-        private final List<String> statuses = new ArrayList<>();
+        private static final String[] STAGE_LABELS = {
+                "Consulta", "Radicación", "Análisis", "Producto", "Decisión"
+        };
+        private final long[] stageDurations = new long[ExecutionTelemetry.TOTAL_STAGES];
+        private final boolean[] stageSuccessful = new boolean[ExecutionTelemetry.TOTAL_STAGES];
+        private final boolean[] stageFinished = new boolean[ExecutionTelemetry.TOTAL_STAGES];
+        private String activeStage = "";
 
         private LiveResponseChartPanel() {
-            setBorder(BorderFactory.createTitledBorder("Tiempo de respuesta por solicitud · actualización en vivo"));
-            setPreferredSize(new Dimension(0, 240));
+            setBorder(BorderFactory.createTitledBorder("Duración de las cinco etapas · solicitud actual"));
+            setPreferredSize(new Dimension(760, 260));
             setBackground(Color.WHITE);
         }
 
-        private void addPoint(long responseTime, String status) {
-            responseTimes.add(responseTime);
-            statuses.add(status);
+        private void startStage(int stageNumber, String stageName) {
+            activeStage = stageName;
+            repaint();
+        }
+
+        private void finishStage(int stageNumber, long durationMillis, boolean successful) {
+            int index = stageNumber - 1;
+            if (index >= 0 && index < stageDurations.length) {
+                stageDurations[index] = durationMillis;
+                stageSuccessful[index] = successful;
+                stageFinished[index] = true;
+                activeStage = STAGE_LABELS[index] + (successful ? " completada" : " fallida");
+            }
             repaint();
         }
 
         private void clear() {
-            responseTimes.clear();
-            statuses.clear();
+            java.util.Arrays.fill(stageDurations, 0);
+            java.util.Arrays.fill(stageSuccessful, false);
+            java.util.Arrays.fill(stageFinished, false);
+            activeStage = "";
             repaint();
         }
 
         @Override
         protected void paintComponent(java.awt.Graphics graphics) {
             super.paintComponent(graphics);
-            if (responseTimes.isEmpty()) {
+            boolean hasData = false;
+            for (boolean finished : stageFinished) {
+                hasData |= finished;
+            }
+            if (!hasData) {
                 graphics.setColor(new Color(100, 110, 120));
-                graphics.drawString("Esperando la primera respuesta del dispositivo...", 20, 58);
+                graphics.drawString("Esperando que finalice una etapa para mostrar su duración...", 20, 58);
                 return;
             }
 
             java.awt.Graphics2D chart = (java.awt.Graphics2D) graphics.create();
             chart.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
                     java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-            int left = 48;
-            int top = 26;
-            int right = getWidth() - 22;
-            int bottom = getHeight() - 34;
+            int left = 58;
+            int top = 34;
+            int right = getWidth() - 28;
+            int bottom = getHeight() - 54;
             int width = Math.max(1, right - left);
             int height = Math.max(1, bottom - top);
-            long maximum = responseTimes.stream().mapToLong(Long::longValue).max().orElse(1L);
+            long maximum = 1;
+            for (long duration : stageDurations) {
+                maximum = Math.max(maximum, duration);
+            }
 
             chart.setColor(new Color(226, 232, 238));
             chart.drawLine(left, bottom, right, bottom);
             chart.drawLine(left, top, left, bottom);
             chart.setColor(new Color(100, 110, 120));
             chart.drawString(formatAxisTime(maximum), 8, top + 5);
-            chart.drawString("0s", 20, bottom + 4);
+            chart.drawString("0s", 28, bottom + 4);
 
-            int count = responseTimes.size();
-            int previousX = -1;
-            int previousY = -1;
-            for (int index = 0; index < count; index++) {
-                int x = count == 1 ? left + width / 2 : left + (width * index / (count - 1));
-                int y = bottom - (int) (height * (responseTimes.get(index) / (double) maximum));
-                if (previousX >= 0) {
-                    chart.setColor(new Color(24, 105, 145));
-                    chart.drawLine(previousX, previousY, x, y);
+            int slotWidth = width / ExecutionTelemetry.TOTAL_STAGES;
+            int barWidth = Math.max(28, slotWidth - 28);
+            for (int index = 0; index < stageDurations.length; index++) {
+                int x = left + index * slotWidth + (slotWidth - barWidth) / 2;
+                int barHeight = stageFinished[index]
+                        ? Math.max(4, (int) (height * (stageDurations[index] / (double) maximum))) : 4;
+                int y = bottom - barHeight;
+                chart.setColor(stageFinished[index]
+                        ? (stageSuccessful[index] ? new Color(36, 145, 106) : new Color(212, 91, 72))
+                        : new Color(190, 198, 207));
+                chart.fillRoundRect(x, y, barWidth, barHeight, 8, 8);
+                chart.setColor(new Color(55, 65, 75));
+                chart.drawString(STAGE_LABELS[index], x, bottom + 20);
+                if (stageFinished[index]) {
+                    chart.drawString(formatAxisTime(stageDurations[index]), x, y - 7);
                 }
-                chart.setColor("OK".equals(statuses.get(index))
-                        ? new Color(36, 145, 106)
-                        : new Color(212, 91, 72));
-                chart.fillOval(x - 4, y - 4, 8, 8);
-                previousX = x;
-                previousY = y;
             }
+            chart.setColor(new Color(85, 95, 105));
+            chart.drawString("Estado: " + activeStage, left, top - 10);
             chart.dispose();
         }
 

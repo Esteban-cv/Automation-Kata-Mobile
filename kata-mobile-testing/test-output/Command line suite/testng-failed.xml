@@ -5,7 +5,7 @@
     <classes>
       <class name="com.kata.automation.tests.FlujoCompletoTest">
         <methods>
-          <include name="verificarCreacionDeOrdenMicrocredito" invocation-numbers="0 1 2"/>
+          <include name="verificarCreacionDeOrdenMicrocredito" invocation-numbers="0"/>
           <include name="globalSetUp"/>
           <include name="globalTearDown"/>
           <include name="setUpPages"/>

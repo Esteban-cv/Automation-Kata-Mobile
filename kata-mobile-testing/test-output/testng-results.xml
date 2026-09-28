@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results ignored="0" total="3" passed="0" failed="3" skipped="0">
+<testng-results ignored="0" total="4" passed="4" failed="0" skipped="0">
   <reporter-output>
+    <line>
+      <![CDATA[Flujo procesado y guardado correctamente para la cédula: 38569302]]>
+    </line>
+    <line>
+      <![CDATA[Flujo procesado y guardado correctamente para la cédula: 36999831]]>
+    </line>
   </reporter-output>
-  <suite started-at="2026-09-28T12:36:08 COT" name="Command line suite" finished-at="2026-09-28T12:47:33 COT" duration-ms="685686">
+  <suite started-at="2026-09-28T14:44:51 COT" name="Command line suite" finished-at="2026-09-28T15:13:05 COT" duration-ms="1693994">
     <groups>
     </groups>
-    <test started-at="2026-09-28T12:36:08 COT" name="Command line test" finished-at="2026-09-28T12:47:33 COT" duration-ms="685686">
+    <test started-at="2026-09-28T14:44:51 COT" name="Command line test" finished-at="2026-09-28T15:13:05 COT" duration-ms="1693994">
       <class name="com.kata.automation.tests.FlujoCompletoTest">
-        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:36:01 COT" name="globalSetUp" finished-at="2026-09-28T12:36:08 COT" duration-ms="6382" status="PASS">
+        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T14:44:46 COT" name="globalSetUp" finished-at="2026-09-28T14:44:51 COT" duration-ms="5074" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalSetUp -->
-        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:36:08 COT" name="setUpPages" finished-at="2026-09-28T12:36:08 COT" duration-ms="187" status="PASS">
+        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T14:44:51 COT" name="setUpPages" finished-at="2026-09-28T14:44:52 COT" duration-ms="159" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUpPages -->
-        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:36:08 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T12:46:06 COT" duration-ms="598642" status="FAIL">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T14:44:52 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T14:47:00 COT" duration-ms="128042" status="PASS">
           <params>
             <param index="0">
               <value>
@@ -34,7 +40,7 @@
             </param>
             <param index="3">
               <value>
-                <![CDATA[38569302]]>
+                <![CDATA[86065519]]>
               </value>
             </param>
             <param index="4">
@@ -44,27 +50,27 @@
             </param>
             <param index="5">
               <value>
-                <![CDATA[Hernandez]]>
+                <![CDATA[Bengoechea]]>
               </value>
             </param>
             <param index="6">
               <value>
-                <![CDATA[Naren]]>
+                <![CDATA[Pablo]]>
               </value>
             </param>
             <param index="7">
               <value>
-                <![CDATA[10]]>
+                <![CDATA[25]]>
               </value>
             </param>
             <param index="8">
               <value>
-                <![CDATA[9]]>
+                <![CDATA[5]]>
               </value>
             </param>
             <param index="9">
               <value>
-                <![CDATA[2005]]>
+                <![CDATA[1980]]>
               </value>
             </param>
             <param index="10">
@@ -268,690 +274,784 @@
               </value>
             </param>
           </params>
-          <exception class="java.lang.RuntimeException">
-            <message>
-              <![CDATA[No se encontró el texto '¿Tiene ahorro?' tras 8 scrolls.]]>
-            </message>
-            <full-stacktrace>
-              <![CDATA[java.lang.RuntimeException: No se encontró el texto '¿Tiene ahorro?' tras 8 scrolls.
-at com.kata.automation.pages.BasePage.scrollToText(BasePage.java:180)
-at com.kata.automation.pages.ProductRegistrationPage.fillProductRegistration(ProductRegistrationPage.java:190)
-at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:144)
-at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
-at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
-at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
-at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
-at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
-at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
-at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-at org.testng.TestRunner.privateRun(TestRunner.java:739)
-at org.testng.TestRunner.run(TestRunner.java:614)
-at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
-at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
-at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
-at org.testng.SuiteRunner.run(SuiteRunner.java:312)
-at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
-at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
-at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
-at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
-at org.testng.TestNG.runSuites(TestNG.java:1112)
-at org.testng.TestNG.run(TestNG.java:1079)
-at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:315)
-at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:254)
-at java.base/java.lang.Thread.run(Thread.java:1583)
-]]>
-            </full-stacktrace>
-          </exception> <!-- java.lang.RuntimeException -->
           <reporter-output>
           </reporter-output>
         </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
-        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:46:06 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T12:47:31 COT" duration-ms="84171" status="FAIL">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T14:47:00 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T14:59:26 COT" duration-ms="745838" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Originación de microcrédito]]>
               </value>
             </param>
             <param index="1">
               <value>
-                <![CDATA[]]>
+                <![CDATA[SolicitudPersonaNatural]]>
               </value>
             </param>
             <param index="2">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Cedula ciudadanía]]>
               </value>
             </param>
             <param index="3">
               <value>
-                <![CDATA[]]>
+                <![CDATA[38569302]]>
               </value>
             </param>
             <param index="4">
               <value>
-                <![CDATA[]]>
+                <![CDATA[COLOMBIA]]>
               </value>
             </param>
             <param index="5">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Hernandez]]>
               </value>
             </param>
             <param index="6">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Naren]]>
               </value>
             </param>
             <param index="7">
               <value>
-                <![CDATA[]]>
+                <![CDATA[9]]>
               </value>
             </param>
             <param index="8">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2]]>
               </value>
             </param>
             <param index="9">
               <value>
-                <![CDATA[]]>
+                <![CDATA[1978]]>
               </value>
             </param>
             <param index="10">
               <value>
-                <![CDATA[]]>
+                <![CDATA[3185551310]]>
               </value>
             </param>
             <param index="11">
               <value>
-                <![CDATA[]]>
+                <![CDATA[17]]>
               </value>
             </param>
             <param index="12">
               <value>
-                <![CDATA[]]>
+                <![CDATA[9]]>
               </value>
             </param>
             <param index="13">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2020]]>
               </value>
             </param>
             <param index="14">
               <value>
-                <![CDATA[]]>
+                <![CDATA[60]]>
               </value>
             </param>
             <param index="15">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Gestión front o contact center]]>
               </value>
             </param>
             <param index="16">
               <value>
-                <![CDATA[]]>
+                <![CDATA[ecolorado@greensqa.com]]>
               </value>
             </param>
             <param index="17">
               <value>
-                <![CDATA[]]>
+                <![CDATA[VALLE DEL CAUCA]]>
               </value>
             </param>
             <param index="18">
               <value>
-                <![CDATA[]]>
+                <![CDATA[CALI]]>
               </value>
             </param>
             <param index="19">
               <value>
-                <![CDATA[]]>
+                <![CDATA[CIUDAD CAPRI]]>
               </value>
             </param>
             <param index="20">
               <value>
-                <![CDATA[]]>
+                <![CDATA[10]]>
               </value>
             </param>
             <param index="21">
               <value>
-                <![CDATA[]]>
+                <![CDATA[SISBEN]]>
               </value>
             </param>
             <param index="22">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Hogar]]>
               </value>
             </param>
             <param index="23">
               <value>
-                <![CDATA[]]>
+                <![CDATA[3185551312]]>
               </value>
             </param>
             <param index="24">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Microcrédito]]>
               </value>
             </param>
             <param index="25">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Crédito productivo urbano360]]>
               </value>
             </param>
             <param index="26">
               <value>
-                <![CDATA[]]>
+                <![CDATA[20000000]]>
               </value>
             </param>
             <param index="27">
               <value>
-                <![CDATA[]]>
+                <![CDATA[24]]>
               </value>
             </param>
             <param index="28">
               <value>
-                <![CDATA[]]>
+                <![CDATA[30]]>
               </value>
             </param>
             <param index="29">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Capital de Trabajo]]>
               </value>
             </param>
             <param index="30">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="31">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="32">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="33">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="34">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="35">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="36">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="37">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="38">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="39">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="40">
               <value>
-                <![CDATA[]]>
+                <![CDATA[15]]>
               </value>
             </param>
             <param index="41">
               <value>
-                <![CDATA[]]>
+                <![CDATA[10]]>
               </value>
             </param>
             <param index="42">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2026]]>
               </value>
             </param>
             <param index="43">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="44">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Negocio del Cliente]]>
               </value>
             </param>
             <param index="45">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Satisfactorio]]>
               </value>
             </param>
             <param index="46">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Capital de trabajo]]>
               </value>
             </param>
             <param index="47">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Correo electrónico P]]>
               </value>
             </param>
             <param index="48">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Solicitud viable para aprobación.]]>
               </value>
             </param>
             <param index="49">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Continuar]]>
               </value>
             </param>
           </params>
-          <exception class="java.lang.RuntimeException">
-            <message>
-              <![CDATA[No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.]]>
-            </message>
-            <full-stacktrace>
-              <![CDATA[java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
-at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
-at com.kata.automation.pages.BasePage.click(BasePage.java:192)
-at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:94)
-at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:110)
-at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
-at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
-at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
-at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
-at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
-at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
-at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-at org.testng.TestRunner.privateRun(TestRunner.java:739)
-at org.testng.TestRunner.run(TestRunner.java:614)
-at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
-at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
-at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
-at org.testng.SuiteRunner.run(SuiteRunner.java:312)
-at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
-at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
-at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
-at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
-at org.testng.TestNG.runSuites(TestNG.java:1112)
-at org.testng.TestNG.run(TestNG.java:1079)
-at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:315)
-at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:254)
-at java.base/java.lang.Thread.run(Thread.java:1583)
-Caused by: org.openqa.selenium.remote.UnreachableBrowserException: Error communicating with the remote browser. It may have died.
-Build info: version: '4.19.1', revision: 'abe0ee07dc'
-System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '21.0.12.1'
-Driver info: io.appium.java_client.android.AndroidDriver
-Command: [536b633d-e2ee-49e3-9e2e-67f2b3a095ff, findElement [value, using]]
-Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
-Session ID: 536b633d-e2ee-49e3-9e2e-67f2b3a095ff
-at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:545)
-at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
-at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
-at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
-at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
-at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
-at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
-at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
-at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
-at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
-... 29 more
-Caused by: java.lang.RuntimeException: java.lang.InterruptedException
-at org.openqa.selenium.remote.http.jdk.JdkHttpClient.execute0(JdkHttpClient.java:439)
-at io.appium.java_client.internal.filters.AppiumIdempotencyFilter.lambda$apply$0(AppiumIdempotencyFilter.java:35)
-at io.appium.java_client.internal.filters.AppiumUserAgentFilter.lambda$apply$0(AppiumUserAgentFilter.java:85)
-at org.openqa.selenium.remote.http.Filter.lambda$andFinally$1(Filter.java:55)
-at org.openqa.selenium.remote.http.jdk.JdkHttpClient.execute(JdkHttpClient.java:352)
-at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:187)
-at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
-at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
-... 38 more
-Caused by: java.lang.InterruptedException
-at java.base/java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:386)
-at java.base/java.util.concurrent.CompletableFuture.get(CompletableFuture.java:2096)
-at org.openqa.selenium.remote.http.jdk.JdkHttpClient.execute0(JdkHttpClient.java:379)
-... 45 more
-]]>
-            </full-stacktrace>
-          </exception> <!-- java.lang.RuntimeException -->
           <reporter-output>
+            <line>
+              <![CDATA[Flujo procesado y guardado correctamente para la cédula: 38569302]]>
+            </line>
           </reporter-output>
         </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
-        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:47:31 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T12:47:33 COT" duration-ms="2619" status="FAIL">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T14:59:26 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T15:01:30 COT" duration-ms="124363" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Originación de microcrédito]]>
               </value>
             </param>
             <param index="1">
               <value>
-                <![CDATA[]]>
+                <![CDATA[SolicitudPersonaNatural]]>
               </value>
             </param>
             <param index="2">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Cedula ciudadanía]]>
               </value>
             </param>
             <param index="3">
               <value>
-                <![CDATA[]]>
+                <![CDATA[19441449]]>
               </value>
             </param>
             <param index="4">
               <value>
-                <![CDATA[]]>
+                <![CDATA[COLOMBIA]]>
               </value>
             </param>
             <param index="5">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Montanez]]>
               </value>
             </param>
             <param index="6">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Alirio]]>
               </value>
             </param>
             <param index="7">
               <value>
-                <![CDATA[]]>
+                <![CDATA[9]]>
               </value>
             </param>
             <param index="8">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2]]>
               </value>
             </param>
             <param index="9">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2000]]>
               </value>
             </param>
             <param index="10">
               <value>
-                <![CDATA[]]>
+                <![CDATA[3185551310]]>
               </value>
             </param>
             <param index="11">
               <value>
-                <![CDATA[]]>
+                <![CDATA[17]]>
               </value>
             </param>
             <param index="12">
               <value>
-                <![CDATA[]]>
+                <![CDATA[9]]>
               </value>
             </param>
             <param index="13">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2020]]>
               </value>
             </param>
             <param index="14">
               <value>
-                <![CDATA[]]>
+                <![CDATA[60]]>
               </value>
             </param>
             <param index="15">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Gestión front o contact center]]>
               </value>
             </param>
             <param index="16">
               <value>
-                <![CDATA[]]>
+                <![CDATA[ecolorado@greensqa.com]]>
               </value>
             </param>
             <param index="17">
               <value>
-                <![CDATA[]]>
+                <![CDATA[VALLE DEL CAUCA]]>
               </value>
             </param>
             <param index="18">
               <value>
-                <![CDATA[]]>
+                <![CDATA[CALI]]>
               </value>
             </param>
             <param index="19">
               <value>
-                <![CDATA[]]>
+                <![CDATA[CIUDAD CAPRI]]>
               </value>
             </param>
             <param index="20">
               <value>
-                <![CDATA[]]>
+                <![CDATA[10]]>
               </value>
             </param>
             <param index="21">
               <value>
-                <![CDATA[]]>
+                <![CDATA[SISBEN]]>
               </value>
             </param>
             <param index="22">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Hogar]]>
               </value>
             </param>
             <param index="23">
               <value>
-                <![CDATA[]]>
+                <![CDATA[3185551313]]>
               </value>
             </param>
             <param index="24">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Microcrédito]]>
               </value>
             </param>
             <param index="25">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Crédito productivo urbano360]]>
               </value>
             </param>
             <param index="26">
               <value>
-                <![CDATA[]]>
+                <![CDATA[20000000]]>
               </value>
             </param>
             <param index="27">
               <value>
-                <![CDATA[]]>
+                <![CDATA[24]]>
               </value>
             </param>
             <param index="28">
               <value>
-                <![CDATA[]]>
+                <![CDATA[30]]>
               </value>
             </param>
             <param index="29">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Capital de Trabajo]]>
               </value>
             </param>
             <param index="30">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="31">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="32">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="33">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="34">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="35">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="36">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="37">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="38">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="39">
               <value>
-                <![CDATA[]]>
+                <![CDATA[NO]]>
               </value>
             </param>
             <param index="40">
               <value>
-                <![CDATA[]]>
+                <![CDATA[15]]>
               </value>
             </param>
             <param index="41">
               <value>
-                <![CDATA[]]>
+                <![CDATA[10]]>
               </value>
             </param>
             <param index="42">
               <value>
-                <![CDATA[]]>
+                <![CDATA[2026]]>
               </value>
             </param>
             <param index="43">
               <value>
-                <![CDATA[]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="44">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Negocio del Cliente]]>
               </value>
             </param>
             <param index="45">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Satisfactorio]]>
               </value>
             </param>
             <param index="46">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Capital de trabajo]]>
               </value>
             </param>
             <param index="47">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Correo electrónico P]]>
               </value>
             </param>
             <param index="48">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Solicitud viable para aprobación.]]>
               </value>
             </param>
             <param index="49">
               <value>
-                <![CDATA[]]>
+                <![CDATA[Continuar]]>
               </value>
             </param>
           </params>
-          <exception class="java.lang.RuntimeException">
-            <message>
-              <![CDATA[No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.]]>
-            </message>
-            <full-stacktrace>
-              <![CDATA[java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
-at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
-at com.kata.automation.pages.BasePage.click(BasePage.java:192)
-at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:94)
-at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:110)
-at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
-at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
-at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
-at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
-at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
-at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
-at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
-at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-at org.testng.TestRunner.privateRun(TestRunner.java:739)
-at org.testng.TestRunner.run(TestRunner.java:614)
-at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
-at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
-at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
-at org.testng.SuiteRunner.run(SuiteRunner.java:312)
-at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
-at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
-at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
-at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
-at org.testng.TestNG.runSuites(TestNG.java:1112)
-at org.testng.TestNG.run(TestNG.java:1079)
-at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:315)
-at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:254)
-at java.base/java.lang.Thread.run(Thread.java:1583)
-Caused by: org.openqa.selenium.NoSuchSessionException: Session ID is null. Using WebDriver after calling quit()?
-Build info: version: '4.19.1', revision: 'abe0ee07dc'
-System info: os.name: 'Windows 11', os.arch: 'amd64', os.version: '10.0', java.version: '21.0.12.1'
-Driver info: io.appium.java_client.android.AndroidDriver
-Command: [null, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
-Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
-at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:151)
-at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
-at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
-at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
-at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
-at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
-at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
-at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
-at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
-at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
-at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
-at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
-... 29 more
-]]>
-            </full-stacktrace>
-          </exception> <!-- java.lang.RuntimeException -->
           <reporter-output>
           </reporter-output>
         </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
-        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@4ebc6c65]" started-at="2026-09-28T12:47:33 COT" name="globalTearDown" finished-at="2026-09-28T12:47:33 COT" duration-ms="1" status="PASS">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T15:01:30 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-09-28T15:13:05 COT" duration-ms="695497" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[Originación de microcrédito]]>
+              </value>
+            </param>
+            <param index="1">
+              <value>
+                <![CDATA[SolicitudPersonaNatural]]>
+              </value>
+            </param>
+            <param index="2">
+              <value>
+                <![CDATA[Cedula ciudadanía]]>
+              </value>
+            </param>
+            <param index="3">
+              <value>
+                <![CDATA[36999831]]>
+              </value>
+            </param>
+            <param index="4">
+              <value>
+                <![CDATA[COLOMBIA]]>
+              </value>
+            </param>
+            <param index="5">
+              <value>
+                <![CDATA[Mera]]>
+              </value>
+            </param>
+            <param index="6">
+              <value>
+                <![CDATA[Sonia]]>
+              </value>
+            </param>
+            <param index="7">
+              <value>
+                <![CDATA[13]]>
+              </value>
+            </param>
+            <param index="8">
+              <value>
+                <![CDATA[7]]>
+              </value>
+            </param>
+            <param index="9">
+              <value>
+                <![CDATA[1964]]>
+              </value>
+            </param>
+            <param index="10">
+              <value>
+                <![CDATA[3185551310]]>
+              </value>
+            </param>
+            <param index="11">
+              <value>
+                <![CDATA[17]]>
+              </value>
+            </param>
+            <param index="12">
+              <value>
+                <![CDATA[9]]>
+              </value>
+            </param>
+            <param index="13">
+              <value>
+                <![CDATA[2020]]>
+              </value>
+            </param>
+            <param index="14">
+              <value>
+                <![CDATA[60]]>
+              </value>
+            </param>
+            <param index="15">
+              <value>
+                <![CDATA[Gestión front o contact center]]>
+              </value>
+            </param>
+            <param index="16">
+              <value>
+                <![CDATA[ecolorado@greensqa.com]]>
+              </value>
+            </param>
+            <param index="17">
+              <value>
+                <![CDATA[VALLE DEL CAUCA]]>
+              </value>
+            </param>
+            <param index="18">
+              <value>
+                <![CDATA[CALI]]>
+              </value>
+            </param>
+            <param index="19">
+              <value>
+                <![CDATA[CIUDAD CAPRI]]>
+              </value>
+            </param>
+            <param index="20">
+              <value>
+                <![CDATA[10]]>
+              </value>
+            </param>
+            <param index="21">
+              <value>
+                <![CDATA[SISBEN]]>
+              </value>
+            </param>
+            <param index="22">
+              <value>
+                <![CDATA[Hogar]]>
+              </value>
+            </param>
+            <param index="23">
+              <value>
+                <![CDATA[3185551314]]>
+              </value>
+            </param>
+            <param index="24">
+              <value>
+                <![CDATA[Microcrédito]]>
+              </value>
+            </param>
+            <param index="25">
+              <value>
+                <![CDATA[Crédito productivo urbano360]]>
+              </value>
+            </param>
+            <param index="26">
+              <value>
+                <![CDATA[20000000]]>
+              </value>
+            </param>
+            <param index="27">
+              <value>
+                <![CDATA[24]]>
+              </value>
+            </param>
+            <param index="28">
+              <value>
+                <![CDATA[30]]>
+              </value>
+            </param>
+            <param index="29">
+              <value>
+                <![CDATA[Capital de Trabajo]]>
+              </value>
+            </param>
+            <param index="30">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="31">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="32">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="33">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="34">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="35">
+              <value>
+                <![CDATA[NO]]>
+              </value>
+            </param>
+            <param index="36">
+              <value>
+                <![CDATA[NO]]>
+              </value>
+            </param>
+            <param index="37">
+              <value>
+                <![CDATA[NO]]>
+              </value>
+            </param>
+            <param index="38">
+              <value>
+                <![CDATA[NO]]>
+              </value>
+            </param>
+            <param index="39">
+              <value>
+                <![CDATA[NO]]>
+              </value>
+            </param>
+            <param index="40">
+              <value>
+                <![CDATA[15]]>
+              </value>
+            </param>
+            <param index="41">
+              <value>
+                <![CDATA[10]]>
+              </value>
+            </param>
+            <param index="42">
+              <value>
+                <![CDATA[2026]]>
+              </value>
+            </param>
+            <param index="43">
+              <value>
+                <![CDATA[No]]>
+              </value>
+            </param>
+            <param index="44">
+              <value>
+                <![CDATA[Negocio del Cliente]]>
+              </value>
+            </param>
+            <param index="45">
+              <value>
+                <![CDATA[Satisfactorio]]>
+              </value>
+            </param>
+            <param index="46">
+              <value>
+                <![CDATA[Capital de trabajo]]>
+              </value>
+            </param>
+            <param index="47">
+              <value>
+                <![CDATA[Correo electrónico P]]>
+              </value>
+            </param>
+            <param index="48">
+              <value>
+                <![CDATA[Solicitud viable para aprobación.]]>
+              </value>
+            </param>
+            <param index="49">
+              <value>
+                <![CDATA[Continuar]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+            <line>
+              <![CDATA[Flujo procesado y guardado correctamente para la cédula: 36999831]]>
+            </line>
+          </reporter-output>
+        </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
+        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@32f2c5fd]" started-at="2026-09-28T15:13:06 COT" name="globalTearDown" finished-at="2026-09-28T15:13:06 COT" duration-ms="738" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalTearDown -->

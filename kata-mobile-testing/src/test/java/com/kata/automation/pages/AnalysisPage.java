@@ -318,10 +318,13 @@ public class AnalysisPage extends BasePage {
 
                 scrollToText("Gastos Familiares", 0.15);
                 type(FAMILY_EXPENSES, "800000"); // Gastos de manutención básicos
+                
+                
 
                 // 6. Activos y Pasivos[cite: 11, 12]
                 scrollToText("Total bienes del negocio", 0.15);
                 type(TOTAL_BUSINESS_ASSETS, "5000000");
+                scrollToText("Pasivos del negocio", 0);
                 type(BUSINESS_LIABILITIES, "2000000");
 
                 scrollToText("Cuentas W", 0.15);

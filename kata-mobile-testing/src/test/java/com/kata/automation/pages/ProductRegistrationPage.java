@@ -187,7 +187,7 @@ public class ProductRegistrationPage extends BasePage {
                                 hasMicroEntrepreneursInsurance, hasLifeInsurance, hasFuneralPlanning, numberId);
 
                 // 2. Ahorros y Fechas
-                scrollToText("¿Tiene ahorro?", 0.15);
+                scrollToText("¿Tiene ahorro?", 0.20);
                 answerQuestion("¿Tiene ahorro?", hasSavings);
 
                 scrollAndClickReliable("Fecha de desembolso", DISBURSEMENT_DATE, 0.15);
@@ -214,8 +214,6 @@ public class ProductRegistrationPage extends BasePage {
                 answerQuestion("¿Requiere Fianza?", hasBail);
 
                 answerQuestion("¿Tiene garantía real?", hasRealGuarantee);
-
-                answerQuestion("¿Requiere Seguro todo riesgo?", comprehensiveInsurance);
 
                 // 5. Simular
                 scrollAndClickReliable("Simular crédito", SIMULATE_CREDIT_BTN, 0.15);

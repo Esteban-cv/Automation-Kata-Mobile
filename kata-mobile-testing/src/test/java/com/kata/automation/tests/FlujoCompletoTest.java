@@ -7,6 +7,7 @@ import com.kata.automation.pages.RadicationPage;
 import com.kata.automation.pages.AnalysisDecisionPage;
 import com.kata.automation.pages.AnalysisPage;
 import com.kata.automation.utils.ExcelUtils;
+import com.kata.automation.utils.ExecutionTelemetry;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -106,53 +107,81 @@ public class FlujoCompletoTest extends BaseTest {
 
         System.out.println("--- Ejecutando flujo completo con datos del Excel ---");
 
-        // 1. Iniciar la orden
-        ordersPage.createOrder(orderType, personType);
+        long stageStarted = startStage("Consulta preliminar", 1);
+        try {
+            ordersPage.createOrder(orderType, personType);
+            boolean canContinueToRadication = ordersPage.preliminaryConsultation(
+                    idType,
+                    numberId,
+                    country,
+                    firstName,
+                    name,
+                    Integer.parseInt(birthDay.replace(".0", "")),
+                    Integer.parseInt(birthMonth.replace(".0", "")),
+                    Integer.parseInt(birthYear.replace(".0", "")),
+                    numberPhone,
+                    Integer.parseInt(corpDay.replace(".0", "")),
+                    Integer.parseInt(corpMonth.replace(".0", "")),
+                    Integer.parseInt(corpYear.replace(".0", "")),
+                    longevity.replace(".0", ""),
+                    origin);
 
-        // 2. Ejecutar consulta preliminar, validaciones y vistas
-        boolean canContinueToRadication = ordersPage.preliminaryConsultation(
-                idType,
-                numberId,
-                country,
-                firstName,
-                name,
-                Integer.parseInt(birthDay.replace(".0", "")),
-                Integer.parseInt(birthMonth.replace(".0", "")),
-                Integer.parseInt(birthYear.replace(".0", "")),
-                numberPhone,
-                Integer.parseInt(corpDay.replace(".0", "")),
-                Integer.parseInt(corpMonth.replace(".0", "")),
-                Integer.parseInt(corpYear.replace(".0", "")),
-                longevity.replace(".0", ""),
-                origin
-            );
-
-        if (!canContinueToRadication) {
-            System.out.println("Orden rechazada en consulta preliminar para la cédula: " + numberId);
-            return;
+            if (!canContinueToRadication) {
+                finishStage("Consulta preliminar", 1, false, "Orden rechazada", stageStarted);
+                System.out.println("Orden rechazada en consulta preliminar para la cédula: " + numberId);
+                return;
+            }
+            finishStage("Consulta preliminar", 1, true, "Consulta aprobada", stageStarted);
+        } catch (RuntimeException exception) {
+            finishStage("Consulta preliminar", 1, false, exception.getMessage(), stageStarted);
+            throw exception;
         }
 
-        // 3. Completar radicación solo si la consulta preliminar fue aprobada
-        radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
-            affiliation, networkAccess, email, analystDept,
-            analysCity, analystNeighborhood, businessPhone);
+        stageStarted = startStage("Radicación", 2);
+        try {
+            radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
+                    affiliation, networkAccess, email, analystDept,
+                    analysCity, analystNeighborhood, businessPhone);
+            finishStage("Radicación", 2, true, "Radicación completada", stageStarted);
+        } catch (RuntimeException exception) {
+            finishStage("Radicación", 2, false, exception.getMessage(), stageStarted);
+            throw exception;
+        }
 
-        // 4. Completar el análisis cualitativo y cuantitativo
-        analysisPage.fillQualitativeAndQuantitativeAnalysis();
+        stageStarted = startStage("Análisis cualitativo y cuantitativo", 3);
+        try {
+            analysisPage.fillQualitativeAndQuantitativeAnalysis();
+            finishStage("Análisis cualitativo y cuantitativo", 3, true, "Análisis completado", stageStarted);
+        } catch (RuntimeException exception) {
+            finishStage("Análisis cualitativo y cuantitativo", 3, false, exception.getMessage(), stageStarted);
+            throw exception;
+        }
 
-        // 5. Registrar y simular el producto
-        productRegistrationPage.fillProductRegistration(
-            numberId, productType, product, amount, term, paymentFreq,
-            destination, hasFNG, hasBail, hasRealGuarantee,
-            comprehensiveInsurance, coDebtors, hasFamilyInsurance,
-            hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
-            hasLifeInsurance, hasFuneralPlanning,
-            parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
+        stageStarted = startStage("Registro del producto", 4);
+        try {
+            productRegistrationPage.fillProductRegistration(
+                    numberId, productType, product, amount, term, paymentFreq,
+                    destination, hasFNG, hasBail, hasRealGuarantee,
+                    comprehensiveInsurance, coDebtors, hasFamilyInsurance,
+                    hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
+                    hasLifeInsurance, hasFuneralPlanning,
+                    parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
+            finishStage("Registro del producto", 4, true, "Producto registrado", stageStarted);
+        } catch (RuntimeException exception) {
+            finishStage("Registro del producto", 4, false, exception.getMessage(), stageStarted);
+            throw exception;
+        }
 
-        // 6. Procesar la decisión final del análisis
-        analysisDecisionPage.fillAnalysisDecision(
-            interviewPlace, interviewResult, contractualPurpose,
-            extractsInfo, analystConcept, analysisDecision, numberId);
+        stageStarted = startStage("Decisión del análisis", 5);
+        try {
+            analysisDecisionPage.fillAnalysisDecision(
+                    interviewPlace, interviewResult, contractualPurpose,
+                    extractsInfo, analystConcept, analysisDecision, numberId);
+            finishStage("Decisión del análisis", 5, true, "Decisión procesada", stageStarted);
+        } catch (RuntimeException exception) {
+            finishStage("Decisión del análisis", 5, false, exception.getMessage(), stageStarted);
+            throw exception;
+        }
 
         // // 7. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
         // ordersPage.closeOrder();
@@ -164,5 +193,17 @@ public class FlujoCompletoTest extends BaseTest {
 
     private int parseInt(String value) {
         return Integer.parseInt(value.replace(".0", ""));
+    }
+
+    private long startStage(String stageName, int stageNumber) {
+        ExecutionTelemetry.stageStarted(stageName, stageNumber);
+        return System.nanoTime();
+    }
+
+    private void finishStage(String stageName, int stageNumber, boolean successful,
+            String detail, long startedAt) {
+        long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
+        ExecutionTelemetry.stageFinished(stageName, stageNumber, successful,
+                detail == null ? "" : detail, durationMillis);
     }
 }
