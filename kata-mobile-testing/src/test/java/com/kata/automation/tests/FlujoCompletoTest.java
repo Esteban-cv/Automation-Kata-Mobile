@@ -6,6 +6,7 @@ import com.kata.automation.pages.ProductRegistrationPage;
 import com.kata.automation.pages.RadicationPage;
 import com.kata.automation.pages.AnalysisDecisionPage;
 import com.kata.automation.pages.AnalysisPage;
+import com.kata.automation.pages.OrdersPage.ConsultationOutcome;
 import com.kata.automation.utils.ExcelUtils;
 import com.kata.automation.utils.ExecutionTelemetry;
 
@@ -127,13 +128,18 @@ public class FlujoCompletoTest extends BaseTest {
                     origin);
 
             if (!canContinueToRadication) {
-                finishStage("Consulta preliminar", 1, false, "Orden rechazada", stageStarted);
+                String detail = ordersPage.getLastConsultationOutcome() == ConsultationOutcome.BLOCKED_BY_LISTS
+                    ? "Bloqueada por listas"
+                    : "Bloqueada por mora mayor a 30 días";
+                finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.BLOCKED, detail, stageStarted);
                 System.out.println("Orden rechazada en consulta preliminar para la cédula: " + numberId);
                 return;
             }
-            finishStage("Consulta preliminar", 1, true, "Consulta aprobada", stageStarted);
+                finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.PASSED,
+                    "Consulta aprobada", stageStarted);
         } catch (RuntimeException exception) {
-            finishStage("Consulta preliminar", 1, false, exception.getMessage(), stageStarted);
+                finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.FAILED,
+                    exception.getMessage(), stageStarted);
             throw exception;
         }
 
@@ -142,18 +148,22 @@ public class FlujoCompletoTest extends BaseTest {
             radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
                     affiliation, networkAccess, email, analystDept,
                     analysCity, analystNeighborhood, businessPhone);
-            finishStage("Radicación", 2, true, "Radicación completada", stageStarted);
+                finishStage("Radicación", 2, ExecutionTelemetry.StageResult.PASSED,
+                    "Radicación completada", stageStarted);
         } catch (RuntimeException exception) {
-            finishStage("Radicación", 2, false, exception.getMessage(), stageStarted);
+                finishStage("Radicación", 2, ExecutionTelemetry.StageResult.FAILED,
+                    exception.getMessage(), stageStarted);
             throw exception;
         }
 
         stageStarted = startStage("Análisis cualitativo y cuantitativo", 3);
         try {
             analysisPage.fillQualitativeAndQuantitativeAnalysis();
-            finishStage("Análisis cualitativo y cuantitativo", 3, true, "Análisis completado", stageStarted);
+                finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.PASSED,
+                    "Análisis completado", stageStarted);
         } catch (RuntimeException exception) {
-            finishStage("Análisis cualitativo y cuantitativo", 3, false, exception.getMessage(), stageStarted);
+                finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.FAILED,
+                    exception.getMessage(), stageStarted);
             throw exception;
         }
 
@@ -166,9 +176,11 @@ public class FlujoCompletoTest extends BaseTest {
                     hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
                     hasLifeInsurance, hasFuneralPlanning,
                     parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
-            finishStage("Registro del producto", 4, true, "Producto registrado", stageStarted);
+                finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
+                    "Producto registrado", stageStarted);
         } catch (RuntimeException exception) {
-            finishStage("Registro del producto", 4, false, exception.getMessage(), stageStarted);
+                finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.FAILED,
+                    exception.getMessage(), stageStarted);
             throw exception;
         }
 
@@ -177,9 +189,11 @@ public class FlujoCompletoTest extends BaseTest {
             analysisDecisionPage.fillAnalysisDecision(
                     interviewPlace, interviewResult, contractualPurpose,
                     extractsInfo, analystConcept, analysisDecision, numberId);
-            finishStage("Decisión del análisis", 5, true, "Decisión procesada", stageStarted);
+                finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.PASSED,
+                    "Decisión procesada", stageStarted);
         } catch (RuntimeException exception) {
-            finishStage("Decisión del análisis", 5, false, exception.getMessage(), stageStarted);
+                finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.FAILED,
+                    exception.getMessage(), stageStarted);
             throw exception;
         }
 
@@ -200,10 +214,10 @@ public class FlujoCompletoTest extends BaseTest {
         return System.nanoTime();
     }
 
-    private void finishStage(String stageName, int stageNumber, boolean successful,
+    private void finishStage(String stageName, int stageNumber, ExecutionTelemetry.StageResult result,
             String detail, long startedAt) {
         long durationMillis = (System.nanoTime() - startedAt) / 1_000_000;
-        ExecutionTelemetry.stageFinished(stageName, stageNumber, successful,
+        ExecutionTelemetry.stageFinished(stageName, stageNumber, result,
                 detail == null ? "" : detail, durationMillis);
     }
 }

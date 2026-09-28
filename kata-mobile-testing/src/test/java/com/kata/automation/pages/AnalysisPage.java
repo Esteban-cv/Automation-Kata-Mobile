@@ -286,7 +286,7 @@ public class AnalysisPage extends BasePage {
 
                 // 2. Selección de Opciones[cite: 9]
                 scrollToText("¿Cliente es exclusivo?", 0.15);
-                answerQuestion("¿Cliente es exclusivo?", "Si");
+                answerQuestion("¿Cliente es exclusivo?", "No");
 
                 scrollAndClickReliable("País de origen de los recursos", RESOURCE_ORIGIN_COUNTRY, 0.15);
                 click(byVisibleText("Colombia"));

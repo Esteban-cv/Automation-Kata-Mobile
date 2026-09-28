@@ -2,10 +2,19 @@ package com.kata.automation.pages;
 
 import org.openqa.selenium.By;
 
+import com.kata.automation.utils.ExecutionTelemetry;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
 
 public class OrdersPage extends BasePage {
+
+        public enum ConsultationOutcome {
+                APPROVED,
+                BLOCKED_BY_LISTS,
+                BLOCKED_BY_ARREARS
+        }
+
+        private ConsultationOutcome lastConsultationOutcome = ConsultationOutcome.APPROVED;
 
         // --- LOCALIZADORES DE ELEMENTOS ---
 
@@ -90,6 +99,10 @@ public class OrdersPage extends BasePage {
                 super(driver); // Envía el driver a BasePage
         }
 
+        public ConsultationOutcome getLastConsultationOutcome() {
+                return lastConsultationOutcome;
+        }
+
         public void createOrder(String type, String personType) {
                 click(NEW_ORDER_BUTTON);
                 click(byVisibleText(type));
@@ -102,6 +115,8 @@ public class OrdersPage extends BasePage {
                         int birthDay, int birthMonth, int birthYear, String numberPhone, int corporationDay,
                         int corporationMonth,
                         int corporationYear, String bussinessLongevity, String originOrderText) {
+
+                lastConsultationOutcome = ConsultationOutcome.APPROVED;
 
                 click(OPEN_ID_TYPE_DROPDOWN);
                 click(byVisibleText(idType));
@@ -158,7 +173,16 @@ public class OrdersPage extends BasePage {
                 click(byVisibleText(originOrderText));
 
                 scrollToText("Consultar cliente", 0.10);
-                clickWithRetry(CONSULT_CLIENT_BUTTON, CONSULTATION_RESULT, TIMEOUT_ERROR_MESSAGE);
+                long consultationStarted = System.nanoTime();
+                try {
+                        clickWithRetry(CONSULT_CLIENT_BUTTON, CONSULTATION_RESULT, TIMEOUT_ERROR_MESSAGE);
+                        ExecutionTelemetry.actionFinished("Consultar cliente", true,
+                                        (System.nanoTime() - consultationStarted) / 1_000_000);
+                } catch (RuntimeException exception) {
+                        ExecutionTelemetry.actionFinished("Consultar cliente", false,
+                                        (System.nanoTime() - consultationStarted) / 1_000_000);
+                        throw exception;
+                }
 
                 // IMPLEMENTAR LOGICA DE MORA, SARLAFT, CONSULTA EXITOSA O CLIENTE NUEVO
 
@@ -166,6 +190,9 @@ public class OrdersPage extends BasePage {
                 System.out.println("mensaje capturado " + systemMessage);
 
                 if (systemMessage.contains("mora mayor") || systemMessage.contains("listas")) {
+                                lastConsultationOutcome = systemMessage.contains("listas")
+                                                ? ConsultationOutcome.BLOCKED_BY_LISTS
+                                                : ConsultationOutcome.BLOCKED_BY_ARREARS;
                         System.out.println("❌ Cliente bloqueado por políticas de riesgo (Mora mayor / SARLAFT).");
                         takeEvidence(numberId, "bloqueo_mora");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);

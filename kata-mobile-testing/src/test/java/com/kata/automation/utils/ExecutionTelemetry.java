@@ -4,11 +4,20 @@ package com.kata.automation.utils;
 public final class ExecutionTelemetry {
     public static final int TOTAL_STAGES = 5;
 
+    public enum StageResult {
+        PASSED,
+        BLOCKED,
+        FAILED,
+        SKIPPED
+    }
+
     public interface Listener {
         void onStageStarted(String stageName, int stageNumber, int totalStages);
 
-        void onStageFinished(String stageName, int stageNumber, boolean successful,
+        void onStageFinished(String stageName, int stageNumber, StageResult result,
                 String detail, long durationMillis);
+
+        void onActionFinished(String actionName, boolean successful, long durationMillis);
     }
 
     private static volatile Listener listener;
@@ -33,11 +42,18 @@ public final class ExecutionTelemetry {
         }
     }
 
-    public static void stageFinished(String stageName, int stageNumber, boolean successful,
+    public static void stageFinished(String stageName, int stageNumber, StageResult result,
             String detail, long durationMillis) {
         Listener currentListener = listener;
         if (currentListener != null) {
-            currentListener.onStageFinished(stageName, stageNumber, successful, detail, durationMillis);
+            currentListener.onStageFinished(stageName, stageNumber, result, detail, durationMillis);
+        }
+    }
+
+    public static void actionFinished(String actionName, boolean successful, long durationMillis) {
+        Listener currentListener = listener;
+        if (currentListener != null) {
+            currentListener.onActionFinished(actionName, successful, durationMillis);
         }
     }
 }
