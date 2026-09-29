@@ -310,6 +310,7 @@ public final class AutomationDashboard extends JFrame {
         int repetitions = (Integer) repetitionsSpinner.getValue();
         resetLiveMetrics(repetitions);
         stopRequested = false;
+        System.setProperty("kata.stop.requested", "false");
         runStarted = Instant.now();
         elapsedTimer.start();
         runButton.setEnabled(false);
@@ -367,6 +368,7 @@ public final class AutomationDashboard extends JFrame {
         }
 
         stopRequested = true;
+        System.setProperty("kata.stop.requested", "true");
         Thread worker = executionThread;
         if (worker != null) {
             worker.interrupt();

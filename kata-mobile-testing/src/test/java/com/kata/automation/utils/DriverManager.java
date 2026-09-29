@@ -97,4 +97,18 @@ public class DriverManager {
             System.out.println("Sesion de Appium finalizada correctamente...");
         }
     }
+
+    public static void restartApplication() {
+        if (driver == null) {
+            return;
+        }
+        Properties configuration = loadConfiguration();
+        String appPackage = configuration.getProperty("app.package", "com.kata.mobile");
+        try {
+            driver.terminateApp(appPackage);
+            driver.activateApp(appPackage);
+        } catch (RuntimeException exception) {
+            throw new RuntimeException("No se pudo reiniciar la aplicación para el reintento.", exception);
+        }
+    }
 }

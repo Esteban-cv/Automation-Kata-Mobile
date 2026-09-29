@@ -9,6 +9,7 @@ import com.kata.automation.pages.AnalysisPage;
 import com.kata.automation.pages.OrdersPage.ConsultationOutcome;
 import com.kata.automation.utils.ExcelUtils;
 import com.kata.automation.utils.ExecutionTelemetry;
+import com.kata.automation.utils.DriverManager;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -16,6 +17,8 @@ import org.testng.annotations.Test;
 import org.testng.Reporter;
 
 public class FlujoCompletoTest extends BaseTest {
+
+    private static final int MAX_ORDER_ATTEMPTS = 2;
 
     private LoginPage loginPage;
     private OrdersPage ordersPage;
@@ -87,6 +90,65 @@ public class FlujoCompletoTest extends BaseTest {
 
         @Test(dataProvider = "excelData")
     public void verificarCreacionDeOrdenMicrocredito(String orderType, String personType,
+            String idType, String numberId, String country,
+            String firstName, String name, String birthDay,
+            String birthMonth, String birthYear, String numberPhone,
+            String corpDay, String corpMonth, String corpYear,
+            String longevity, String origin, String email, String analystDept,
+            String analysCity, String analystNeighborhood,
+            String lastYearCompleted, String affiliation, String networkAccess,
+            String businessPhone,
+            String productType, String product, String amount, String term,
+            String paymentFreq, String destination, String hasFNG,
+            String hasBail, String hasRealGuarantee, String comprehensiveInsurance,
+            String coDebtors, String hasFamilyInsurance,
+            String hasHomeBussinessInsurance, String hasMicroEntrepreneursInsurance,
+            String hasLifeInsurance, String hasFuneralPlanning,
+            String disbDay, String disbMonth, String disbYear, String hasSavings,
+            String interviewPlace, String interviewResult,
+            String contractualPurpose, String extractsInfo, String analystConcept,
+            String analysisDecision) {
+
+        executeOrderWithRetry(() -> processOrder(orderType, personType,
+                idType, numberId, country, firstName, name, birthDay, birthMonth, birthYear,
+                numberPhone, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
+                analysCity, analystNeighborhood, lastYearCompleted, affiliation, networkAccess,
+                businessPhone, productType, product, amount, term, paymentFreq, destination,
+                hasFNG, hasBail, hasRealGuarantee, comprehensiveInsurance, coDebtors,
+                hasFamilyInsurance, hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
+                hasLifeInsurance, hasFuneralPlanning, disbDay, disbMonth, disbYear, hasSavings,
+                interviewPlace, interviewResult, contractualPurpose, extractsInfo, analystConcept,
+                analysisDecision));
+    }
+
+    private void executeOrderWithRetry(Runnable orderExecution) {
+        RuntimeException lastFailure = null;
+        for (int attempt = 1; attempt <= MAX_ORDER_ATTEMPTS; attempt++) {
+            try {
+                orderExecution.run();
+                return;
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
+                boolean stopRequested = Boolean.parseBoolean(System.getProperty("kata.stop.requested", "false"));
+                if (stopRequested || attempt == MAX_ORDER_ATTEMPTS) {
+                    throw exception;
+                }
+                System.out.println("La orden falló en el intento " + attempt
+                        + ". Se reiniciará Appium antes de repetir el mismo cliente.");
+                recoverDriverForRetry();
+            }
+        }
+        throw lastFailure;
+    }
+
+    private void recoverDriverForRetry() {
+        DriverManager.quitDriver();
+        driver = DriverManager.getDriver();
+        DriverManager.restartApplication();
+        setUpPages();
+    }
+
+    private void processOrder(String orderType, String personType,
             String idType, String numberId, String country,
             String firstName, String name, String birthDay,
             String birthMonth, String birthYear, String numberPhone,

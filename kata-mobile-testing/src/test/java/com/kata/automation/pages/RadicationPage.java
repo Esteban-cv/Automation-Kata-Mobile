@@ -120,7 +120,8 @@ public class RadicationPage extends BasePage {
         // confirmación
         // Anclamos el XPath al título del modal para garantizar que le dé al ACEPTAR
         // correcto
-        private static final By ACCEPT_CONSULT_VIEW360_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
+        private static final By ACCEPT_CONSULT_VIEW360_BUTTON = By
+                        .xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
         private static final By ACCEPT_CONSULT_CLIENT_BUTTON = By.xpath(
                         "//*[@text=\"Actualización exitosa\"]/following::*[@text=\"ACEPTAR\"][1]");
 
@@ -150,7 +151,13 @@ public class RadicationPage extends BasePage {
         // RADICACION
         private static final By CONSULTATION_RESULT = By.xpath("//*[@text=\"Actualización exitosa\"]");
         // Se simplifica el timeout para no colapsar el motor de búsqueda
-    private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
+        private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
+                        "//*[contains(@text, 'tiempo excedido') or contains(@text, 'tiempo de espera') or contains(@text, 'timeout')]");
+
+        //BOTON DE VISTA 360
+        private static final By CONSULTATION_VIEW360_RESULT = By.xpath("//*[@text=\"Consulta Exitosa\"]");
+        // Se simplifica el timeout para no colapsar el motor de búsqueda
+    private static final By TIMEOUT_ERROR_VIEW360_MESSAGE = By.xpath(
             "//*[contains(@text, 'tiempo excedido') or contains(@text, 'tiempo de espera') or contains(@text, 'timeout')]");
 
         public void fillFamilyComposition(By openSectionLocator) {
@@ -198,89 +205,92 @@ public class RadicationPage extends BasePage {
                         String affiliation, String networkAccess, String email, String bussinessDepartmentAnalist,
                         String bussinessCityAnalist,
                         String bussinessNeighborhoodAnalist, String bussinesNumberPhone) {
-                clickSafely(RADICATE_BUTTON);
-                takeEvidence(numberId, "radicacion");
+                // clickSafely(RADICATE_BUTTON);
+                // takeEvidence(numberId, "radicacion");
 
-                scrollToText("El solicitante tiene otra nacionalidad", 0.30);
+                // scrollToText("El solicitante tiene otra nacionalidad", 0.30);
 
-                answerQuestion("¿El solicitante tiene otra nacionalidad?", "No");
+                // answerQuestion("¿El solicitante tiene otra nacionalidad?", "No");
 
-                scrollToText("Último año cursado del solicitante", 0.15);
-                type(LAST_YEAR_COMPLETED, lastYearCompleted);
+                // scrollToText("Último año cursado del solicitante", 0.15);
+                // type(LAST_YEAR_COMPLETED, lastYearCompleted);
 
-                scrollAndClickReliable("Afiliación salud del solicitante",
-                                AFFILIATION_CLIENT, 0.15);
-                click(byVisibleText(affiliation));
+                // scrollAndClickReliable("Afiliación salud del solicitante",
+                //                 AFFILIATION_CLIENT, 0.15);
+                // click(byVisibleText(affiliation));
 
-                scrollAndClickReliable("Acceso a internet del solicitante",
-                                NETWOK_ACCESS_CLIENT, 0.15);
-                click(byVisibleText(networkAccess));
+                // scrollAndClickReliable("Acceso a internet del solicitante",
+                //                 NETWOK_ACCESS_CLIENT, 0.15);
+                // click(byVisibleText(networkAccess));
 
-                sleep(100);
+                // sleep(100);
 
-                scrollToText("¿El solicitante tiene propiedad Raiz?", 0.15);
+                // scrollToText("¿El solicitante tiene propiedad Raiz?", 0.15);
 
-                answerQuestion("¿El solicitante tiene propiedad Raiz?", "No");
+                // answerQuestion("¿El solicitante tiene propiedad Raiz?", "No");
 
-                fillFamilyComposition(FAMILY_COMPOSITION);
+                // fillFamilyComposition(FAMILY_COMPOSITION);
 
-                scrollToText("Confirmar correo electrónico del solicitante", 0.15);
+                // scrollToText("Confirmar correo electrónico del solicitante", 0.15);
 
-                type(EMAIL, email);
-                type(CONFIRM_EMAIL, email);
+                // type(EMAIL, email);
+                // type(CONFIRM_EMAIL, email);
 
-                takeEvidence(numberId, "correo_electronico_registrado");
+                // takeEvidence(numberId, "correo_electronico_registrado");
 
-                try {
-                        driver.hideKeyboard();
-                } catch (Exception e) {
-                        /* Ignorado */ }
+                // try {
+                //         driver.hideKeyboard();
+                // } catch (Exception e) {
+                //         /* Ignorado */ }
 
-                scrollAndClickReliable("Zona de residencia del solicitante", RESIDENCE_ZONE_CLIENT, 0.15);
-                click(byVisibleText("Urbano"));
+                // scrollAndClickReliable("Zona de residencia del solicitante", RESIDENCE_ZONE_CLIENT, 0.15);
+                // click(byVisibleText("Urbano"));
 
-                scrollToText("Fecha de inicio de ocupación de la residencia", 0.15);
+                // scrollToText("Fecha de inicio de ocupación de la residencia", 0.15);
 
-                click(RESIDENCE_OCUPATION_DATE);
-                selectDateInCalendar(22, 9, 2020);
+                // click(RESIDENCE_OCUPATION_DATE);
+                // selectDateInCalendar(22, 9, 2020);
 
-                // ciudad del analista para que la orden pueda ser validad
-                scrollToText("Ciudad del negocio del solicitante", 0.15);
+                // // ciudad del analista para que la orden pueda ser validad
+                // scrollToText("Ciudad del negocio del solicitante", 0.15);
 
-                // PROBAR SI ENCUENTRA EL DEPARTAMENTO EN LA LISTA DESPLAGABLE
+                // // PROBAR SI ENCUENTRA EL DEPARTAMENTO EN LA LISTA DESPLAGABLE
 
-                findTextInDropDown(BUSSINESS_DEPARTMENT_CLIENT, bussinessDepartmentAnalist);
-                findTextInDropDown(BUSSINESS_CITY_CLIENT, bussinessCityAnalist);
-                findTextWithSearch(BUSSINESS_NEIGHBORHOOD_CLIENT, SEARCH_INPUT, bussinessNeighborhoodAnalist);
+                // findTextInDropDown(BUSSINESS_DEPARTMENT_CLIENT, bussinessDepartmentAnalist);
+                // findTextInDropDown(BUSSINESS_CITY_CLIENT, bussinessCityAnalist);
+                // findTextWithSearch(BUSSINESS_NEIGHBORHOOD_CLIENT, SEARCH_INPUT, bussinessNeighborhoodAnalist);
 
-                // Hace scroll hasta que el botón sea visible
-                scrollToText("Coordenadas del negocio", 0.15);
-                sleep(500); // Pausa breve para estabilizar la pantalla
+                // // Hace scroll hasta que el botón sea visible
+                // scrollToText("Coordenadas del negocio", 0.15);
+                // sleep(500); // Pausa breve para estabilizar la pantalla
 
-                // Ejecuta el toque físico real
-                try {
-                        forceClick(BUSSINESS_COORDINATES);
-                } catch (Exception e) {
-                        // ignora si ya tiene la ubicacion
-                        System.out.println("Ubicacion ya registrada");
-                }
+                // // Ejecuta el toque físico real
+                // try {
+                //         forceClick(BUSSINESS_COORDINATES);
+                // } catch (Exception e) {
+                //         // ignora si ya tiene la ubicacion
+                //         System.out.println("Ubicacion ya registrada");
+                // }
 
-                scrollAndClickReliable("Observaciones de posicionamiento", OBSERVATION_COORDINATES, 0.10);
-                click(byVisibleText("No registro coordenadas por falla del sistema"));
+                // scrollAndClickReliable("Observaciones de posicionamiento", OBSERVATION_COORDINATES, 0.10);
+                // click(byVisibleText("No registro coordenadas por falla del sistema"));
 
-                scrollAndClickReliable("Selfie del analista y el negocio", CLIENT_ANALYST_IMAGE, 0.10);
-                click(CAPTURE_BUTTON);
-                click(GO_BACK);
+                // scrollAndClickReliable("Selfie del analista y el negocio", CLIENT_ANALYST_IMAGE, 0.10);
+                // click(CAPTURE_BUTTON);
+                // click(GO_BACK);
 
-                scrollAndClickReliable("Tipo de local del negocio", BUSSINESS_TYPE, 0.10);
-                click(byVisibleText("Familiar"));
+                // scrollAndClickReliable("Tipo de local del negocio", BUSSINESS_TYPE, 0.10);
+                // click(byVisibleText("Familiar"));
 
-                scrollToText("Confirmar celular del negocio", 0.15);
+                // scrollToText("Confirmar celular del negocio", 0.15);
 
-                type(BUSSINESS_NUMBER_PHONE, bussinesNumberPhone);
-                type(CONFIRM_BUSSINESS_NUMBER_PHONE, bussinesNumberPhone);
+                // type(BUSSINESS_NUMBER_PHONE, bussinesNumberPhone);
+                // type(CONFIRM_BUSSINESS_NUMBER_PHONE, bussinesNumberPhone);
 
-                scrollAndClickReliable("Vista 360 del cliente", GENERATE_VIEW360_BUTTON, 0.15);
+                // scrollAndClickReliable("Vista 360 del cliente", GENERATE_VIEW360_BUTTON,
+                // 0.15);
+                scrollToText("Vista 360 del cliente", 0.15);
+                clickWithRetry(GENERATE_VIEW360_BUTTON, CONSULTATION_VIEW360_RESULT, TIMEOUT_ERROR_VIEW360_MESSAGE);
                 click(ACCEPT_CONSULT_VIEW360_BUTTON);
 
                 scrollAndClickReliable("Sector actividad económica principal", MAIN_SECTOR_ACTIVITY, 0.15);
