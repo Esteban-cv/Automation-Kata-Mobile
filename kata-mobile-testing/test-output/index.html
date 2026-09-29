@@ -25,7 +25,7 @@
       <span class="top-banner-title-font">Test results</span>
       <button id="button" class="button">Switch Retro Theme</button> <!-- button -->
       <br/>
-      <span class="top-banner-font-1">1 suite</span>
+      <span class="top-banner-font-1">1 suite, 4 failed tests</span>
     </div> <!-- top-banner-root -->
     <div class="navigator-root">
       <div class="navigator-suite-header">
@@ -39,7 +39,7 @@
         <div class="rounded-window">
           <div class="suite-header light-rounded-window-top">
             <a href="#" panel-name="suite-Command_line_suite" class="navigator-link">
-              <span class="suite-name border-passed">Command line suite</span>
+              <span class="suite-name border-failed">Command line suite</span>
             </a> <!-- navigator-link -->
           </div> <!-- suite-header light-rounded-window-top -->
           <div class="navigator-suite-content">
@@ -92,21 +92,36 @@
               <div class="suite-section-content">
                 <ul>
                   <li>
-                    <span class="method-stats">1 method,   1 passed</span>
+                    <span class="method-stats">4 methods, 4 failed,   </span>
                   </li>
                   <li>
-                    <span class="method-list-title passed">Passed methods</span>
-                    <span class="show-or-hide-methods passed">
-                      <a href="#" panel-name="suite-Command_line_suite" class="hide-methods passed suite-Command_line_suite"> (hide)</a> <!-- hide-methods passed suite-Command_line_suite -->
-                      <a href="#" panel-name="suite-Command_line_suite" class="show-methods passed suite-Command_line_suite"> (show)</a> <!-- show-methods passed suite-Command_line_suite -->
+                    <span class="method-list-title failed">Failed methods</span>
+                    <span class="show-or-hide-methods failed">
+                      <a href="#" panel-name="suite-Command_line_suite" class="hide-methods failed suite-Command_line_suite"> (hide)</a> <!-- hide-methods failed suite-Command_line_suite -->
+                      <a href="#" panel-name="suite-Command_line_suite" class="show-methods failed suite-Command_line_suite"> (show)</a> <!-- show-methods failed suite-Command_line_suite -->
                     </span>
-                    <div class="method-list-content passed suite-Command_line_suite">
+                    <div class="method-list-content failed suite-Command_line_suite">
                       <span>
-                        <img src="passed.png" width="3%"/>
+                        <img src="failed.png" width="3%"/>
+                        <a href="#" panel-name="suite-Command_line_suite" title="com.kata.automation.tests.FlujoCompletoTest" class="method navigator-link" hash-for-method="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoec...)">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoec...)</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img src="failed.png" width="3%"/>
+                        <a href="#" panel-name="suite-Command_line_suite" title="com.kata.automation.tests.FlujoCompletoTest" class="method navigator-link" hash-for-method="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montane...)">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montane...)</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img src="failed.png" width="3%"/>
                         <a href="#" panel-name="suite-Command_line_suite" title="com.kata.automation.tests.FlujoCompletoTest" class="method navigator-link" hash-for-method="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...)">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...)</a> <!-- method navigator-link -->
                       </span>
                       <br/>
-                    </div> <!-- method-list-content passed suite-Command_line_suite -->
+                      <span>
+                        <img src="failed.png" width="3%"/>
+                        <a href="#" panel-name="suite-Command_line_suite" title="com.kata.automation.tests.FlujoCompletoTest" class="method navigator-link" hash-for-method="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernand...)">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernand...)</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                    </div> <!-- method-list-content failed suite-Command_line_suite -->
                   </li>
                 </ul>
               </div> <!-- suite-section-content -->
@@ -118,22 +133,177 @@
     <div class="wrapper">
       <div class="main-panel-root">
         <div panel-name="suite-Command_line_suite" class="panel Command_line_suite">
-          <div class="suite-Command_line_suite-class-passed">
+          <div class="suite-Command_line_suite-class-failed">
             <div class="main-panel-header rounded-window-top">
-              <img src="passed.png"/>
+              <img src="failed.png"/>
               <span class="class-name">com.kata.automation.tests.FlujoCompletoTest</span>
             </div> <!-- main-panel-header rounded-window-top -->
             <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoec...)">
+                  </a> <!-- verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoec...) -->
+                  <span class="method-name">verificarCreacionDeOrdenMicrocredito</span>
+                  <span class="parameters">(Originación de microcrédito,SolicitudPersonaNatural,Cedula ciudadanía,86065519,COLOMBIA,Bengoechea,Pablo,25,5,1980,3185551310,17,9,2020,60,Gestión front o contact center,ecolorado@greensqa.com,VALLE DEL CAUCA,CALI,CIUDAD CAPRI,10,SISBEN,Hogar,3185551311,Microcrédito,Crédito productivo urbano360,20000000,24,30,Capital de Trabajo,No,No,No,No,No,NO,NO,NO,NO,NO,15,10,2026,No,Negocio del Cliente,Satisfactorio,Capital de trabajo,Correo electrónico P,Solicitud viable para aprobación.,Continuar)</span>
+                  <div class="stack-trace">java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames
+</div> <!-- stack-trace -->
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montane...)">
+                  </a> <!-- verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montane...) -->
+                  <span class="method-name">verificarCreacionDeOrdenMicrocredito</span>
+                  <span class="parameters">(Originación de microcrédito,SolicitudPersonaNatural,Cedula ciudadanía,19441449,COLOMBIA,Montanez,Alirio,9,2,2000,3185551310,17,9,2020,60,Gestión front o contact center,ecolorado@greensqa.com,VALLE DEL CAUCA,CALI,CIUDAD CAPRI,10,SISBEN,Hogar,3185551313,Microcrédito,Crédito productivo urbano360,20000000,24,30,Capital de Trabajo,No,No,No,No,No,NO,NO,NO,NO,NO,15,10,2026,No,Negocio del Cliente,Satisfactorio,Capital de trabajo,Correo electrónico P,Solicitud viable para aprobación.,Continuar)</span>
+                  <div class="stack-trace">java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames
+</div> <!-- stack-trace -->
+                </div> <!-- method-content -->
+              </div> <!-- method -->
               <div class="method">
                 <div class="method-content">
                   <a name="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...)">
                   </a> <!-- verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...) -->
                   <span class="method-name">verificarCreacionDeOrdenMicrocredito</span>
                   <span class="parameters">(Originación de microcrédito,SolicitudPersonaNatural,Cedula ciudadanía,36999831,COLOMBIA,Mera,Sonia,13,7,1980,3185551310,17,9,2020,60,Gestión front o contact center,ecolorado@greensqa.com,VALLE DEL CAUCA,CALI,CIUDAD CAPRI,10,SISBEN,Hogar,3185551314,Microcrédito,Crédito productivo urbano360,20000000,24,30,Capital de Trabajo,No,No,No,No,No,NO,NO,NO,NO,NO,15,10,2026,No,Negocio del Cliente,Satisfactorio,Capital de trabajo,Correo electrónico P,Solicitud viable para aprobación.,Continuar)</span>
+                  <div class="stack-trace">org.openqa.selenium.WebDriverException: Could not proxy command to the remote server. Original error: read ECONNRESET
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//android.widget.TextView[@text=&quot;ACEPTAR&quot;], using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForVisibility(BasePage.java:68)
+	at com.kata.automation.pages.ProductRegistrationPage.fillProductRegistration(ProductRegistrationPage.java:220)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:172)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+... Removed 25 stack frames
+</div> <!-- stack-trace -->
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernand...)">
+                  </a> <!-- verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernand...) -->
+                  <span class="method-name">verificarCreacionDeOrdenMicrocredito</span>
+                  <span class="parameters">(Originación de microcrédito,SolicitudPersonaNatural,Cedula ciudadanía,38569302,COLOMBIA,Hernandez,Naren,9,2,1978,3185551310,17,9,2020,60,Gestión front o contact center,ecolorado@greensqa.com,VALLE DEL CAUCA,CALI,CIUDAD CAPRI,10,SISBEN,Hogar,3185551312,Microcrédito,Crédito productivo urbano360,20000000,24,30,Capital de Trabajo,No,No,No,No,No,NO,NO,NO,NO,NO,15,10,2026,No,Negocio del Cliente,Satisfactorio,Capital de trabajo,Correo electrónico P,Solicitud viable para aprobación.,Continuar)</span>
+                  <div class="stack-trace">java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames
+</div> <!-- stack-trace -->
                 </div> <!-- method-content -->
               </div> <!-- method -->
             </div> <!-- main-panel-content rounded-window-bottom -->
-          </div> <!-- suite-Command_line_suite-class-passed -->
+          </div> <!-- suite-Command_line_suite-class-failed -->
         </div> <!-- panel Command_line_suite -->
         <div panel-name="test-xml-Command_line_suite" class="panel">
           <div class="main-panel-header rounded-window-top">
@@ -185,16 +355,28 @@ data.addColumn('number', 'Number');
 data.addColumn('string', 'Method');
 data.addColumn('string', 'Class');
 data.addColumn('number', 'Time (ms)');
-data.addRows(1);
+data.addRows(4);
 data.setCell(0, 0, 0)
 data.setCell(0, 1, 'verificarCreacionDeOrdenMicrocredito')
 data.setCell(0, 2, 'com.kata.automation.tests.FlujoCompletoTest')
-data.setCell(0, 3, 746402);
+data.setCell(0, 3, 657761);
+data.setCell(1, 0, 1)
+data.setCell(1, 1, 'verificarCreacionDeOrdenMicrocredito')
+data.setCell(1, 2, 'com.kata.automation.tests.FlujoCompletoTest')
+data.setCell(1, 3, 2078);
+data.setCell(2, 0, 2)
+data.setCell(2, 1, 'verificarCreacionDeOrdenMicrocredito')
+data.setCell(2, 2, 'com.kata.automation.tests.FlujoCompletoTest')
+data.setCell(2, 3, 2069);
+data.setCell(3, 0, 3)
+data.setCell(3, 1, 'verificarCreacionDeOrdenMicrocredito')
+data.setCell(3, 2, 'com.kata.automation.tests.FlujoCompletoTest')
+data.setCell(3, 3, 2043);
 window.suiteTableData['Command_line_suite']= { tableData: data, tableDiv: 'times-div-Command_line_suite'}
 return data;
 }
               </script>
-              <span class="suite-total-time">Total running time: 12 minutes</span>
+              <span class="suite-total-time">Total running time: 11 minutes</span>
               <div id="times-div-Command_line_suite">
               </div> <!-- times-div-Command_line_suite -->
             </div> <!-- times-div -->
@@ -205,12 +387,6 @@ return data;
             <span class="header-content">Reporter output for Command line suite</span>
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
-            <div class="reporter-method-div">
-              <span class="reporter-method-name">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...)</span>
-              <div class="reporter-method-output-div">
-                <span class="reporter-method-output">Flujo procesado y guardado correctamente para la cédula: 36999831</span>
-              </div> <!-- reporter-method-output-div -->
-            </div> <!-- reporter-method-div -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->
         <div panel-name="ignored-methods-Command_line_suite" class="panel">
@@ -233,15 +409,35 @@ return data;
               </div> <!-- configuration-suite before -->
               <div class="configuration-class before">
                 <span class="method-name">setUpPages</span>
-                <span class="method-start">4650 ms</span>
+                <span class="method-start">6110 ms</span>
               </div> <!-- configuration-class before -->
               <div class="test-method">
+                <img src="failed.png">
+                </img>
                 <span class="method-name">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, S...)</span>
-                <span class="method-start">4795 ms</span>
+                <span class="method-start">6371 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <img src="failed.png">
+                </img>
+                <span class="method-name">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoec...)</span>
+                <span class="method-start">664137 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <img src="failed.png">
+                </img>
+                <span class="method-name">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernand...)</span>
+                <span class="method-start">666215 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <img src="failed.png">
+                </img>
+                <span class="method-name">verificarCreacionDeOrdenMicrocredito(Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montane...)</span>
+                <span class="method-start">668258 ms</span>
               </div> <!-- test-method -->
               <div class="configuration-suite after">
                 <span class="method-name">globalTearDown</span>
-                <span class="method-start">751217 ms</span>
+                <span class="method-start">670578 ms</span>
               </div> <!-- configuration-suite after -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->

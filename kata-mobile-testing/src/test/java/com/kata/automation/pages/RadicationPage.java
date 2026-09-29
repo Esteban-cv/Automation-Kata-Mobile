@@ -163,7 +163,7 @@ public class RadicationPage extends BasePage {
                 // 2. Ejecuta el llenado exactamente 2 veces
                 for (int i = 1; i <= 2; i++) {
                         System.out.println("Agregando familiar #" + i);
-
+                        waitForVisibility(ADD_RECORD_BUTTON);
                         clickSafely(ADD_RECORD_BUTTON);
 
                         clickComposeDropdown(FAMILY_MEMBER_TYPE);
@@ -181,15 +181,16 @@ public class RadicationPage extends BasePage {
 
                         sleep(200);
 
+                        waitForVisibility(SAVE_FAMILY_BUTTON);
                         clickSafely(SAVE_FAMILY_BUTTON);
 
-                        sleep(200);
+                        waitForVisibility(CONFIRM_BUTTON);
                         clickSafely(CONFIRM_BUTTON);
                         sleep(200);
 
                         System.out.println("familiar #" + i + " Terminado...");
                 }
-
+                waitForVisibility(GO_BACK);
                 clickSafely(GO_BACK);
         }
 

@@ -2,7 +2,14 @@ package com.kata.automation.utils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URISyntaxException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Properties;
 
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
@@ -14,11 +21,12 @@ public class DriverManager {
     public static AndroidDriver getDriver() {
         if (driver == null) {
             try {
+                Properties configuration = loadConfiguration();
                 UiAutomator2Options options = new UiAutomator2Options();
                 options.setPlatformName("Android");
-                options.setDeviceName("RZCX10KND8P");
-                options.setAppPackage("com.kata.mobile");
-                options.setAutomationName("UiAutomator2");
+                options.setDeviceName(configuration.getProperty("device.name", "RZCX10KND8P"));
+                options.setAppPackage(configuration.getProperty("app.package", "com.kata.mobile"));
+                options.setAutomationName(configuration.getProperty("automation.name", "UiAutomator2"));
 
                 // Mantiene los datos y la caché de la app entre sesiones de Appium
                 // para que no se reinicie desde cero en cada prueba.
@@ -29,16 +37,18 @@ public class DriverManager {
                 //options.setCapability("appium:forceAppLaunch", true);
                 options.setCapability("disableWindowAnimation", true);
 
-                String appiumUrl = System.getenv("APPIUM_SERVER_URL");
-                if (appiumUrl == null || appiumUrl.isBlank()) {
-                    appiumUrl = DEFAULT_APPIUM_URL;
+                String appiumUrl = configuration.getProperty("appium.server.url", DEFAULT_APPIUM_URL);
+                String environmentUrl = System.getenv("APPIUM_SERVER_URL");
+                if (environmentUrl != null && !environmentUrl.isBlank()) {
+                    appiumUrl = environmentUrl;
                 }
 
                 URL appiumServer = new URL(appiumUrl);
                 driver = new AndroidDriver(appiumServer,options);
 
-                //Espera implicita de 10 segundos
-                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+                long implicitTimeout = Long.parseLong(
+                    configuration.getProperty("implicit.timeout.seconds", "10"));
+                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(implicitTimeout));
 
                 System.out.println("¡Conexion a el dispositiva EXITOSA!");
 
@@ -47,6 +57,37 @@ public class DriverManager {
             }
         }
         return driver;
+    }
+
+    private static Properties loadConfiguration() {
+        Properties configuration = new Properties();
+        String configuredPath = System.getenv("KATA_CONFIG_PATH");
+        Path path = Paths.get(configuredPath == null || configuredPath.isBlank()
+                ? "config/robot.properties" : configuredPath);
+        if ((configuredPath == null || configuredPath.isBlank()) && !Files.exists(path)) {
+            path = configurationPathNearApplication();
+        }
+        if (!Files.exists(path)) {
+            return configuration;
+        }
+        try (InputStream input = Files.newInputStream(path)) {
+            configuration.load(input);
+        } catch (IOException exception) {
+            throw new RuntimeException("No se pudo leer la configuracion del robot: " + path, exception);
+        }
+        return configuration;
+    }
+
+    private static Path configurationPathNearApplication() {
+        try {
+            Path applicationLocation = Paths.get(DriverManager.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+            Path applicationDirectory = Files.isDirectory(applicationLocation)
+                    ? applicationLocation : applicationLocation.getParent();
+            return applicationDirectory.resolve("config").resolve("robot.properties");
+        } catch (URISyntaxException | NullPointerException exception) {
+            return Paths.get("config", "robot.properties");
+        }
     }
 
     public static void quitDriver() {

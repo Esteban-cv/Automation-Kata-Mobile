@@ -55,11 +55,11 @@ function toggleAllBoxes() {
 <body>
 <h2 align='center'>Command line test</h2><table border='1' align="center">
 <tr>
-<td>Tests passed/Failed/Skipped:</td><td>1/0/0</td>
+<td>Tests passed/Failed/Skipped:</td><td>0/4/0</td>
 </tr><tr>
-<td>Started on:</td><td>Mon Sep 28 16:15:19 COT 2026</td>
+<td>Started on:</td><td>Mon Sep 28 16:42:17 COT 2026</td>
 </tr>
-<tr><td>Total time:</td><td>746 seconds (746548 ms)</td>
+<tr><td>Total time:</td><td>664 seconds (664217 ms)</td>
 </tr><tr>
 <td>Included groups:</td><td></td>
 </tr><tr>
@@ -67,8 +67,8 @@ function toggleAllBoxes() {
 </tr>
 </table><p/>
 <small><i>(Hover the method name to see the test class name)</i></small><p/>
-<table width='100%' border='1' class='invocation-passed'>
-<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<table width='100%' border='1' class='invocation-failed'>
+<tr><td colspan='4' align='center'><b>FAILED TESTS</b></td></tr>
 <tr><td><b>Test method</b></td>
 <td><b>Attribute(s)</b></td>
 <td width="30%"><b>Exception</b></td>
@@ -76,17 +76,375 @@ function toggleAllBoxes() {
 <td><b>Instance</b></td>
 </tr>
 <tr>
-<td title='com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito()'><b>verificarCreacionDeOrdenMicrocredito</b><br>Test class: com.kata.automation.tests.FlujoCompletoTest<br>Parameters: Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, Sonia, 13, 7, 1980, 3185551310, 17, 9, 2020, 60, Gestión front o contact center, ecolorado@greensqa.com, VALLE DEL CAUCA, CALI, CIUDAD CAPRI, 10, SISBEN, Hogar, 3185551314, Microcrédito, Crédito productivo urbano360, 20000000, 24, 30, Capital de Trabajo, No, No, No, No, No, NO, NO, NO, NO, NO, 15, 10, 2026, No, Negocio del Cliente, Satisfactorio, Capital de trabajo, Correo electrónico P, Solicitud viable para aprobación., Continuar<br/>
-<a href="#Output-1228601015" onClick='toggleBox("Output-1228601015", this, "Show output", "Hide output");'>Show output</a>
-
-<a href="#Output-1228601015" onClick="toggleAllBoxes();">Show all outputs</a>
-<div class='log' id="Output-1228601015">
-Flujo procesado y guardado correctamente para la cédula: 36999831<br/>
-</div>
-</td>
-<td></td>
-<td>746</td>
-<td>com.kata.automation.tests.FlujoCompletoTest@2832bf01</td></tr>
+<td title='com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito()'><b>verificarCreacionDeOrdenMicrocredito</b><br>Test class: com.kata.automation.tests.FlujoCompletoTest<br>Parameters: Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 86065519, COLOMBIA, Bengoechea, Pablo, 25, 5, 1980, 3185551310, 17, 9, 2020, 60, Gestión front o contact center, ecolorado@greensqa.com, VALLE DEL CAUCA, CALI, CIUDAD CAPRI, 10, SISBEN, Hogar, 3185551311, Microcrédito, Crédito productivo urbano360, 20000000, 24, 30, Capital de Trabajo, No, No, No, No, No, NO, NO, NO, NO, NO, 15, 10, 2026, No, Negocio del Cliente, Satisfactorio, Capital de trabajo, Correo electrónico P, Solicitud viable para aprobación., Continuar</td>
+<td><div><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1808524143", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1808524143'><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:739)
+	at org.testng.TestRunner.run(TestRunner.java:614)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+</pre></div></td>
+<td>2</td>
+<td>com.kata.automation.tests.FlujoCompletoTest@12469bbd</td></tr>
+<tr>
+<td title='com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito()'><b>verificarCreacionDeOrdenMicrocredito</b><br>Test class: com.kata.automation.tests.FlujoCompletoTest<br>Parameters: Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 19441449, COLOMBIA, Montanez, Alirio, 9, 2, 2000, 3185551310, 17, 9, 2020, 60, Gestión front o contact center, ecolorado@greensqa.com, VALLE DEL CAUCA, CALI, CIUDAD CAPRI, 10, SISBEN, Hogar, 3185551313, Microcrédito, Crédito productivo urbano360, 20000000, 24, 30, Capital de Trabajo, No, No, No, No, No, NO, NO, NO, NO, NO, 15, 10, 2026, No, Negocio del Cliente, Satisfactorio, Capital de trabajo, Correo electrónico P, Solicitud viable para aprobación., Continuar</td>
+<td><div><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace1691355956", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace1691355956'><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:739)
+	at org.testng.TestRunner.run(TestRunner.java:614)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+</pre></div></td>
+<td>2</td>
+<td>com.kata.automation.tests.FlujoCompletoTest@12469bbd</td></tr>
+<tr>
+<td title='com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito()'><b>verificarCreacionDeOrdenMicrocredito</b><br>Test class: com.kata.automation.tests.FlujoCompletoTest<br>Parameters: Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 36999831, COLOMBIA, Mera, Sonia, 13, 7, 1980, 3185551310, 17, 9, 2020, 60, Gestión front o contact center, ecolorado@greensqa.com, VALLE DEL CAUCA, CALI, CIUDAD CAPRI, 10, SISBEN, Hogar, 3185551314, Microcrédito, Crédito productivo urbano360, 20000000, 24, 30, Capital de Trabajo, No, No, No, No, No, NO, NO, NO, NO, NO, 15, 10, 2026, No, Negocio del Cliente, Satisfactorio, Capital de trabajo, Correo electrónico P, Solicitud viable para aprobación., Continuar</td>
+<td><div><pre>org.openqa.selenium.WebDriverException: Could not proxy command to the remote server. Original error: read ECONNRESET
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//android.widget.TextView[@text=&quot;ACEPTAR&quot;], using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForVisibility(BasePage.java:68)
+	at com.kata.automation.pages.ProductRegistrationPage.fillProductRegistration(ProductRegistrationPage.java:220)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:172)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+... Removed 25 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace423241661", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace423241661'><pre>org.openqa.selenium.WebDriverException: Could not proxy command to the remote server. Original error: read ECONNRESET
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//android.widget.TextView[@text=&quot;ACEPTAR&quot;], using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForVisibility(BasePage.java:68)
+	at com.kata.automation.pages.ProductRegistrationPage.fillProductRegistration(ProductRegistrationPage.java:220)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:172)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:739)
+	at org.testng.TestRunner.run(TestRunner.java:614)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+</pre></div></td>
+<td>657</td>
+<td>com.kata.automation.tests.FlujoCompletoTest@12469bbd</td></tr>
+<tr>
+<td title='com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito()'><b>verificarCreacionDeOrdenMicrocredito</b><br>Test class: com.kata.automation.tests.FlujoCompletoTest<br>Parameters: Originación de microcrédito, SolicitudPersonaNatural, Cedula ciudadanía, 38569302, COLOMBIA, Hernandez, Naren, 9, 2, 1978, 3185551310, 17, 9, 2020, 60, Gestión front o contact center, ecolorado@greensqa.com, VALLE DEL CAUCA, CALI, CIUDAD CAPRI, 10, SISBEN, Hogar, 3185551312, Microcrédito, Crédito productivo urbano360, 20000000, 24, 30, Capital de Trabajo, No, No, No, No, No, NO, NO, NO, NO, NO, 15, 10, 2026, No, Negocio del Cliente, Satisfactorio, Capital de trabajo, Correo electrónico P, Solicitud viable para aprobación., Continuar</td>
+<td><div><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+... Removed 25 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace209610117", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace209610117'><pre>java.lang.RuntimeException: No se pudo hacer click en By.xpath: //androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button tras 5 intentos.
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:427)
+	at com.kata.automation.pages.BasePage.click(BasePage.java:192)
+	at com.kata.automation.pages.OrdersPage.createOrder(OrdersPage.java:107)
+	at com.kata.automation.tests.FlujoCompletoTest.verificarCreacionDeOrdenMicrocredito(FlujoCompletoTest.java:113)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:686)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:992)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:739)
+	at org.testng.TestRunner.run(TestRunner.java:614)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at com.kata.automation.gui.AutomationDashboard.executeRuns(AutomationDashboard.java:392)
+	at com.kata.automation.gui.AutomationDashboard.lambda$5(AutomationDashboard.java:319)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: org.openqa.selenium.WebDriverException: &apos;POST /element&apos; cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details
+Build info: version: &apos;4.19.1&apos;, revision: &apos;abe0ee07dc&apos;
+System info: os.name: &apos;Windows 11&apos;, os.arch: &apos;amd64&apos;, os.version: &apos;10.0&apos;, java.version: &apos;21.0.12.1&apos;
+Driver info: io.appium.java_client.android.AndroidDriver
+Command: [6e5700dc-961e-4103-8b0b-588448e6ba7f, findElement {value=//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button, using=xpath}]
+Capabilities {appium:appActivity: com.kata.mobile/.splash.Spl..., appium:appPackage: com.kata.mobile, appium:automationName: UiAutomator2, appium:databaseEnabled: false, appium:desired: {appPackage: com.kata.mobile, automationName: UiAutomator2, deviceName: RZCX10KND8P, disableWindowAnimation: true, dontStopAppOnReset: true, fullReset: false, noReset: true, platformName: ANDROID, skipUnlock: true}, appium:deviceApiLevel: 36, appium:deviceManufacturer: samsung, appium:deviceModel: SM-A546E, appium:deviceName: RZCX10KND8P, appium:deviceScreenDensity: 380, appium:deviceScreenSize: 1080x2340, appium:deviceUDID: RZCX10KND8P, appium:disableWindowAnimation: true, appium:dontStopAppOnReset: true, appium:fullReset: false, appium:javascriptEnabled: true, appium:locationContextEnabled: false, appium:networkConnectionEnabled: true, appium:noReset: true, appium:pixelRatio: 2.375, appium:platformVersion: 16, appium:skipUnlock: true, appium:statBarHeight: 95, appium:takesScreenshot: true, appium:viewportRect: {height: 2245, left: 0, top: 95, width: 1080}, appium:warnings: {}, appium:webStorageEnabled: false, platformName: ANDROID}
+Session ID: 6e5700dc-961e-4103-8b0b-588448e6ba7f
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.openqa.selenium.remote.ErrorCodec.decode(ErrorCodec.java:167)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:138)
+	at org.openqa.selenium.remote.codec.w3c.W3CHttpResponseCodec.decode(W3CHttpResponseCodec.java:50)
+	at org.openqa.selenium.remote.HttpCommandExecutor.execute(HttpCommandExecutor.java:190)
+	at io.appium.java_client.remote.AppiumCommandExecutor.execute(AppiumCommandExecutor.java:237)
+	at org.openqa.selenium.remote.RemoteWebDriver.execute(RemoteWebDriver.java:518)
+	at org.openqa.selenium.remote.ElementLocation$ElementFinder$2.findElement(ElementLocation.java:165)
+	at org.openqa.selenium.remote.ElementLocation.findElement(ElementLocation.java:59)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:355)
+	at org.openqa.selenium.remote.RemoteWebDriver.findElement(RemoteWebDriver.java:349)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:194)
+	at org.openqa.selenium.support.ui.ExpectedConditions$7.apply(ExpectedConditions.java:190)
+	at org.openqa.selenium.support.ui.FluentWait.until(FluentWait.java:203)
+	at com.kata.automation.pages.BasePage.waitForStableElement(BasePage.java:382)
+	at com.kata.automation.pages.BasePage.clickSafely(BasePage.java:414)
+	... 29 more
+</pre></div></td>
+<td>2</td>
+<td>com.kata.automation.tests.FlujoCompletoTest@12469bbd</td></tr>
 </table><p>
 </body>
 </html>

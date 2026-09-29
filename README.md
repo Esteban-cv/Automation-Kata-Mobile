@@ -25,3 +25,24 @@ raíz del repositorio. Para crear un acceso directo en el escritorio:
 Por ahora el lanzador es `.bat`, porque el dashboard depende de Maven, TestNG,
 Appium y las clases de prueba existentes. Más adelante se puede empaquetar como
 `.exe` con `jpackage`, incluyendo un runtime de Java y todas esas dependencias.
+
+## Empaquetar para compartir
+
+La configuración del dispositivo y Appium está en `config/robot.properties`. No
+incluye contraseñas. Para generar una aplicación portable:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\EmpaquetarDashboard.ps1
+```
+
+El resultado queda en `kata-mobile-testing/target/dashboard-package`. Para crear
+un instalador `.exe` se necesita instalar WiX Toolset y ejecutar:
+
+```powershell
+.\EmpaquetarDashboard.ps1 -Installer
+```
+
+Cada computador que ejecute el robot todavía necesita Appium, ADB y un
+dispositivo Android accesible. El instalador no mata procesos ni borra la
+carpeta temporal del sistema.
