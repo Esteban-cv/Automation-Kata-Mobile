@@ -56,7 +56,6 @@ public class AnalysisDecisionPage extends BasePage {
                         String analystConcept,
                         String decision, String numberId) {
 
-                System.out.println("--- Iniciando pantalla: Decisión del análisis ---");
                 waitForVisibility(DECISION_BUTTON);
                 click(DECISION_BUTTON);
 
@@ -101,9 +100,7 @@ public class AnalysisDecisionPage extends BasePage {
                         clickSafely(By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]"));
 
                 } catch (Exception e) {
-                        System.out.println("No apareció pop-up de confirmación, continuando...");
                 }
 
-                System.out.println("✅ ¡Decisión procesada exitosamente!");
         }
 }

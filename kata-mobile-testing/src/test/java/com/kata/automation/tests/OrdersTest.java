@@ -41,7 +41,6 @@ public class OrdersTest extends BaseTest {
 
     // @Test(groups = "smoke")
     // public void smokeTestCreacionOrden() {
-    // System.out.println("--- Ejecutando Smoke Test Rápido ---");
 
     // ordersPage.setScreenDensity(380);
 

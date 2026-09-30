@@ -15,8 +15,6 @@ public class ProductRegistrationTest extends BaseTest {
 
     @Test(groups = "smoke")
     public void smokeTestProductRegister() {
-        System.out.println("Iniciando prueba en registro de producto");
-
         productRegistrationPage.fillProductRegistration(
                 "38569302",
                 "Microcrédito",

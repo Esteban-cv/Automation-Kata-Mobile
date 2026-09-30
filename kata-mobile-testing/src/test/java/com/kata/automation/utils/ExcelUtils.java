@@ -31,7 +31,7 @@ public class ExcelUtils {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("No se pudo leer el archivo Excel: " + e.getMessage());
         }
         return data;
     }

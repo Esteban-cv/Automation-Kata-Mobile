@@ -55,7 +55,6 @@ public class BaseTest {
             File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             Path destination = evidenceDirectory.resolve(name + "_" + System.currentTimeMillis() + ".png");
             Files.copy(sourceFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Captura guardada en: " + destination.toAbsolutePath());
         } catch (IOException e) {
             System.err.println("No se pudo guardar la captura: " + e.getMessage());
         }

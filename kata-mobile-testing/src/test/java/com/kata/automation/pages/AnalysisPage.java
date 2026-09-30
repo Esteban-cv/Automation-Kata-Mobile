@@ -152,7 +152,6 @@ public class AnalysisPage extends BasePage {
                 sleep(500);
 
                 for (int i = 1; i <= 2; i++) {
-                        System.out.println("Agregando Geo Referencia #" + i);
                         clickSafely(ADD_RECORD_BUTTON);
 
                         type(GEO_FIRST_NAME, "Carlos");
@@ -178,7 +177,6 @@ public class AnalysisPage extends BasePage {
 
                 }
 
-                System.out.println("--- Geo Referencias completadas ---");
                 clickSafely(GO_BACK);
         }
 
@@ -192,7 +190,6 @@ public class AnalysisPage extends BasePage {
                 sleep(1000);
 
                 for (int i = 1; i <= 3; i++) {
-                        System.out.println("Agregando Ingreso Referencia #" + i);
                         clickSafely(ADD_RECORD_BUTTON);
 
                         if (i <= 2) {
@@ -257,7 +254,6 @@ public class AnalysisPage extends BasePage {
                         }
                 }
 
-                System.out.println("--- Ingreso Referencias completado ---");
                 clickSafely(GO_BACK);
         }
 
@@ -266,7 +262,6 @@ public class AnalysisPage extends BasePage {
          * Análisis Cualitativo y Cuantitativo.
          */
         public void fillQualitativeAndQuantitativeAnalysis() {
-                System.out.println("--- Iniciando formulario: Análisis Cualitativo y Cuantitativo ---");
                 click(ANALYSIS_BUTTON);
 
                 fillGeoReferences(OPEN_GEO_REFERENCES);
@@ -338,7 +333,6 @@ public class AnalysisPage extends BasePage {
                 scrollAndClickReliable("Validar información financiera", VALIDATE_FINANCIAL_INFO_BTN, 0.15);
                 click(ACCEPT_BUTTON);
 
-                System.out.println("--- Análisis Cualitativo y Cuantitativo Finalizado ---");
         }
 
 }

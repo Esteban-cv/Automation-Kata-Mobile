@@ -1,8 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+Write-Host "Cerrando procesos anteriores de KataMobile..." -ForegroundColor Yellow
+Stop-Process -Name "KataMobile" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "javaw" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
 # =========================================================================
-# 1. INYECCIÓN DEL PATH: Agregamos WiX a las variables de entorno para esta sesión
-# Esto soluciona tu problema de variables sin tener que tocar Windows[cite: 32].
+# 1. INYECCIÓN DEL PATH DE WiX
 # =========================================================================
 $env:PATH += ";C:\Archivos de programa (x86)\WiX Toolset v3.14\bin"
 
@@ -60,14 +64,51 @@ try {
     Copy-Item (Join-Path $repositoryRoot "config") $distRoot -Recurse -Force
 
     # =========================================================================
-    # 2. GENERACIÓN DEL INSTALADOR EXE (Forzado siempre a "exe")
+    # 2. GENERACIÓN DEL INSTALADOR EXE (Auto-Incremento de Versión)
     # =========================================================================
-    $packageType = "exe"
-    $outputPath = Join-Path $projectRoot "target\dashboard-package"
-    Remove-Item $outputPath -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Path $outputPath | Out-Null
+    
+    # Lee la última versión usada y le suma 1 (Ej: 1.0.0 -> 1.0.1)
+    $versionFile = Join-Path $projectRoot "version.txt"
+    if (-not (Test-Path $versionFile)) {
+        Set-Content -Path $versionFile -Value "1.0.0"
+    }
+    $lastVersion = Get-Content $versionFile
+    $versionParts = $lastVersion.Split('.')
+    $newBuild = [int]$versionParts[2] + 1
+    $dynamicVersion = "$($versionParts[0]).$($versionParts[1]).$newBuild"
+    
+    # Guarda la nueva versión para la próxima vez
+    Set-Content -Path $versionFile -Value $dynamicVersion
 
-    Write-Host "Iniciando jpackage para compilar el instalador $packageType..." -ForegroundColor Cyan
+    $packageType = "exe"
+    # Ahora cada build se guarda en su propia carpeta, evadiendo bloqueos de Windows
+    $outputPath = "C:\KataMobile_Releases\Version_$dynamicVersion"
+    
+    if (Test-Path $outputPath) {
+        Write-Host "Limpiando el instalador anterior..." -ForegroundColor DarkCyan
+        
+        $retryCount = 0
+        $isDeleted = $false
+        
+        while ($retryCount -lt 4 -and -not $isDeleted) {
+            Remove-Item $outputPath -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path $outputPath)) {
+                $isDeleted = $true
+            }
+            else {
+                $retryCount++
+                Write-Host "⚠️ Carpeta bloqueada. Reintentando en 2 segundos... ($retryCount/4)" -ForegroundColor Yellow
+                Start-Sleep -Seconds 2
+            }
+        }
+
+        if (-not $isDeleted) {
+            throw "❌ Un proceso zombi sigue bloqueando la carpeta en C:\KataMobile_Releases. Ciérralo manualmente."
+        }
+    }
+    New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
+
+    Write-Host "Iniciando jpackage para compilar el instalador (Versión $dynamicVersion)..." -ForegroundColor Cyan
     
     $jpackageArgs = @(
         "--type", $packageType,
@@ -76,12 +117,15 @@ try {
         "--main-jar", "KataMobileDashboard.jar",
         "--main-class", "com.kata.automation.gui.AutomationDashboard",
         "--dest", $outputPath,
-        "--app-version", "1.0.0",
+        "--app-version", $dynamicVersion, 
         "--vendor", "GreenSQA",
         "--java-options", "-Dfile.encoding=UTF-8",
         "--win-shortcut",
         "--win-menu",
-        "--win-dir-chooser" 
+        "--win-dir-chooser",
+        "--win-console",
+        "--win-upgrade-uuid", "f9a8b7c6-d5e4-3f2a-1b0c-9d8e7f6a5b4c"
+        # "--icon", "icono.ico" # <--- Descomenta si tienes tu logo .ico en la raíz
     )
 
     jpackage @jpackageArgs
@@ -91,7 +135,7 @@ try {
     }
 
     Write-Host "✅ ¡Instalador EXE generado exitosamente!" -ForegroundColor Green
-    Write-Host "Encuentra tu .exe en: $outputPath" -ForegroundColor Yellow
+    Write-Host "Encuentra tu instalador en: $outputPath" -ForegroundColor Yellow
 }
 finally {
     Pop-Location

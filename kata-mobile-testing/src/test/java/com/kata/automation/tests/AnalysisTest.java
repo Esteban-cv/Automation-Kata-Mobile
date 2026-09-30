@@ -18,14 +18,11 @@ public class AnalysisTest extends BaseTest {
     @Test(description = "Verifica el llenado completo de la pestaña Análisis Cualitativo y Cuantitativo")
     public void verificarPestanaAnalisis() {
         try {
-            System.out.println("========== INICIANDO PRUEBA DE ANÁLISIS ==========");
 
 
-            System.out.println("Ejecutando llenado de Análisis...");
             analysisPage.fillQualitativeAndQuantitativeAnalysis();
             // 3. Validación de éxito
             String successMessage = "✅ Prueba superada: Se completaron las Geo Referencias, Ingreso de Referencias y el Formulario Financiero sin errores.";
-            System.out.println(successMessage);
             Reporter.log(successMessage, true);
 
         } catch (Exception e) {

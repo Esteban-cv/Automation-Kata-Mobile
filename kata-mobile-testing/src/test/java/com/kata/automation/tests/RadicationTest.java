@@ -15,7 +15,6 @@ public class RadicationTest extends BaseTest{
 
     @Test(groups = "smoke")
     public void smokeTestRadicationOrder(){
-        System.out.println("Ejecutando smoke");
         
 
         radicationPage.completeRadicationExistingClient("38569302", "10",

@@ -169,7 +169,6 @@ public class RadicationPage extends BasePage {
 
                 // 2. Ejecuta el llenado exactamente 2 veces
                 for (int i = 1; i <= 2; i++) {
-                        System.out.println("Agregando familiar #" + i);
                         waitForVisibility(ADD_RECORD_BUTTON);
                         clickSafely(ADD_RECORD_BUTTON);
 
@@ -195,7 +194,6 @@ public class RadicationPage extends BasePage {
                         clickSafely(CONFIRM_BUTTON);
                         sleep(200);
 
-                        System.out.println("familiar #" + i + " Terminado...");
                 }
                 waitForVisibility(GO_BACK);
                 clickSafely(GO_BACK);
@@ -269,7 +267,6 @@ public class RadicationPage extends BasePage {
                         forceClick(BUSSINESS_COORDINATES);
                 } catch (Exception e) {
                         // ignora si ya tiene la ubicacion
-                        System.out.println("Ubicacion ya registrada");
                 }
 
                 scrollAndClickReliable("Observaciones de posicionamiento", OBSERVATION_COORDINATES, 0.10);
@@ -326,10 +323,8 @@ public class RadicationPage extends BasePage {
 
                 clickWithRetry(PROCCESS_DECISION, CONSULTATION_RESULT, TIMEOUT_ERROR_MESSAGE);
                 takeEvidence(numberId, "decision_radicacion");
-                System.out.println("Esperando modal de Actualización exitosa...");
                 waitForVisibility(ACCEPT_CONSULT_CLIENT_BUTTON);
                 clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
-                System.out.println("✅ Modal cerrado correctamente.");
         }
 
         public void radicationProcess(String departmentBirth, String cityBirth, int expDay, int expMounth,

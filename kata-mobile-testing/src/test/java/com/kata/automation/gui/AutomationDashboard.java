@@ -35,6 +35,8 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.Locale;
 import java.time.Duration;
@@ -97,10 +99,44 @@ public final class AutomationDashboard extends JFrame {
 
     private AutomationDashboard() {
         super("Kata Mobile | Centro de ejecuciones");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                shutdownApplication();
+            }
+        });
         setMinimumSize(new Dimension(900, 620));
         setLocationByPlatform(true);
         add(buildContent());
+    }
+
+    private void shutdownApplication() {
+        Thread worker = executionThread;
+        if (worker != null && worker.isAlive()) {
+            int confirmation = JOptionPane.showConfirmDialog(
+                    this,
+                    "Hay una ejecución activa. ¿Deseas cerrar el dashboard y detenerla?",
+                    "Confirmar cierre",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+            stopRequested = true;
+            System.setProperty("kata.stop.requested", "true");
+            worker.interrupt();
+        }
+
+        elapsedTimer.stop();
+        try {
+            DriverManager.quitDriver();
+        } catch (RuntimeException exception) {
+            System.err.println("No se pudo cerrar Appium limpiamente: " + exception.getMessage());
+        } finally {
+            dispose();
+            System.exit(0);
+        }
     }
 
     public static void main(String[] args) {

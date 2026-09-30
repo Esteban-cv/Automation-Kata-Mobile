@@ -151,7 +151,6 @@ public class ProductRegistrationPage extends BasePage {
                         int disbDay, int disbMonth, int disbYear,
                         String hasSavings) {
 
-                System.out.println("--- Iniciando Registro del Producto ---");
 
                 LocalDate calculatedDate = LocalDate.of(disbYear, disbMonth, disbDay).plusDays(30);
 
@@ -204,7 +203,6 @@ public class ProductRegistrationPage extends BasePage {
                 takeEvidence(numberId, "Mensaje_validacion_seguros");
                 click(ACCEPT_BUTTON);
 
-                System.out.println("Esperando que el sistema auto-complete las garantías...");
                 sleep(3000); // Pausa vital para que el sistema procese y marque los radio buttons solos.
 
                 // 4. Llenar obligatoriamente FNG y Garantía Real (Como lo pediste)
@@ -222,7 +220,6 @@ public class ProductRegistrationPage extends BasePage {
 
                 click(ACCEPT_BUTTON);
 
-                System.out.println("--- Registro del Producto Finalizado. Simulando... ---");
         }
 
         /**
@@ -236,7 +233,6 @@ public class ProductRegistrationPage extends BasePage {
                         String hasMicroEntrepreneursInsurance, String hasLifeInsurance,
                         String hasFuneralPlanning, String numberId) {
 
-                System.out.println("Configurando seguros voluntarios...");
 
                 // ==========================================
                 // 1. MARCAR LOS CHECKBOXES HACIENDO CLIC EN EL TEXTO
@@ -272,7 +268,6 @@ public class ProductRegistrationPage extends BasePage {
 
                 // Regla A: Si se seleccionó Familia O Vida, se llena Beneficiarios
                 if ("si".equalsIgnoreCase(hasFamilyInsurance) || "si".equalsIgnoreCase(hasLifeInsurance)) {
-                        System.out.println("Llenando formulario de Beneficiarios...");
                         scrollAndClickReliable("Beneficiarios seguros voluntarios", BENEFICIARIES_BTN, 0.15);
                         // método que llena el modal de beneficiarios
                         fillBeneficiariesModal(numberId);
@@ -280,7 +275,6 @@ public class ProductRegistrationPage extends BasePage {
 
                 // Regla B: Si se seleccionó Hogar y Negocio, se llena Inmueble
                 if ("si".equalsIgnoreCase(hasHomeBussinessInsurance)) {
-                        System.out.println("Llenando formulario de Inmueble...");
                         scrollToText("Inmueble a asegurar", 0.15);
                         clickSafely(PROPERTY_TO_INSURE_BTN);
                         // método que llena el modal de inmuebles
@@ -330,7 +324,6 @@ public class ProductRegistrationPage extends BasePage {
          * Hogar/Negocio).
          */
         public void fillPropertyModal(String numberId) {
-                System.out.println("Agregando registro de Inmueble...");
                 clickSafely(ADD); // Asumo que usas la misma variable ADD_RECORD_BUTTON que en Análisis
 
                 // 1. Dirección e Info Geográfica

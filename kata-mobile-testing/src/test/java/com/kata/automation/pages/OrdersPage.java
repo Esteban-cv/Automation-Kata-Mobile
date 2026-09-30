@@ -151,10 +151,8 @@ public class OrdersPage extends BasePage {
                 click(byVisibleText(country));
 
                 scrollToText("Aceptación políticas", 0.15);
-                System.out.println("Antes de escribir numero de telefono");
                 type(NUMBER_PHONE_CLIENT, numberPhone);
                 type(CONFIRM_PHONE_CLIENT, numberPhone);
-                System.out.println("Despues de escribir numero de telefono");
 
                 sleep(1000);
                 answerQuestion("¿Autoriza el tratamiento de datos personales?", "SI");
@@ -187,7 +185,6 @@ public class OrdersPage extends BasePage {
                 // IMPLEMENTAR LOGICA DE MORA, SARLAFT, CONSULTA EXITOSA O CLIENTE NUEVO
 
                 String systemMessage = getAlertMessageText().toLowerCase();
-                System.out.println("mensaje capturado " + systemMessage);
 
                 if (systemMessage.contains("mora mayor") || systemMessage.contains("listas")) {
                                 lastConsultationOutcome = systemMessage.contains("listas")
@@ -202,11 +199,8 @@ public class OrdersPage extends BasePage {
                         clickSafely(SAVE_DECISION_BUTTON);
                         waitForVisibility(SUCCESS_UPDATING);
                         takeEvidence(numberId, "resultado_decisión");
-                        System.out.println("primer clic de cerrar ventana con boton aceptar");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
-                        System.out.println("Segundo clic de cerrar ventana con boton aceptar");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
-                        System.out.println("Cerrando orden...RECHAZADA");
                         return false;
                 } else {
                         System.out.println(
@@ -237,11 +231,8 @@ public class OrdersPage extends BasePage {
         }
 
         public void closeOrder() {
-                System.out.println("boton atras de cerrar order");
                 click(GO_BACK);
-                System.out.println("Esperando visibilidad de elemento go back");
                 waitForVisibility(YES_BUTTON_GO_BACK);
-                System.out.println("clic en elemento go back");
                 click(YES_BUTTON_GO_BACK);
                 sleep(1000);
         }

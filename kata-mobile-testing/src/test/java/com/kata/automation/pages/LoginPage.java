@@ -28,11 +28,8 @@ public class LoginPage extends BasePage {
         click(SUBMIT_lOGIN);
         try {
             waitForVisibility(AUTO_SAVE_ALERT);
-            System.out.println("Auto save detectado");
             click(CANCEL_AUTO_SAVE);
-            System.out.println("Cerrando Auto save");
         } catch (Exception e) {
-            System.out.println("No se encontro el autosave");
         }
         click(CONTINUE_LAST_BUTTON);
 

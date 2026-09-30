@@ -407,19 +407,13 @@ public class BasePage {
                 return;
             } catch (Exception e) {
                 lastError = e;
-                System.out.println(
-                        "⚠️ Intento " + attempt + " falló para " + locator + ": " + e.getClass().getSimpleName());
-
                 try {
                     WebElement element = waitForStableElement(locator, 3);
                     driver.executeScript("mobile: clickGesture", Map.of(
                             "elementId", ((org.openqa.selenium.remote.RemoteWebElement) element).getId()));
-                    System.out.println("Clic nativo ejecutado para " + locator + ".");
                     return;
                 } catch (Exception fallbackError) {
                     lastError = fallbackError;
-                    System.out.println("⚠️ También falló el clic nativo para " + locator + ": "
-                            + fallbackError.getClass().getSimpleName());
                     sleep(400);
                 }
             }
@@ -451,7 +445,6 @@ public class BasePage {
             File destFile = new File(folderPath + "/" + String.format("%02d_%s_%d.png",
                     evidenceNumber, cleanStepName, System.currentTimeMillis()));
             Files.copy(srcFile.toPath(), destFile.toPath());
-            System.out.println("Evidencia guardada: " + destFile.getAbsolutePath());
         } catch (IOException e) {
             System.err.println("Error al guardar la evidencia: " + e.getMessage());
         }
@@ -473,8 +466,6 @@ public class BasePage {
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                System.out.println("Buscando elemento " + targetLocator + " (intento " + attempt + " de "
-                        + maxAttempts + ").");
                 scrollToText(anchorText, jumpPercent);
                 WebElement target = wait.until(ExpectedConditions.visibilityOfElementLocated(targetLocator));
 
@@ -484,12 +475,9 @@ public class BasePage {
 
                 // Usa el clic normal y, si falla por Compose/layout, el fallback nativo.
                 clickSafely(targetLocator);
-                System.out.println("Clic ejecutado para " + targetLocator + ".");
                 return;
             } catch (Exception e) {
                 lastError = e;
-                System.out.println("No se pudo hacer clic en " + targetLocator + " durante el intento " + attempt
-                        + ": " + e.getClass().getSimpleName());
                 sleep(400);
             }
         }
@@ -523,7 +511,6 @@ public class BasePage {
     public void setScreenDensity(int densityDpi) {
         try {
             driver.executeScript("mobile: shell", Map.of("command", "wm density " + densityDpi));
-            System.out.println("Densidad de pantalla ajustada a: " + densityDpi);
         } catch (Exception e) {
             System.err.println("No se pudo cambiar la densidad de pantalla: " + e.getMessage());
         }
@@ -533,7 +520,6 @@ public class BasePage {
     public void resetScreenDensity() {
         try {
             driver.executeScript("mobile: shell", Map.of("command", "wm density reset"));
-            System.out.println("Densidad de pantalla restaurada a la original.");
         } catch (Exception e) {
             System.err.println("No se pudo restablecer la densidad: " + e.getMessage());
         }
@@ -548,7 +534,6 @@ public class BasePage {
         try {
             for (int attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {
-                    System.out.println("Consulta de cliente: intento " + attempt + " de " + maxAttempts);
                     clickSafely(buttonLocator);
 
                     WebDriverWait consultationWait = new WebDriverWait(driver, Duration.ofMinutes(3));
@@ -559,17 +544,12 @@ public class BasePage {
                     });
 
                     if (!driver.findElements(resultLocator).isEmpty()) {
-                        System.out.println("Consulta de cliente respondida en el intento " + attempt + ".");
                         return;
                     }
-
-                    System.out.println("La aplicación informó timeout en el intento " + attempt + ".");
                 } catch (TimeoutException e) {
                     lastError = e;
-                    System.out.println("La consulta no respondió en el intento " + attempt + ".");
                 } catch (Exception e) {
                     lastError = e;
-                    System.out.println("Falló el intento " + attempt + " de consulta: " + e.getMessage());
                 }
 
                 if (attempt < maxAttempts) {

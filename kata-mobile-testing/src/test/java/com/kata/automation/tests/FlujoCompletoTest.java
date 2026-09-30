@@ -36,7 +36,6 @@ public class FlujoCompletoTest extends BaseTest {
         analysisPage = new AnalysisPage(driver);
         analysisDecisionPage = new AnalysisDecisionPage(driver);
 
-        System.out.println("--- FASE 1: Autenticación única ---");
         //loginPage.doLogin("Banco2025*");
         ordersPage.setScreenDensity(380);
     }
@@ -44,7 +43,6 @@ public class FlujoCompletoTest extends BaseTest {
     // @Test(groups = "smoke")
     // public void wholeFlowSmoke() {
     //     try {
-    //         System.out.println("--- Ejecutando Smoke Test Rápido ---");
 
     //         loginPage.doLogin("Banco2024*");
 
@@ -53,7 +51,6 @@ public class FlujoCompletoTest extends BaseTest {
     //         // 1. Iniciar la orden con parámetros fijos
     //         ordersPage.createOrder("Originación de microcrédito", "SolicitudPersonaNatural");
 
-    //         System.out.println("Iniciando consulta preliminar");
     //         ordersPage.preliminaryConsultation(
     //                 "Cedula ciudadanía",
     //                 "38569302",
@@ -66,15 +63,10 @@ public class FlujoCompletoTest extends BaseTest {
     //                 "60",
     //                 "Gestión front o contact center");
 
-    //         System.out.println("Finalizando consulta preliminar");
-    //         System.out.println("Iniciando Radicación");
     //         radicationPage.completeRadicationExistingClient("38569302", "10",
     //                 "SISBEN", "Hogar", "ecolorado@greensqa.com", "VALLE DEL CAUCA",
     //                 "EL CERRITO", "LA ESTRELLA", "3185551311");
-    //         System.out.println("Finalizando Radicacion");
-    //         System.out.println("Cerrando Orden");
     //         ordersPage.closeOrder();
-    //         System.out.println("Flujo finalizado correctamente");
     //     } catch (Exception e) {
     //         takeScreenshot("flujo_completo_error");
     //         throw new RuntimeException("El flujo completo falló.", e);
@@ -133,8 +125,6 @@ public class FlujoCompletoTest extends BaseTest {
                 if (stopRequested || attempt == MAX_ORDER_ATTEMPTS) {
                     throw exception;
                 }
-                System.out.println("La orden falló en el intento " + attempt
-                        + ". Se reiniciará Appium antes de repetir el mismo cliente.");
                 recoverDriverForRetry();
             }
         }
@@ -168,7 +158,6 @@ public class FlujoCompletoTest extends BaseTest {
             String contractualPurpose, String extractsInfo, String analystConcept,
             String analysisDecision) {
 
-        System.out.println("--- Ejecutando flujo completo con datos del Excel ---");
 
         long stageStarted = startStage("Consulta preliminar", 1);
         try {
@@ -194,7 +183,6 @@ public class FlujoCompletoTest extends BaseTest {
                     ? "Bloqueada por listas"
                     : "Bloqueada por mora mayor a 30 días";
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.BLOCKED, detail, stageStarted);
-                System.out.println("Orden rechazada en consulta preliminar para la cédula: " + numberId);
                 return;
             }
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.PASSED,
@@ -263,7 +251,6 @@ public class FlujoCompletoTest extends BaseTest {
         // ordersPage.closeOrder();
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;
-        System.out.println(successMessage);
         Reporter.log(successMessage, true);
     }
 

@@ -18,7 +18,6 @@ public class AnalysisDecisionTest extends BaseTest {
     @Test(groups = "smoke", description = "Verifica el procesamiento de la decisión del análisis")
     public void verificarDecisionDelAnalisis() {
         try {
-            System.out.println("========== INICIANDO PRUEBA DE DECISIÓN DEL ANÁLISIS ==========");
 
             analysisDecisionPage.fillAnalysisDecision(
                     "Negocio del Cliente",
@@ -29,7 +28,6 @@ public class AnalysisDecisionTest extends BaseTest {
                     "Continuar","38569302");
 
             String successMessage = "Prueba superada: se procesó la decisión del análisis correctamente.";
-            System.out.println(successMessage);
             Reporter.log(successMessage, true);
         } catch (Exception e) {
             takeScreenshot("error_decision_analisis");
