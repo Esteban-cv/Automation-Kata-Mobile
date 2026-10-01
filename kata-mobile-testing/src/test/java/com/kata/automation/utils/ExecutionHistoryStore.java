@@ -3,14 +3,14 @@ package com.kata.automation.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Stores dashboard timing facts outside the in-memory Swing session. */
 public final class ExecutionHistoryStore {
-    private static final Path HISTORY_FILE = Paths.get("evidencias", "dashboard-history.csv");
+    private static final Path HISTORY_FILE = EvidenceStorage.evidenceDirectory()
+            .resolve("dashboard-history.csv");
 
     public record Entry(Instant timestamp, String type, String key, long durationMillis, String status) {
     }
@@ -26,7 +26,7 @@ public final class ExecutionHistoryStore {
             Files.writeString(HISTORY_FILE, row,
                     java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
         } catch (IOException exception) {
-            System.err.println("No se pudo guardar la estadística del dashboard: " + exception.getMessage());
+            ExecutionLog.error("No se pudo guardar la estadística del dashboard", exception);
         }
     }
 
@@ -45,7 +45,7 @@ public final class ExecutionHistoryStore {
                         Long.parseLong(columns[3]), columns[4]));
             }
         } catch (IOException | RuntimeException exception) {
-            System.err.println("No se pudo leer el historial del dashboard: " + exception.getMessage());
+            ExecutionLog.error("No se pudo leer el historial del dashboard", exception);
         }
         return entries;
     }

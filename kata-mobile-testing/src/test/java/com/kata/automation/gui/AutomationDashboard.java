@@ -3,102 +3,127 @@ package com.kata.automation.gui;
 import com.kata.automation.tests.FlujoCompletoTest;
 import com.kata.automation.utils.DriverManager;
 import com.kata.automation.utils.ExcelUtils;
-import com.kata.automation.utils.ExecutionTelemetry;
 import com.kata.automation.utils.ExecutionHistoryStore;
-import org.testng.TestNG;
+import com.kata.automation.utils.ExecutionLog;
+import com.kata.automation.utils.ExecutionTelemetry;
+import com.kata.automation.utils.EvidenceStorage;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
+import org.testng.TestNG;
 
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import javax.swing.table.JTableHeader;
+import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Locale;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
-/** Small operator dashboard for launching the existing TestNG flow. */
+/**
+ * Centro de control para lanzar y supervisar ejecuciones del flujo TestNG.
+ *
+ * <p>Vocabulario de la interfaz: una <b>ejecución</b> procesa el archivo Excel completo;
+ * cada fila del Excel es una <b>solicitud</b>; cada solicitud atraviesa varias <b>etapas</b>.
+ */
 public final class AutomationDashboard extends JFrame {
-    private final JTextArea logArea = new JTextArea();
-    private final JLabel selectedFileLabel = new JLabel("Ningún archivo seleccionado");
-    private final JLabel loadedRowsLabel = new JLabel("Filas cargadas: 0");
-    private final JSpinner repetitionsSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
-    private final JButton runButton = new JButton("Ejecutar solicitudes");
-    private final JButton stopButton = new JButton("Detener ejecución");
+
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final String[] STAGE_LABELS = {"Consulta", "Radicación", "Análisis", "Producto", "Decisión"};
+    private static final String EXCEL_SHEET = "Hoja1";
+    private static final int MAX_RUNS_IN_CHART = 30;
+    private static final int MAX_ACTIONS_IN_CHART = 8;
+
+    // ---------------------------------------------------------------- Configuración
+    private final JLabel fileNameLabel = new JLabel("Ningún archivo seleccionado");
+    private final JLabel fileHintLabel = new JLabel("Arrastra un .xlsx aquí o usa el botón");
+    private final JLabel loadedRowsLabel = new JLabel("Sin datos cargados");
+    private final JLabel planSummaryLabel = new JLabel(" ");
+    private final JSpinner executionsSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
+    private final ModernButton browseButton =
+            new ModernButton("Seleccionar archivo Excel…", ModernButton.Kind.SECONDARY);
+    private final ModernButton runButton = new ModernButton("Iniciar ejecución", ModernButton.Kind.PRIMARY);
+    private final ModernButton stopButton = new ModernButton("Detener ejecución", ModernButton.Kind.DANGER);
+
+    // ---------------------------------------------------------------- Estado en vivo
+    private final PillLabel statusPill = new PillLabel("LISTO");
     private final JLabel executionStatusLabel = new JLabel("Listo para ejecutar");
-    private final JLabel currentRequestLabel = new JLabel("Sin solicitud activa");
-    private final JLabel elapsedLabel = new JLabel("00:00");
-    private final JLabel liveTimerLabel = new JLabel("00:00");
+    private final JLabel currentRequestLabel = new JLabel("Selecciona un archivo Excel para comenzar");
+    private final JLabel stageStatusLabel = new JLabel("Sin etapa activa");
+    private final JLabel totalTimerLabel = new JLabel("00:00:00");
+    private final JLabel stageTimeLabel = new JLabel("00:00:00");
+    private final JLabel completedLabel = new JLabel("0 / 0");
     private final JLabel passedLabel = new JLabel("0");
     private final JLabel failedLabel = new JLabel("0");
     private final JLabel blockedLabel = new JLabel("0");
     private final JLabel skippedLabel = new JLabel("0");
-    private final JLabel completedLabel = new JLabel("0 / 0");
-    private final JLabel stageStatusLabel = new JLabel("Sin etapa activa");
     private final JProgressBar progressBar = new JProgressBar();
-    private final DefaultTableModel statisticsModel = new DefaultTableModel(
-            new Object[] {"Corrida", "Estado", "Duración", "Pasaron", "Fallaron", "Bloqueadas", "Omitidas"}, 0);
-        private final DefaultTableModel orderStatisticsModel = new DefaultTableModel(
-            new Object[] {"Cédula", "Estado", "Duración"}, 0);
+    private final JTextArea logArea = new JTextArea();
+    private final LiveStagePanel stageChart = new LiveStagePanel();
+
+    // ---------------------------------------------------------------- Historial
+    private final DefaultTableModel statisticsModel = readOnlyModel(
+            "Ejecución", "Estado", "Duración", "Exitosas", "Fallidas", "Bloqueadas", "Omitidas");
+    private final DefaultTableModel orderStatisticsModel = readOnlyModel(
+            "Ejecución", "Cédula", "Estado", "Duración");
     private final DefaultListModel<String> eventModel = new DefaultListModel<>();
     private final JTable statisticsTable = new JTable(statisticsModel);
     private final JTable orderStatisticsTable = new JTable(orderStatisticsModel);
     private final JList<String> eventList = new JList<>(eventModel);
-    private final DurationChartPanel durationChart = new DurationChartPanel();
-    private final StageAverageChartPanel stageAverageChart = new StageAverageChartPanel();
-    private final ActionAverageChartPanel actionAverageChart = new ActionAverageChartPanel();
-    private final LiveResponseChartPanel responseChart = new LiveResponseChartPanel();
+    private final BarChartPanel durationChart = new BarChartPanel(
+            "Duración por ejecución (últimas " + MAX_RUNS_IN_CHART + ")",
+            "Las duraciones aparecerán al finalizar una ejecución.");
+    private final BarChartPanel stageAverageChart = new BarChartPanel(
+            "Promedio histórico por etapa", "Aún no hay etapas registradas.");
+    private final BarChartPanel actionAverageChart = new BarChartPanel(
+            "Acciones más lentas (promedio)", "Las acciones instrumentadas aparecerán aquí.");
+
+    private final List<Long> runDurations = new ArrayList<>();
+    private final List<String> runStatuses = new ArrayList<>();
+    private final long[] stageTotals = new long[ExecutionTelemetry.TOTAL_STAGES];
+    private final int[] stageCounts = new int[ExecutionTelemetry.TOTAL_STAGES];
+    private final Map<String, Long> actionTotals = new LinkedHashMap<>();
+    private final Map<String, Integer> actionCounts = new LinkedHashMap<>();
+
+    // ---------------------------------------------------------------- Control de ejecución
     private File selectedFile;
+    private int loadedRows;
     private volatile boolean stopRequested;
     private volatile Thread executionThread;
     private volatile Instant currentRequestStarted;
-    private int totalPlannedRequests;
-    private int completedRequests;
-    private int livePassed;
-    private int liveFailed;
-    private int liveSkipped;
     private int totalPlannedStages;
     private int completedStages;
     private int livePassedStages;
     private int liveFailedStages;
     private int liveBlockedStages;
     private int liveSkippedStages;
-    private int currentStageNumber;
     private Instant runStarted;
     private Instant currentStageStarted;
-    private final javax.swing.Timer elapsedTimer = new javax.swing.Timer(250, event -> refreshElapsedTime());
+    private final Timer elapsedTimer = new Timer(250, event -> refreshElapsedTime());
 
     private AutomationDashboard() {
-        super("Kata Mobile | Centro de ejecuciones");
+        super("Kata Mobile | Centro de control de ejecuciones");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
@@ -106,9 +131,626 @@ public final class AutomationDashboard extends JFrame {
                 shutdownApplication();
             }
         });
-        setMinimumSize(new Dimension(900, 620));
-        setLocationByPlatform(true);
-        add(buildContent());
+        setIconImage(createAppIcon(64));
+        setMinimumSize(new Dimension(1100, 720));
+        setSize(1280, 820);
+        setLocationRelativeTo(null);
+        setContentPane(buildContent());
+        executionsSpinner.addChangeListener(event -> updatePlanSummary());
+        loadHistory();
+        applyIdleState();
+    }
+
+    public static void main(String[] args) {
+        EvidenceStorage.ensureEvidenceDirectory();
+        installLookAndFeel();
+        SwingUtilities.invokeLater(() -> new AutomationDashboard().setVisible(true));
+    }
+
+    /**
+     * Usa FlatLaf si está en el classpath (recomendado, ver README del cambio);
+     * de lo contrario recurre a Nimbus, que ya viene con el JDK.
+     */
+    private static void installLookAndFeel() {
+        UIManager.put("Component.arc", 10);
+        UIManager.put("TextComponent.arc", 10);
+        UIManager.put("ProgressBar.arc", 999);
+        UIManager.put("ScrollBar.thumbArc", 999);
+        UIManager.put("ScrollBar.width", 12);
+        try {
+            UIManager.setLookAndFeel("com.formdev.flatlaf.FlatLightLaf");
+            return;
+        } catch (Exception ignored) {
+            // FlatLaf no disponible: se intenta Nimbus.
+        }
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    return;
+                }
+            }
+        } catch (Exception ignored) {
+            // Se mantiene el aspecto por defecto.
+        }
+    }
+
+    // ================================================================ Tema visual
+
+    private static final class Theme {
+        static final Color BACKGROUND = new Color(0xF2F4F8);
+        static final Color SURFACE = Color.WHITE;
+        static final Color BORDER = new Color(0xDCE2E9);
+        static final Color GRID = new Color(0xE6EBF0);
+        static final Color TEXT = new Color(0x1B2733);
+        static final Color MUTED = new Color(0x667380);
+        static final Color NAVY = new Color(0x0D2B4E);
+        static final Color PRIMARY = new Color(0x1565C0);
+        static final Color RUNNING = new Color(0x2F8CFF);
+        static final Color SUCCESS = new Color(0x1E9E6A);
+        static final Color WARNING = new Color(0xD98E04);
+        static final Color DANGER = new Color(0xD64545);
+        static final Color NEUTRAL = new Color(0x7B8794);
+        static final Color PENDING = new Color(0xC9D2DC);
+        static final Color VIOLET = new Color(0x6D4AC4);
+        static final String FONT_FAMILY = resolveFontFamily();
+
+        private Theme() { }
+
+        static Font font(int style, int size) {
+            return new Font(FONT_FAMILY, style, size);
+        }
+
+        private static String resolveFontFamily() {
+            Set<String> available = new HashSet<>(Arrays.asList(
+                    GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
+            for (String candidate : new String[] {"Segoe UI", "Inter", "Helvetica Neue", "Ubuntu", "Roboto"}) {
+                if (available.contains(candidate)) {
+                    return candidate;
+                }
+            }
+            return Font.SANS_SERIF;
+        }
+    }
+
+    private static Graphics2D quality(Graphics graphics) {
+        Graphics2D g2 = (Graphics2D) graphics.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        return g2;
+    }
+
+    private static Color withAlpha(Color color, int alpha) {
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+    }
+
+    private static JLabel caption(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.font(Font.BOLD, 12));
+        label.setForeground(Theme.MUTED);
+        return label;
+    }
+
+    private static JLabel sectionTitle(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.font(Font.BOLD, 15));
+        label.setForeground(Theme.TEXT);
+        return label;
+    }
+
+    private static DefaultTableModel readOnlyModel(String... columns) {
+        return new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+    }
+
+    // ================================================================ Construcción de la interfaz
+
+    private JPanel buildContent() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Theme.BACKGROUND);
+        root.add(buildHeader(), BorderLayout.NORTH);
+
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(Theme.font(Font.BOLD, 13));
+        tabs.addTab("Ejecución en vivo", buildExecutionPanel());
+        tabs.addTab("Historial y estadísticas", buildStatisticsPanel());
+
+        JPanel body = new JPanel(new BorderLayout());
+        body.setOpaque(false);
+        body.setBorder(BorderFactory.createEmptyBorder(14, 18, 18, 18));
+        body.add(tabs, BorderLayout.CENTER);
+        root.add(body, BorderLayout.CENTER);
+        return root;
+    }
+
+    private JPanel buildHeader() {
+        JPanel header = new JPanel(new BorderLayout(14, 0));
+        header.setBackground(Theme.NAVY);
+        header.setBorder(BorderFactory.createEmptyBorder(14, 22, 14, 22));
+
+        JLabel title = new JLabel("Kata Mobile");
+        title.setFont(Theme.font(Font.BOLD, 20));
+        title.setForeground(Color.WHITE);
+        JLabel subtitle = new JLabel("Centro de control de ejecuciones");
+        subtitle.setFont(Theme.font(Font.PLAIN, 13));
+        subtitle.setForeground(new Color(0xB9C7DA));
+
+        JPanel texts = new JPanel(new GridLayout(2, 1, 0, 2));
+        texts.setOpaque(false);
+        texts.add(title);
+        texts.add(subtitle);
+
+        JPanel brand = new JPanel(new BorderLayout(12, 0));
+        brand.setOpaque(false);
+        brand.add(new JLabel(new ImageIcon(createAppIcon(44))), BorderLayout.WEST);
+        brand.add(texts, BorderLayout.CENTER);
+
+        JPanel pillHolder = new JPanel(new GridBagLayout());
+        pillHolder.setOpaque(false);
+        pillHolder.add(statusPill);
+
+        header.add(brand, BorderLayout.WEST);
+        header.add(pillHolder, BorderLayout.EAST);
+        return header;
+    }
+
+    private static Image createAppIcon(int size) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = quality(image.getGraphics());
+        g2.setPaint(new GradientPaint(0, 0, Theme.RUNNING, size, size, Theme.PRIMARY));
+        g2.fillRoundRect(0, 0, size, size, size / 3, size / 3);
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font(Theme.FONT_FAMILY, Font.BOLD, (int) (size * 0.58)));
+        FontMetrics metrics = g2.getFontMetrics();
+        g2.drawString("K", (size - metrics.stringWidth("K")) / 2,
+                (size - metrics.getHeight()) / 2 + metrics.getAscent());
+        g2.dispose();
+        return image;
+    }
+
+    // ---------------------------------------------------------------- Pestaña: ejecución en vivo
+
+    private JPanel buildExecutionPanel() {
+        JPanel panel = new JPanel(new BorderLayout(16, 0));
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
+        panel.add(buildSidebar(), BorderLayout.WEST);
+
+        JPanel main = new JPanel(new BorderLayout(0, 12));
+        main.setOpaque(false);
+        main.add(buildLiveMetricsPanel(), BorderLayout.NORTH);
+        main.add(stageChart, BorderLayout.CENTER);
+        main.add(buildLogCard(), BorderLayout.SOUTH);
+        panel.add(main, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel buildSidebar() {
+        RoundedPanel card = new RoundedPanel(new GridBagLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        card.setPreferredSize(new Dimension(330, 0));
+        card.setTransferHandler(new ExcelDropHandler());
+
+        fileNameLabel.setFont(Theme.font(Font.BOLD, 13));
+        fileNameLabel.setForeground(Theme.TEXT);
+        fileHintLabel.setFont(Theme.font(Font.PLAIN, 12));
+        fileHintLabel.setForeground(Theme.MUTED);
+        JPanel fileBox = new JPanel(new GridLayout(2, 1, 0, 2));
+        fileBox.setBackground(new Color(0xF8FAFC));
+        fileBox.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+        fileBox.add(fileNameLabel);
+        fileBox.add(fileHintLabel);
+
+        browseButton.addActionListener(event -> chooseExcelFile());
+        runButton.addActionListener(event -> startExecution());
+        stopButton.addActionListener(event -> requestStop());
+        stopButton.setEnabled(false);
+
+        executionsSpinner.setFont(Theme.font(Font.PLAIN, 14));
+        executionsSpinner.setPreferredSize(new Dimension(100, 34));
+        executionsSpinner.setToolTipText("Cuántas veces se procesará el archivo completo");
+
+        loadedRowsLabel.setFont(Theme.font(Font.BOLD, 13));
+        loadedRowsLabel.setForeground(Theme.MUTED);
+        planSummaryLabel.setFont(Theme.font(Font.PLAIN, 12));
+        planSummaryLabel.setForeground(Theme.MUTED);
+        JLabel spinnerHint = new JLabel("Veces que se procesará el archivo completo");
+        spinnerHint.setFont(Theme.font(Font.PLAIN, 12));
+        spinnerHint.setForeground(Theme.MUTED);
+
+        int row = 0;
+        addRow(card, sectionTitle("Configuración"), row++, 0);
+        addRow(card, caption("Archivo de solicitudes"), row++, 18);
+        addRow(card, fileBox, row++, 6);
+        addRow(card, browseButton, row++, 8);
+        addRow(card, caption("Número de ejecuciones"), row++, 18);
+        addRow(card, executionsSpinner, row++, 6);
+        addRow(card, spinnerHint, row++, 4);
+        addRow(card, caption("Datos disponibles"), row++, 18);
+        addRow(card, loadedRowsLabel, row++, 6);
+        addRow(card, planSummaryLabel, row++, 2);
+        addRow(card, runButton, row++, 24);
+        addRow(card, stopButton, row++, 8);
+
+        GridBagConstraints filler = new GridBagConstraints();
+        filler.gridx = 0;
+        filler.gridy = row;
+        filler.weighty = 1;
+        JPanel spacer = new JPanel();
+        spacer.setOpaque(false);
+        card.add(spacer, filler);
+        return card;
+    }
+
+    private static void addRow(JPanel panel, Component component, int row, int topGap) {
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = row;
+        constraints.weightx = 1;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+        constraints.insets = new Insets(topGap, 0, 0, 0);
+        panel.add(component, constraints);
+    }
+
+    private JPanel buildLiveMetricsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setOpaque(false);
+
+        executionStatusLabel.setFont(Theme.font(Font.BOLD, 17));
+        executionStatusLabel.setForeground(Theme.TEXT);
+        currentRequestLabel.setFont(Theme.font(Font.PLAIN, 13));
+        currentRequestLabel.setForeground(Theme.MUTED);
+        stageStatusLabel.setFont(Theme.font(Font.PLAIN, 12));
+        stageStatusLabel.setForeground(Theme.MUTED);
+        JPanel texts = new JPanel(new GridLayout(3, 1, 0, 3));
+        texts.setOpaque(false);
+        texts.add(executionStatusLabel);
+        texts.add(currentRequestLabel);
+        texts.add(stageStatusLabel);
+
+        JLabel timerCaption = caption("Tiempo total");
+        timerCaption.setHorizontalAlignment(SwingConstants.RIGHT);
+        totalTimerLabel.setFont(Theme.font(Font.BOLD, 26));
+        totalTimerLabel.setForeground(Theme.PRIMARY);
+        totalTimerLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        JPanel timerBox = new JPanel(new GridLayout(2, 1));
+        timerBox.setOpaque(false);
+        timerBox.add(timerCaption);
+        timerBox.add(totalTimerLabel);
+
+        RoundedPanel activity = new RoundedPanel(new BorderLayout(16, 0));
+        activity.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
+        activity.add(texts, BorderLayout.CENTER);
+        activity.add(timerBox, BorderLayout.EAST);
+        panel.add(activity, BorderLayout.NORTH);
+
+        JPanel cards = new JPanel(new GridLayout(1, 6, 10, 0));
+        cards.setOpaque(false);
+        cards.add(createMetricCard("Etapas completadas", completedLabel, Theme.PRIMARY));
+        cards.add(createMetricCard("Etapas superadas", passedLabel, Theme.SUCCESS));
+        cards.add(createMetricCard("Fallos técnicos", failedLabel, Theme.DANGER));
+        cards.add(createMetricCard("Órdenes bloqueadas", blockedLabel, Theme.WARNING));
+        cards.add(createMetricCard("Etapas omitidas", skippedLabel, Theme.NEUTRAL));
+        cards.add(createMetricCard("Duración de etapa", stageTimeLabel, Theme.VIOLET));
+        panel.add(cards, BorderLayout.CENTER);
+
+        progressBar.setStringPainted(true);
+        progressBar.setString("Esperando ejecución");
+        progressBar.setForeground(Theme.PRIMARY);
+        progressBar.setFont(Theme.font(Font.BOLD, 11));
+        progressBar.setPreferredSize(new Dimension(0, 20));
+        panel.add(progressBar, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel createMetricCard(String title, JLabel valueLabel, Color accent) {
+        RoundedPanel card = new RoundedPanel(new BorderLayout(0, 4));
+        card.setAccent(accent);
+        card.setBorder(BorderFactory.createEmptyBorder(12, 18, 12, 10));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(Theme.font(Font.PLAIN, 12));
+        titleLabel.setForeground(Theme.MUTED);
+        valueLabel.setFont(Theme.font(Font.BOLD, 20));
+        valueLabel.setForeground(Theme.TEXT);
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel buildLogCard() {
+        RoundedPanel card = new RoundedPanel(new BorderLayout(0, 8));
+        card.setBorder(BorderFactory.createEmptyBorder(12, 16, 14, 16));
+        card.setPreferredSize(new Dimension(0, 190));
+
+        logArea.setEditable(false);
+        logArea.setLineWrap(true);
+        logArea.setWrapStyleWord(true);
+        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        logArea.setBackground(new Color(0x101B29));
+        logArea.setForeground(new Color(0xD2DCE6));
+        logArea.setCaretColor(new Color(0xD2DCE6));
+        logArea.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+
+        JScrollPane scroll = new JScrollPane(logArea);
+        scroll.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+        card.add(sectionTitle("Actividad reciente"), BorderLayout.NORTH);
+        card.add(scroll, BorderLayout.CENTER);
+        return card;
+    }
+
+    // ---------------------------------------------------------------- Pestaña: historial
+
+    private JPanel buildStatisticsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(14, 14));
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
+
+        styleTable(statisticsTable);
+        styleTable(orderStatisticsTable);
+        JTabbedPane summaryTabs = new JTabbedPane();
+        summaryTabs.setFont(Theme.font(Font.BOLD, 12));
+        summaryTabs.addTab("Resumen por ejecución", tableScroll(statisticsTable));
+        summaryTabs.addTab("Detalle por solicitud", tableScroll(orderStatisticsTable));
+        RoundedPanel tables = new RoundedPanel(new BorderLayout());
+        tables.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        tables.add(summaryTabs, BorderLayout.CENTER);
+        panel.add(tables, BorderLayout.CENTER);
+
+        JPanel charts = new JPanel(new GridLayout(1, 3, 12, 0));
+        charts.setOpaque(false);
+        charts.setPreferredSize(new Dimension(0, 270));
+        charts.add(durationChart);
+        charts.add(stageAverageChart);
+        charts.add(actionAverageChart);
+        panel.add(charts, BorderLayout.SOUTH);
+
+        eventList.setFont(Theme.font(Font.PLAIN, 12));
+        eventList.setForeground(Theme.TEXT);
+        eventList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, isSelected, false);
+                label.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+                return label;
+            }
+        });
+        JScrollPane eventScroll = new JScrollPane(eventList);
+        eventScroll.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+        RoundedPanel events = new RoundedPanel(new BorderLayout(0, 8));
+        events.setBorder(BorderFactory.createEmptyBorder(12, 14, 14, 14));
+        events.setPreferredSize(new Dimension(300, 0));
+        events.add(sectionTitle("Eventos de la sesión"), BorderLayout.NORTH);
+        events.add(eventScroll, BorderLayout.CENTER);
+        panel.add(events, BorderLayout.EAST);
+        return panel;
+    }
+
+    private static JScrollPane tableScroll(JTable table) {
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setBackground(Color.WHITE);
+        return scroll;
+    }
+
+    private static void styleTable(JTable table) {
+        table.setRowHeight(32);
+        table.setShowVerticalLines(false);
+        table.setShowHorizontalLines(true);
+        table.setGridColor(new Color(0xEBEFF3));
+        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setFont(Theme.font(Font.PLAIN, 13));
+        table.setSelectionBackground(new Color(0xDCEBFA));
+        table.setSelectionForeground(Theme.TEXT);
+        table.setFillsViewportHeight(true);
+        table.setDefaultRenderer(Object.class, new CellRenderer());
+        JTableHeader header = table.getTableHeader();
+        header.setReorderingAllowed(false);
+        header.setPreferredSize(new Dimension(0, 36));
+        header.setDefaultRenderer(new HeaderRenderer());
+    }
+
+    // ================================================================ Selección de archivo
+
+    private void chooseExcelFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Seleccionar archivo de solicitudes");
+        chooser.setFileFilter(new FileNameExtensionFilter("Libro de Excel (*.xlsx)", "xlsx"));
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            loadExcel(chooser.getSelectedFile());
+        }
+    }
+
+    private void loadExcel(File file) {
+        selectedFile = file;
+        fileNameLabel.setText(file.getName());
+        File parent = file.getParentFile();
+        fileHintLabel.setText(parent == null ? file.getAbsolutePath() : parent.getAbsolutePath());
+        fileHintLabel.setToolTipText(file.getAbsolutePath());
+        fileNameLabel.setToolTipText(file.getAbsolutePath());
+        updateLoadedRowCount();
+        appendLog("Archivo seleccionado: " + file.getName());
+        if (loadedRows > 0) {
+            currentRequestLabel.setText("Archivo listo. Pulsa «Iniciar ejecución» para comenzar.");
+        }
+    }
+
+    private void updateLoadedRowCount() {
+        try {
+            Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), EXCEL_SHEET);
+            loadedRows = data == null ? 0 : data.length;
+            if (loadedRows > 0) {
+                loadedRowsLabel.setText(loadedRows + (loadedRows == 1 ? " solicitud" : " solicitudes")
+                        + " en la hoja «" + EXCEL_SHEET + "»");
+                loadedRowsLabel.setForeground(Theme.SUCCESS);
+            } else {
+                loadedRowsLabel.setText("La hoja «" + EXCEL_SHEET + "» no tiene solicitudes");
+                loadedRowsLabel.setForeground(Theme.DANGER);
+            }
+            loadedRowsLabel.setToolTipText(null);
+        } catch (RuntimeException exception) {
+            loadedRows = 0;
+            loadedRowsLabel.setText("No se pudo leer el archivo");
+            loadedRowsLabel.setForeground(Theme.DANGER);
+            loadedRowsLabel.setToolTipText(exception.getMessage());
+            appendLog("No se pudo leer el archivo: " + exception.getMessage());
+        }
+        updatePlanSummary();
+    }
+
+    private void updatePlanSummary() {
+        if (loadedRows <= 0) {
+            planSummaryLabel.setText(" ");
+            return;
+        }
+        int executions = (Integer) executionsSpinner.getValue();
+        planSummaryLabel.setText(loadedRows + (loadedRows == 1 ? " solicitud" : " solicitudes") + " × "
+                + executions + (executions == 1 ? " ejecución" : " ejecuciones")
+                + " = " + (loadedRows * executions) + " en total");
+    }
+
+    private final class ExcelDropHandler extends TransferHandler {
+        @Override
+        public boolean canImport(TransferSupport support) {
+            return runButton.isEnabled() && support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
+            try {
+                List<?> files = (List<?>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                if (files.isEmpty()) {
+                    return false;
+                }
+                File file = (File) files.get(0);
+                if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".xlsx")) {
+                    showWarning("Formato no compatible", "Solo se admiten libros de Excel (.xlsx).");
+                    return false;
+                }
+                loadExcel(file);
+                return true;
+            } catch (UnsupportedFlavorException | IOException exception) {
+                return false;
+            }
+        }
+    }
+
+    private void showWarning(String title, String message) {
+        JOptionPane.showMessageDialog(this, message, title, JOptionPane.WARNING_MESSAGE);
+    }
+
+    // ================================================================ Ciclo de vida de la ejecución
+
+    private void startExecution() {
+        if (selectedFile == null) {
+            showWarning("Archivo requerido", "Selecciona un archivo Excel antes de iniciar la ejecución.");
+            return;
+        }
+        if (loadedRows <= 0) {
+            showWarning("Sin solicitudes",
+                    "El archivo seleccionado no tiene solicitudes en la hoja «" + EXCEL_SHEET + "».");
+            return;
+        }
+
+        int executions = (Integer) executionsSpinner.getValue();
+        try {
+            resetLiveMetrics(executions);
+        } catch (RuntimeException exception) {
+            showWarning("No se pudo leer el archivo", String.valueOf(exception.getMessage()));
+            return;
+        }
+        stopRequested = false;
+        System.setProperty("kata.stop.requested", "false");
+        runStarted = Instant.now();
+        elapsedTimer.start();
+        setControlsEnabled(false);
+        statusPill.setState("EN EJECUCIÓN", Theme.RUNNING);
+        appendLog("Iniciando " + executions + (executions == 1 ? " ejecución…" : " ejecuciones…"));
+
+        executionThread = new Thread(() -> executeRuns(executions), "kata-mobile-executor");
+        executionThread.start();
+    }
+
+    private void setControlsEnabled(boolean idle) {
+        browseButton.setEnabled(idle);
+        executionsSpinner.setEnabled(idle);
+        runButton.setEnabled(idle);
+        stopButton.setEnabled(!idle);
+    }
+
+    private void applyIdleState() {
+        statusPill.setState("LISTO", new Color(0x5B6B7D));
+        executionStatusLabel.setText("Listo para ejecutar");
+        currentRequestLabel.setText("Selecciona un archivo Excel para comenzar");
+        stageStatusLabel.setText("Sin etapa activa");
+        totalTimerLabel.setText("00:00:00");
+        stageTimeLabel.setText("00:00:00");
+        progressBar.setValue(0);
+        progressBar.setString("Esperando ejecución");
+    }
+
+    private void resetLiveMetrics(int executions) {
+        Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), EXCEL_SHEET);
+        int requestsPerRun = data == null ? 0 : data.length;
+        totalPlannedStages = requestsPerRun * executions * ExecutionTelemetry.TOTAL_STAGES;
+        completedStages = 0;
+        livePassedStages = 0;
+        liveFailedStages = 0;
+        liveBlockedStages = 0;
+        liveSkippedStages = 0;
+        currentRequestStarted = null;
+        currentStageStarted = null;
+        elapsedTimer.stop();
+        progressBar.setMaximum(Math.max(1, totalPlannedStages));
+        progressBar.setValue(0);
+        progressBar.setString(totalPlannedStages == 0 ? "Sin etapas" : "0 / " + totalPlannedStages + " etapas");
+        executionStatusLabel.setText("Preparando ejecución");
+        currentRequestLabel.setText("Leyendo solicitudes del Excel");
+        stageStatusLabel.setText("Etapa 0/" + ExecutionTelemetry.TOTAL_STAGES);
+        totalTimerLabel.setText("00:00:00");
+        stageTimeLabel.setText("00:00:00");
+        completedLabel.setText("0 / " + totalPlannedStages);
+        passedLabel.setText("0");
+        failedLabel.setText("0");
+        blockedLabel.setText("0");
+        skippedLabel.setText("0");
+        stageChart.clear();
+    }
+
+    private void requestStop() {
+        int confirmation = JOptionPane.showConfirmDialog(
+                this,
+                "¿Confirmas que deseas detener la ejecución?\nLa operación Appium en curso terminará de forma segura.",
+                "Confirmar detención",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (confirmation != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        stopRequested = true;
+        System.setProperty("kata.stop.requested", "true");
+        Thread worker = executionThread;
+        if (worker != null) {
+            worker.interrupt();
+        }
+        Thread driverCloser = new Thread(DriverManager::quitDriver, "kata-mobile-stop-driver");
+        driverCloser.setDaemon(true);
+        driverCloser.start();
+        stopButton.setEnabled(false);
+        statusPill.setState("DETENIENDO", Theme.WARNING);
+        appendLog("Detención solicitada. Cerrando la sesión Appium para permitir una nueva ejecución.");
     }
 
     private void shutdownApplication() {
@@ -132,294 +774,19 @@ public final class AutomationDashboard extends JFrame {
         try {
             DriverManager.quitDriver();
         } catch (RuntimeException exception) {
-            System.err.println("No se pudo cerrar Appium limpiamente: " + exception.getMessage());
+            ExecutionLog.error("No se pudo cerrar Appium limpiamente", exception);
         } finally {
             dispose();
             System.exit(0);
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new AutomationDashboard().setVisible(true));
-    }
-
-    private JPanel buildContent() {
-        JPanel root = new JPanel(new BorderLayout(16, 16));
-        root.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
-        root.setBackground(new Color(238, 242, 247));
-
-        JLabel title = new JLabel("Centro de ejecuciones");
-        title.setFont(new Font("SansSerif", Font.BOLD, 26));
-        title.setForeground(new Color(25, 39, 52));
-        JLabel subtitle = new JLabel("Supervisa el dispositivo y entiende el comportamiento de cada solicitud en tiempo real.");
-        subtitle.setForeground(new Color(85, 95, 105));
-
-        JPanel heading = new JPanel(new BorderLayout(0, 4));
-        heading.setOpaque(false);
-        heading.add(title, BorderLayout.NORTH);
-        heading.add(subtitle, BorderLayout.CENTER);
-        root.add(heading, BorderLayout.NORTH);
-
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Ejecutar", buildExecutionPanel());
-        tabs.addTab("Estadísticas", buildStatisticsPanel());
-        JScrollPane tabsScroll = new JScrollPane(tabs,
-            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        tabsScroll.setBorder(BorderFactory.createEmptyBorder());
-        tabsScroll.getVerticalScrollBar().setUnitIncrement(16);
-        root.add(tabsScroll, BorderLayout.CENTER);
-        return root;
-    }
-
-    private JPanel buildExecutionPanel() {
-        JPanel panel = new JPanel(new BorderLayout(12, 12));
-        panel.setBorder(BorderFactory.createEmptyBorder(14, 4, 4, 4));
-
-        JPanel configuration = new JPanel(new GridBagLayout());
-        configuration.setBorder(BorderFactory.createTitledBorder("Configuración"));
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(8, 8, 8, 8);
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-
-        JButton browseButton = new JButton("Seleccionar Excel");
-        browseButton.addActionListener(event -> chooseExcelFile());
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        configuration.add(browseButton, constraints);
-        constraints.gridx = 1;
-        constraints.weightx = 1;
-        configuration.add(selectedFileLabel, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.weightx = 0;
-        configuration.add(new JLabel("Cantidad de corridas:"), constraints);
-        constraints.gridx = 1;
-        constraints.weightx = 1;
-        configuration.add(repetitionsSpinner, constraints);
-
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.weightx = 0;
-        configuration.add(new JLabel("Datos disponibles:"), constraints);
-        constraints.gridx = 1;
-        constraints.weightx = 1;
-        loadedRowsLabel.setForeground(new Color(24, 105, 145));
-        configuration.add(loadedRowsLabel, constraints);
-
-        runButton.setBackground(new Color(24, 105, 145));
-        runButton.setForeground(Color.WHITE);
-        runButton.addActionListener(event -> startExecution());
-        stopButton.setBackground(new Color(180, 65, 58));
-        stopButton.setForeground(Color.WHITE);
-        stopButton.setEnabled(false);
-        stopButton.addActionListener(event -> requestStop());
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        configuration.add(runButton, constraints);
-        constraints.gridx = 1;
-        configuration.add(stopButton, constraints);
-        JPanel liveHeader = new JPanel(new BorderLayout(0, 10));
-        liveHeader.setOpaque(false);
-        liveHeader.add(configuration, BorderLayout.NORTH);
-        liveHeader.add(buildLiveMetricsPanel(), BorderLayout.CENTER);
-        panel.add(liveHeader, BorderLayout.NORTH);
-
-        logArea.setEditable(false);
-        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        logArea.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        JScrollPane logScroll = new JScrollPane(logArea);
-        logScroll.setBorder(BorderFactory.createTitledBorder("Actividad reciente"));
-        logScroll.setPreferredSize(new Dimension(0, 145));
-        panel.add(responseChart, BorderLayout.CENTER);
-        panel.add(logScroll, BorderLayout.SOUTH);
-        return panel;
-    }
-
-    private JPanel buildLiveMetricsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 8));
-        panel.setOpaque(false);
-
-        JPanel statusLine = new JPanel(new BorderLayout(8, 0));
-        statusLine.setOpaque(false);
-        executionStatusLabel.setFont(new Font("SansSerif", Font.BOLD, 15));
-        executionStatusLabel.setForeground(new Color(24, 105, 145));
-        currentRequestLabel.setForeground(new Color(85, 95, 105));
-        stageStatusLabel.setForeground(new Color(85, 95, 105));
-        statusLine.add(executionStatusLabel, BorderLayout.WEST);
-        statusLine.add(currentRequestLabel, BorderLayout.CENTER);
-        JPanel statusDetails = new JPanel(new java.awt.GridLayout(2, 1));
-        statusDetails.setOpaque(false);
-        statusDetails.add(stageStatusLabel);
-        statusDetails.add(liveTimerLabel);
-        statusLine.add(statusDetails, BorderLayout.EAST);
-        panel.add(statusLine, BorderLayout.NORTH);
-
-        JPanel cards = new JPanel(new java.awt.GridLayout(1, 6, 8, 0));
-        cards.setOpaque(false);
-        cards.add(createMetricCard("Etapas completadas", completedLabel, new Color(24, 105, 145)));
-        cards.add(createMetricCard("Etapas superadas", passedLabel, new Color(36, 145, 106)));
-        cards.add(createMetricCard("Fallos técnicos", failedLabel, new Color(212, 91, 72)));
-        cards.add(createMetricCard("Órdenes bloqueadas", blockedLabel, new Color(190, 125, 35)));
-        cards.add(createMetricCard("Etapas omitidas", skippedLabel, new Color(125, 135, 145)));
-        cards.add(createMetricCard("Tiempo etapa", elapsedLabel, new Color(104, 77, 160)));
-        panel.add(cards, BorderLayout.CENTER);
-
-        progressBar.setStringPainted(true);
-        progressBar.setString("Esperando ejecución");
-        progressBar.setForeground(new Color(24, 105, 145));
-        panel.add(progressBar, BorderLayout.SOUTH);
-        return panel;
-    }
-
-    private JPanel createMetricCard(String title, JLabel valueLabel, Color accent) {
-        JPanel card = new JPanel(new BorderLayout(4, 3));
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(218, 225, 232)),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
-        card.setBackground(Color.WHITE);
-        JLabel titleLabel = new JLabel(title.toUpperCase(Locale.ROOT));
-        titleLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
-        titleLabel.setForeground(new Color(100, 110, 120));
-        valueLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
-        valueLabel.setForeground(accent);
-        card.add(titleLabel, BorderLayout.NORTH);
-        card.add(valueLabel, BorderLayout.CENTER);
-        return card;
-    }
-
-    private JPanel buildStatisticsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(14, 4, 4, 4));
-        statisticsTable.setFillsViewportHeight(true);
-        orderStatisticsTable.setFillsViewportHeight(true);
-        JTabbedPane summaryTabs = new JTabbedPane();
-        summaryTabs.addTab("Resumen por corrida", new JScrollPane(statisticsTable));
-        summaryTabs.addTab("Duración por orden", new JScrollPane(orderStatisticsTable));
-        panel.add(summaryTabs, BorderLayout.CENTER);
-        JPanel historicalCharts = new JPanel(new java.awt.GridLayout(3, 1, 0, 8));
-        historicalCharts.add(durationChart);
-        historicalCharts.add(stageAverageChart);
-        historicalCharts.add(actionAverageChart);
-        panel.add(historicalCharts, BorderLayout.SOUTH);
-
-        eventList.setBorder(BorderFactory.createTitledBorder("Eventos de la ejecución"));
-        eventList.setPreferredSize(new Dimension(300, 0));
-        panel.add(eventList, BorderLayout.EAST);
-        return panel;
-    }
-
-    private void chooseExcelFile() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Seleccionar archivo de solicitudes");
-        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel (*.xlsx)", "xlsx"));
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            selectedFile = chooser.getSelectedFile();
-            selectedFileLabel.setText(selectedFile.getAbsolutePath());
-            updateLoadedRowCount();
-            appendLog("Archivo seleccionado: " + selectedFile.getName());
-        }
-    }
-
-    private void updateLoadedRowCount() {
-        try {
-            Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), "Hoja1");
-            int rowCount = data == null ? 0 : data.length;
-            loadedRowsLabel.setText("Filas cargadas: " + rowCount);
-            loadedRowsLabel.setForeground(rowCount > 0 ? new Color(36, 145, 106) : new Color(212, 91, 72));
-            loadedRowsLabel.setToolTipText(rowCount + " solicitud(es) disponibles en la hoja Hoja1");
-        } catch (RuntimeException exception) {
-            loadedRowsLabel.setText("No se pudo leer el Excel");
-            loadedRowsLabel.setForeground(new Color(212, 91, 72));
-            loadedRowsLabel.setToolTipText(exception.getMessage());
-            appendLog("No se pudo leer el archivo: " + exception.getMessage());
-        }
-    }
-
-    private void startExecution() {
-        if (selectedFile == null) {
-            appendLog("Selecciona un archivo Excel antes de ejecutar.");
-            return;
-        }
-
-        int repetitions = (Integer) repetitionsSpinner.getValue();
-        resetLiveMetrics(repetitions);
-        stopRequested = false;
-        System.setProperty("kata.stop.requested", "false");
-        runStarted = Instant.now();
-        elapsedTimer.start();
-        runButton.setEnabled(false);
-        stopButton.setEnabled(true);
-        appendLog("Iniciando " + repetitions + " corrida(s)...");
-
-        executionThread = new Thread(() -> executeRuns(repetitions), "kata-mobile-executor");
-        executionThread.start();
-    }
-
-    private void resetLiveMetrics(int repetitions) {
-        Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), "Hoja1");
-        int requestsPerRun = data == null ? 0 : data.length;
-        totalPlannedRequests = requestsPerRun * repetitions;
-        totalPlannedStages = totalPlannedRequests * ExecutionTelemetry.TOTAL_STAGES;
-        completedRequests = 0;
-        livePassed = 0;
-        liveFailed = 0;
-        liveSkipped = 0;
-        completedStages = 0;
-        livePassedStages = 0;
-        liveFailedStages = 0;
-        liveBlockedStages = 0;
-        liveSkippedStages = 0;
-        currentStageNumber = 0;
-        currentRequestStarted = null;
-        currentStageStarted = null;
-        elapsedTimer.stop();
-        progressBar.setMaximum(Math.max(1, totalPlannedStages));
-        progressBar.setValue(0);
-        progressBar.setString(totalPlannedStages == 0 ? "Sin etapas" : "0 / " + totalPlannedStages + " etapas");
-        executionStatusLabel.setText("Preparando ejecución");
-        currentRequestLabel.setText("Leyendo solicitudes del Excel");
-        stageStatusLabel.setText("Etapa 0/5");
-        liveTimerLabel.setText("00:00");
-        elapsedLabel.setText("00:00");
-        completedLabel.setText("0 / " + totalPlannedStages);
-        passedLabel.setText("0");
-        failedLabel.setText("0");
-        blockedLabel.setText("0");
-        skippedLabel.setText("0");
-        responseChart.clear();
-    }
-
-    private void requestStop() {
-        int confirmation = JOptionPane.showConfirmDialog(
-                this,
-                "¿Confirmas que deseas detener la ejecución?\nLa operación Appium actual terminará de forma segura.",
-                "Confirmar detención",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-
-        if (confirmation != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        stopRequested = true;
-        System.setProperty("kata.stop.requested", "true");
-        Thread worker = executionThread;
-        if (worker != null) {
-            worker.interrupt();
-        }
-        Thread driverCloser = new Thread(DriverManager::quitDriver, "kata-mobile-stop-driver");
-        driverCloser.setDaemon(true);
-        driverCloser.start();
-        stopButton.setEnabled(false);
-        appendLog("Detención solicitada. Cerrando la sesión Appium para permitir una nueva ejecución.");
-    }
-
-    private void executeRuns(int repetitions) {
-        for (int runNumber = 1; runNumber <= repetitions && !stopRequested; runNumber++) {
+    private void executeRuns(int executions) {
+        for (int runNumber = 1; runNumber <= executions && !stopRequested; runNumber++) {
             ExecutionListener listener = new ExecutionListener(runNumber);
             Instant started = Instant.now();
+            ExecutionLog.start(runNumber);
+            ExecutionLog.info("Archivo Excel: " + selectedFile.getAbsolutePath());
             try {
                 System.setProperty("kata.excel.path", selectedFile.getAbsolutePath());
                 TestNG testng = new TestNG();
@@ -439,26 +806,37 @@ public final class AutomationDashboard extends JFrame {
                     status = "OK + BLOQUEADAS";
                 }
                 addStatistics(runNumber, listener, duration, status);
+                ExecutionLog.finish(status);
             } catch (Exception exception) {
                 Duration duration = Duration.between(started, Instant.now());
-                addStatistics(runNumber, listener, duration, stopRequested ? "DETENIDA" : "ERROR DE LANZAMIENTO");
-                appendLog("Corrida " + runNumber + " no pudo iniciar: " + exception.getMessage());
+                String status = stopRequested ? "DETENIDA" : "ERROR DE LANZAMIENTO";
+                addStatistics(runNumber, listener, duration, status);
+                appendLog("La ejecución " + runNumber + " no pudo iniciar: " + exception.getMessage());
+                ExecutionLog.error("La ejecución no pudo iniciar", exception);
+                ExecutionLog.finish(status);
             }
         }
         executionThread = null;
+        boolean stopped = stopRequested;
         SwingUtilities.invokeLater(() -> {
-            runButton.setEnabled(true);
-            stopButton.setEnabled(false);
+            setControlsEnabled(true);
             elapsedTimer.stop();
             currentRequestStarted = null;
             currentStageStarted = null;
-            executionStatusLabel.setText(stopRequested ? "Ejecución detenida" : "Ejecución finalizada");
-            currentRequestLabel.setText("Sin solicitud activa");
-            stageStatusLabel.setText("Etapa 0/5");
-            liveTimerLabel.setText("00:00");
+            if (stopped) {
+                statusPill.setState("DETENIDA", Theme.WARNING);
+                executionStatusLabel.setText("Ejecución detenida");
+            } else {
+                statusPill.setState("FINALIZADA", Theme.SUCCESS);
+                executionStatusLabel.setText("Ejecución finalizada");
+            }
+            currentRequestLabel.setText("Revisa el detalle en la pestaña «Historial y estadísticas».");
+            stageStatusLabel.setText("Sin etapa activa");
         });
-        appendLog(stopRequested ? "Ejecución detenida por el usuario." : "Ejecución finalizada.");
+        appendLog(stopped ? "Ejecución detenida por el usuario." : "Ejecución finalizada.");
     }
+
+    // ================================================================ Registro de resultados
 
     private void addStatistics(int runNumber, ExecutionListener listener, Duration duration, String status) {
         SwingUtilities.invokeLater(() -> {
@@ -466,75 +844,72 @@ public final class AutomationDashboard extends JFrame {
                 runNumber, status, formatDuration(duration), listener.passed, listener.failed,
                 listener.blockedOrders, listener.skipped
             });
-            durationChart.addDuration(duration.toMillis(), status);
+            runDurations.add(duration.toMillis());
+            runStatuses.add(status);
+            refreshRunChart();
             ExecutionHistoryStore.save("RUN", String.valueOf(runNumber), duration.toMillis(), status);
         });
     }
 
     private void appendLog(String message) {
-        SwingUtilities.invokeLater(() -> logArea.append(message + System.lineSeparator()));
+        String line = "[" + LocalTime.now().format(TIME_FORMAT) + "]  " + message;
+        ExecutionLog.info(message);
+        SwingUtilities.invokeLater(() -> {
+            logArea.append(line + System.lineSeparator());
+            logArea.setCaretPosition(logArea.getDocument().getLength());
+        });
     }
 
     private void refreshElapsedTime() {
         if (runStarted != null) {
-            liveTimerLabel.setText(formatDuration(Duration.between(runStarted, Instant.now())));
+            totalTimerLabel.setText(formatDuration(Duration.between(runStarted, Instant.now())));
         }
         if (currentStageStarted != null) {
-            elapsedLabel.setText(formatDuration(Duration.between(currentStageStarted, Instant.now())));
+            stageTimeLabel.setText(formatDuration(Duration.between(currentStageStarted, Instant.now())));
         }
     }
 
     private void requestStarted(ITestResult result, int runNumber) {
         currentRequestStarted = Instant.now();
         SwingUtilities.invokeLater(() -> {
-            executionStatusLabel.setText("Ejecutando solicitud");
-            currentRequestLabel.setText("Corrida " + runNumber + " | " + result.getName());
-            stageStatusLabel.setText("Etapa 0/5 | preparando");
-            elapsedLabel.setText("00:00");
-            responseChart.clear();
+            executionStatusLabel.setText("Procesando solicitud");
+            currentRequestLabel.setText("Ejecución " + runNumber + " · " + result.getName());
+            stageStatusLabel.setText("Etapa 0/" + ExecutionTelemetry.TOTAL_STAGES + " · preparando");
+            stageTimeLabel.setText("00:00:00");
+            stageChart.clear();
             elapsedTimer.start();
         });
     }
 
-    private void requestFinished(ITestResult result, String status) {
+    private void requestFinished(ITestResult result, String status, int runNumber) {
         Instant started = currentRequestStarted;
         long durationMillis = started == null ? 0 : Duration.between(started, Instant.now()).toMillis();
+        String orderId = readOrderId(result);
         SwingUtilities.invokeLater(() -> {
-            elapsedTimer.stop();
-            completedRequests++;
-            if ("OK".equals(status)) {
-                livePassed++;
-            } else if ("FALLÓ".equals(status)) {
-                liveFailed++;
-            } else {
-                liveSkipped++;
-            }
-            currentRequestLabel.setText("Última solicitud: " + formatDuration(Duration.ofMillis(durationMillis)));
-            elapsedLabel.setText(formatDuration(Duration.ofMillis(durationMillis)));
-            executionStatusLabel.setText("Solicitud " + status.toLowerCase(Locale.ROOT));
-                orderStatisticsModel.addRow(new Object[] {
-                    readOrderId(result), status, formatDuration(Duration.ofMillis(durationMillis))
-                });
-                    ExecutionHistoryStore.save("ORDER", readOrderId(result), durationMillis, status);
+            String duration = formatDuration(Duration.ofMillis(durationMillis));
+            currentRequestLabel.setText("Última solicitud: " + duration);
+            stageTimeLabel.setText(duration);
+            executionStatusLabel.setText("Solicitud " + displayStatus(status).toLowerCase(Locale.ROOT));
+            orderStatisticsModel.addRow(new Object[] {runNumber, orderId, status, duration});
+            ExecutionHistoryStore.save("ORDER", orderId, durationMillis, status);
         });
     }
 
-            private String readOrderId(ITestResult result) {
-            Object[] parameters = result.getParameters();
-            return parameters.length > 3 && parameters[3] != null
+    private String readOrderId(ITestResult result) {
+        Object[] parameters = result.getParameters();
+        return parameters.length > 3 && parameters[3] != null
                 ? String.valueOf(parameters[3]) : "Desconocida";
-            }
+    }
 
     private void stageStarted(String stageName, int stageNumber, int totalStages) {
-        currentStageNumber = stageNumber;
         currentStageStarted = Instant.now();
         appendLog("Etapa " + stageNumber + "/" + totalStages + " iniciada: " + stageName);
         SwingUtilities.invokeLater(() -> {
             executionStatusLabel.setText("Ejecutando etapa");
-            stageStatusLabel.setText("Etapa " + stageNumber + "/" + totalStages + " | " + stageName);
-            currentRequestLabel.setText("En progreso: " + stageName);
-            elapsedLabel.setText("00:00:00");
-            responseChart.startStage(stageNumber, stageName);
+            stageStatusLabel.setText("Etapa " + stageNumber + "/" + totalStages + " · " + stageName);
+            currentRequestLabel.setText("En curso: " + stageName);
+            stageTimeLabel.setText("00:00:00");
+            stageChart.startStage(stageNumber);
         });
     }
 
@@ -547,14 +922,11 @@ public final class AutomationDashboard extends JFrame {
                 progressBar.setMaximum(Math.max(1, totalPlannedStages));
             }
             completedStages++;
-            if (result == ExecutionTelemetry.StageResult.PASSED) {
-                livePassedStages++;
-            } else if (result == ExecutionTelemetry.StageResult.BLOCKED) {
-                liveBlockedStages++;
-            } else if (result == ExecutionTelemetry.StageResult.FAILED) {
-                liveFailedStages++;
-            } else {
-                liveSkippedStages++;
+            switch (result) {
+                case PASSED -> livePassedStages++;
+                case BLOCKED -> liveBlockedStages++;
+                case FAILED -> liveFailedStages++;
+                default -> liveSkippedStages++;
             }
             completedLabel.setText(completedStages + " / " + totalPlannedStages);
             passedLabel.setText(String.valueOf(livePassedStages));
@@ -565,30 +937,195 @@ public final class AutomationDashboard extends JFrame {
             progressBar.setString(totalPlannedStages == 0
                     ? String.valueOf(completedStages)
                     : completedStages + " / " + totalPlannedStages + " etapas");
-            responseChart.finishStage(stageNumber, durationMillis, result);
+            stageChart.finishStage(stageNumber, durationMillis, result);
+
             ExecutionHistoryStore.save("STAGE", stageName, durationMillis, result.name());
-            stageAverageChart.addStage(stageNumber, durationMillis);
-            stageStatusLabel.setText("Etapa " + stageNumber + "/5 "
-                    + stageResultLabel(result) + " | " + stageName);
+            int index = stageNumber - 1;
+            if (index >= 0 && index < stageTotals.length) {
+                stageTotals[index] += durationMillis;
+                stageCounts[index]++;
+                refreshStageChart();
+            }
+
+            String duration = formatDuration(Duration.ofMillis(durationMillis));
+            stageStatusLabel.setText("Etapa " + stageNumber + "/" + ExecutionTelemetry.TOTAL_STAGES
+                    + " " + stageResultLabel(result) + " · " + stageName);
             currentRequestLabel.setText(detail == null || detail.isBlank() ? stageName : detail);
-            elapsedLabel.setText(formatDuration(Duration.ofMillis(durationMillis)));
-                appendLog("Etapa " + stageNumber + "/5 " + stageResultLabel(result)
-                    + ": " + stageName + " (" + formatDuration(Duration.ofMillis(durationMillis)) + ")");
+            stageTimeLabel.setText(duration);
+            appendLog("Etapa " + stageNumber + "/" + ExecutionTelemetry.TOTAL_STAGES + " "
+                    + stageResultLabel(result) + ": " + stageName + " (" + duration + ")");
         });
     }
 
-    private String stageResultLabel(ExecutionTelemetry.StageResult result) {
+    private static String stageResultLabel(ExecutionTelemetry.StageResult result) {
         return switch (result) {
             case PASSED -> "superada";
             case BLOCKED -> "bloqueada";
             case FAILED -> "fallida";
-            case SKIPPED -> "omitida";
+            default -> "omitida";
         };
+    }
+
+    // ================================================================ Historial persistente
+
+    private void loadHistory() {
+        try {
+            for (ExecutionHistoryStore.Entry entry : ExecutionHistoryStore.readAll()) {
+                switch (entry.type()) {
+                    case "RUN" -> {
+                        runDurations.add(entry.durationMillis());
+                        runStatuses.add(entry.status());
+                    }
+                    case "STAGE" -> {
+                        int stageNumber = stageNumberFromName(entry.key());
+                        if (stageNumber > 0) {
+                            stageTotals[stageNumber - 1] += entry.durationMillis();
+                            stageCounts[stageNumber - 1]++;
+                        }
+                    }
+                    case "ACTION" -> recordAction(entry.key(), entry.durationMillis());
+                    default -> { }
+                }
+            }
+        } catch (RuntimeException exception) {
+            appendLog("No se pudo cargar el historial: " + exception.getMessage());
+        }
+        refreshRunChart();
+        refreshStageChart();
+        refreshActionChart();
+    }
+
+    private static int stageNumberFromName(String stageName) {
+        if (stageName == null) return 0;
+        if (stageName.startsWith("Consulta")) return 1;
+        if (stageName.startsWith("Radicación")) return 2;
+        if (stageName.startsWith("Análisis")) return 3;
+        if (stageName.startsWith("Registro") || stageName.startsWith("Producto")) return 4;
+        if (stageName.startsWith("Decisión")) return 5;
+        return 0;
+    }
+
+    private void recordAction(String actionName, long durationMillis) {
+        actionTotals.merge(actionName, durationMillis, Long::sum);
+        actionCounts.merge(actionName, 1, Integer::sum);
+    }
+
+    private void refreshRunChart() {
+        List<String> labels = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        List<Color> colors = new ArrayList<>();
+        for (int i = Math.max(0, runDurations.size() - MAX_RUNS_IN_CHART); i < runDurations.size(); i++) {
+            labels.add("#" + (i + 1));
+            values.add(runDurations.get(i));
+            colors.add(statusColor(runStatuses.get(i)));
+        }
+        durationChart.setData(labels, values, colors);
+    }
+
+    private void refreshStageChart() {
+        List<String> labels = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        List<Color> colors = new ArrayList<>();
+        boolean hasData = false;
+        for (int i = 0; i < stageTotals.length; i++) {
+            labels.add(stageLabel(i));
+            long average = stageCounts[i] == 0 ? 0 : stageTotals[i] / stageCounts[i];
+            hasData |= stageCounts[i] > 0;
+            values.add(average);
+            colors.add(Theme.VIOLET);
+        }
+        if (!hasData) {
+            labels.clear();
+            values.clear();
+            colors.clear();
+        }
+        stageAverageChart.setData(labels, values, colors);
+    }
+
+    private void refreshActionChart() {
+        List<Map.Entry<String, Long>> averages = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : actionTotals.entrySet()) {
+            averages.add(Map.entry(entry.getKey(), entry.getValue() / actionCounts.get(entry.getKey())));
+        }
+        averages.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+        List<String> labels = new ArrayList<>();
+        List<Long> values = new ArrayList<>();
+        List<Color> colors = new ArrayList<>();
+        for (int i = 0; i < Math.min(MAX_ACTIONS_IN_CHART, averages.size()); i++) {
+            labels.add(averages.get(i).getKey());
+            values.add(averages.get(i).getValue());
+            colors.add(Theme.PRIMARY);
+        }
+        actionAverageChart.setData(labels, values, colors);
+    }
+
+    // ================================================================ Utilidades de formato
+
+    private static String stageLabel(int index) {
+        return index >= 0 && index < STAGE_LABELS.length ? STAGE_LABELS[index] : "Etapa " + (index + 1);
     }
 
     private static String formatDuration(Duration duration) {
         return String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart());
     }
+
+    private static String formatShort(long millis) {
+        if (millis < 60_000) {
+            return String.format(Locale.ROOT, "%.1fs", millis / 1000.0);
+        }
+        long seconds = millis / 1000;
+        if (seconds < 3600) {
+            return String.format(Locale.ROOT, "%dm %02ds", seconds / 60, seconds % 60);
+        }
+        return String.format(Locale.ROOT, "%dh %02dm", seconds / 3600, (seconds % 3600) / 60);
+    }
+
+    /** Traduce los códigos internos (que se conservan en el historial) a texto para el operador. */
+    private static String displayStatus(String status) {
+        if (status == null) {
+            return "—";
+        }
+        return switch (status) {
+            case "OK" -> "Exitosa";
+            case "OK + BLOQUEADAS" -> "Exitosa con bloqueos";
+            case "CON ERROR" -> "Con errores";
+            case "ERROR DE LANZAMIENTO" -> "Error al iniciar";
+            case "DETENIDA" -> "Detenida";
+            case "FALLÓ" -> "Fallida";
+            case "BLOQUEADA" -> "Bloqueada";
+            case "OMITIDA" -> "Omitida";
+            default -> status;
+        };
+    }
+
+    private static Color statusColor(String status) {
+        if (status == null) {
+            return Theme.MUTED;
+        }
+        if ("OK".equals(status)) {
+            return Theme.SUCCESS;
+        }
+        if (status.startsWith("OK") || "BLOQUEADA".equals(status)) {
+            return Theme.WARNING;
+        }
+        if ("DETENIDA".equals(status) || "OMITIDA".equals(status)) {
+            return Theme.NEUTRAL;
+        }
+        return Theme.DANGER;
+    }
+
+    private static String fit(FontMetrics metrics, String text, int maxWidth) {
+        if (metrics.stringWidth(text) <= maxWidth) {
+            return text;
+        }
+        int end = text.length();
+        while (end > 1 && metrics.stringWidth(text.substring(0, end) + "…") > maxWidth) {
+            end--;
+        }
+        return text.substring(0, end) + "…";
+    }
+
+    // ================================================================ Listener TestNG
 
     private final class ExecutionListener implements ITestListener, ExecutionTelemetry.Listener {
         private final int runNumber;
@@ -610,27 +1147,29 @@ public final class AutomationDashboard extends JFrame {
             } else {
                 passed++;
             }
-            requestFinished(result, status);
-            recordEvent("Corrida " + runNumber + ": solicitud " + status.toLowerCase(Locale.ROOT));
+            requestFinished(result, status, runNumber);
+            recordEvent("Ejecución " + runNumber + ": solicitud " + displayStatus(status).toLowerCase(Locale.ROOT));
             currentOrderBlocked = false;
         }
 
         @Override
         public void onTestFailure(ITestResult result) {
             failed++;
-            requestFinished(result, "FALLÓ");
-            recordEvent("Corrida " + runNumber + ": fallo en " + result.getName());
+            requestFinished(result, "FALLÓ", runNumber);
+            ExecutionLog.error("Solicitud fallida: " + result.getName(), result.getThrowable());
+            recordEvent("Ejecución " + runNumber + ": fallo en " + result.getName());
         }
 
         @Override
         public void onTestSkipped(ITestResult result) {
             skipped++;
-            requestFinished(result, "OMITIDA");
-            recordEvent("Corrida " + runNumber + ": solicitud omitida");
+            requestFinished(result, "OMITIDA", runNumber);
+            recordEvent("Ejecución " + runNumber + ": solicitud omitida");
         }
 
         private void recordEvent(String event) {
-            SwingUtilities.invokeLater(() -> eventModel.addElement(event));
+            String line = LocalTime.now().format(TIME_FORMAT) + "  " + event;
+            SwingUtilities.invokeLater(() -> eventModel.addElement(line));
         }
 
         @Override public void onStart(ITestContext context) { }
@@ -649,323 +1188,442 @@ public final class AutomationDashboard extends JFrame {
             if (result == ExecutionTelemetry.StageResult.BLOCKED) {
                 currentOrderBlocked = true;
             }
+            if (result == ExecutionTelemetry.StageResult.FAILED) {
+                ExecutionLog.error("Etapa fallida: " + stageName + " - " + detail);
+            }
             stageFinished(stageName, stageNumber, result, detail, durationMillis);
         }
 
         @Override
         public void onActionFinished(String actionName, boolean successful, long durationMillis) {
-            ExecutionHistoryStore.save("ACTION", actionName, durationMillis,
-                    successful ? "OK" : "ERROR");
-            actionAverageChart.addAction(actionName, durationMillis);
+            ExecutionHistoryStore.save("ACTION", actionName, durationMillis, successful ? "OK" : "ERROR");
+            if (!successful) {
+                ExecutionLog.error("Acción fallida: " + actionName);
+            }
+            SwingUtilities.invokeLater(() -> {
+                recordAction(actionName, durationMillis);
+                refreshActionChart();
+            });
         }
     }
 
-    private static final class LiveResponseChartPanel extends JPanel {
-        private static final String[] STAGE_LABELS = {
-                "Consulta", "Radicación", "Análisis", "Producto", "Decisión"
-        };
-        private final long[] stageDurations = new long[ExecutionTelemetry.TOTAL_STAGES];
-        private final ExecutionTelemetry.StageResult[] stageResults =
-            new ExecutionTelemetry.StageResult[ExecutionTelemetry.TOTAL_STAGES];
-        private final boolean[] stageFinished = new boolean[ExecutionTelemetry.TOTAL_STAGES];
-        private String activeStage = "";
+    // ================================================================ Componentes visuales
 
-        private LiveResponseChartPanel() {
-            setBorder(BorderFactory.createTitledBorder("Duración de las cinco etapas · solicitud actual"));
-            setPreferredSize(new Dimension(760, 260));
-            setBackground(Color.WHITE);
+    /** Tarjeta blanca de esquinas redondeadas con borde sutil y barra de acento opcional. */
+    private static class RoundedPanel extends JPanel {
+        private Color accent;
+
+        RoundedPanel() {
+            this(new BorderLayout());
         }
 
-        private void startStage(int stageNumber, String stageName) {
-            activeStage = stageName;
+        RoundedPanel(LayoutManager layout) {
+            super(layout);
+            setOpaque(false);
+        }
+
+        void setAccent(Color accent) {
+            this.accent = accent;
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = quality(graphics);
+            Shape shape = new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1f, getHeight() - 1f, 14, 14);
+            g2.setColor(Theme.SURFACE);
+            g2.fill(shape);
+            if (accent != null) {
+                g2.setClip(shape);
+                g2.setColor(accent);
+                g2.fillRect(0, 0, 5, getHeight());
+                g2.setClip(null);
+            }
+            g2.setColor(Theme.BORDER);
+            g2.draw(shape);
+            g2.dispose();
+        }
+    }
+
+    /** Indicador de estado con forma de píldora. */
+    private static final class PillLabel extends JLabel {
+        private Color fill = Theme.NEUTRAL;
+
+        PillLabel(String text) {
+            super(text, SwingConstants.CENTER);
+            setOpaque(false);
+            setForeground(Color.WHITE);
+            setFont(Theme.font(Font.BOLD, 12));
+            setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
+        }
+
+        void setState(String text, Color fill) {
+            setText(text);
+            this.fill = fill;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = quality(graphics);
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
+            g2.dispose();
+            super.paintComponent(graphics);
+        }
+    }
+
+    /** Botón propio: se ve igual con FlatLaf, Nimbus o cualquier otro aspecto. */
+    private static final class ModernButton extends JButton {
+        enum Kind { PRIMARY, DANGER, SECONDARY }
+
+        private final Kind kind;
+        private boolean hover;
+        private boolean pressed;
+
+        ModernButton(String text, Kind kind) {
+            super(text);
+            this.kind = kind;
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setOpaque(false);
+            setFont(Theme.font(Font.BOLD, 13));
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setPreferredSize(new Dimension(100, 42));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent event) { hover = true; repaint(); }
+                @Override public void mouseExited(MouseEvent event) { hover = false; pressed = false; repaint(); }
+                @Override public void mousePressed(MouseEvent event) { pressed = true; repaint(); }
+                @Override public void mouseReleased(MouseEvent event) { pressed = false; repaint(); }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = quality(graphics);
+            Color fill;
+            Color border = null;
+            Color text;
+            if (!isEnabled()) {
+                fill = new Color(0xE9EDF2);
+                text = new Color(0x9AA5B1);
+            } else if (kind == Kind.SECONDARY) {
+                fill = pressed ? new Color(0xD8E8F8) : hover ? new Color(0xEAF2FB) : Color.WHITE;
+                border = Theme.PRIMARY;
+                text = Theme.PRIMARY;
+            } else {
+                Color base = kind == Kind.PRIMARY ? Theme.PRIMARY : Theme.DANGER;
+                fill = pressed ? base.darker().darker() : hover ? base.darker() : base;
+                text = Color.WHITE;
+            }
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+            if (border != null) {
+                g2.setColor(border);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+            }
+            g2.setFont(getFont());
+            FontMetrics metrics = g2.getFontMetrics();
+            g2.setColor(text);
+            g2.drawString(getText(), (getWidth() - metrics.stringWidth(getText())) / 2,
+                    (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent());
+            g2.dispose();
+        }
+    }
+
+    private static final class HeaderRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, false, false, row, column);
+            setOpaque(true);
+            setBackground(new Color(0xEEF2F6));
+            setForeground(Theme.MUTED);
+            setFont(Theme.font(Font.BOLD, 12));
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.BORDER),
+                    BorderFactory.createEmptyBorder(0, 10, 0, 10)));
+            return this;
+        }
+    }
+
+    private static final class CellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                boolean hasFocus, int row, int column) {
+            boolean statusColumn = "Estado".equals(table.getColumnName(column));
+            String raw = String.valueOf(value);
+            super.getTableCellRendererComponent(table, statusColumn ? displayStatus(raw) : value,
+                    isSelected, false, row, column);
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+            if (!isSelected) {
+                setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xF8FAFC));
+            }
+            setForeground(statusColumn ? statusColor(raw) : Theme.TEXT);
+            setFont(Theme.font(statusColumn ? Font.BOLD : Font.PLAIN, 13));
+            return this;
+        }
+    }
+
+    /** Pipeline de las etapas de la solicitud actual: estado de cada etapa y su duración. */
+    private static final class LiveStagePanel extends RoundedPanel {
+        private enum State { PENDING, RUNNING, PASSED, BLOCKED, FAILED, SKIPPED }
+
+        private final long[] durations = new long[ExecutionTelemetry.TOTAL_STAGES];
+        private final State[] states = new State[ExecutionTelemetry.TOTAL_STAGES];
+        private String caption = "";
+
+        private LiveStagePanel() {
+            setPreferredSize(new Dimension(0, 270));
+            clear();
+        }
+
+        private void startStage(int stageNumber) {
+            int index = stageNumber - 1;
+            if (index >= 0 && index < states.length) {
+                states[index] = State.RUNNING;
+                durations[index] = 0;
+                caption = stageLabel(index) + " en curso";
+            }
             repaint();
         }
 
         private void finishStage(int stageNumber, long durationMillis, ExecutionTelemetry.StageResult result) {
             int index = stageNumber - 1;
-            if (index >= 0 && index < stageDurations.length) {
-                stageDurations[index] = durationMillis;
-            stageResults[index] = result;
-                stageFinished[index] = true;
-            activeStage = STAGE_LABELS[index] + " " + resultLabel(result);
+            if (index >= 0 && index < states.length) {
+                durations[index] = durationMillis;
+                states[index] = switch (result) {
+                    case PASSED -> State.PASSED;
+                    case BLOCKED -> State.BLOCKED;
+                    case FAILED -> State.FAILED;
+                    default -> State.SKIPPED;
+                };
+                caption = stageLabel(index) + " " + stageResultLabel(result);
             }
             repaint();
         }
 
         private void clear() {
-            java.util.Arrays.fill(stageDurations, 0);
-            java.util.Arrays.fill(stageResults, null);
-            java.util.Arrays.fill(stageFinished, false);
-            activeStage = "";
+            Arrays.fill(durations, 0);
+            Arrays.fill(states, State.PENDING);
+            caption = "";
             repaint();
         }
 
-        @Override
-        protected void paintComponent(java.awt.Graphics graphics) {
-            super.paintComponent(graphics);
-            boolean hasData = false;
-            for (boolean finished : stageFinished) {
-                hasData |= finished;
-            }
-            if (!hasData) {
-                graphics.setColor(new Color(100, 110, 120));
-                graphics.drawString("Esperando que finalice una etapa para mostrar su duración...", 20, 58);
-                return;
-            }
-
-            java.awt.Graphics2D chart = (java.awt.Graphics2D) graphics.create();
-            chart.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-            int left = 58;
-            int top = 54;
-            int right = getWidth() - 28;
-            int bottom = getHeight() - 54;
-            int width = Math.max(1, right - left);
-            int height = Math.max(1, bottom - top);
-            long maximum = 1;
-            for (long duration : stageDurations) {
-                maximum = Math.max(maximum, duration);
-            }
-
-            chart.setColor(new Color(226, 232, 238));
-            chart.drawLine(left, bottom, right, bottom);
-            chart.drawLine(left, top, left, bottom);
-            chart.setColor(new Color(100, 110, 120));
-            chart.drawString(formatAxisTime(maximum), 8, top + 5);
-            chart.drawString("0s", 28, bottom + 4);
-
-            int slotWidth = width / ExecutionTelemetry.TOTAL_STAGES;
-            int barWidth = Math.max(28, slotWidth - 28);
-            for (int index = 0; index < stageDurations.length; index++) {
-                int x = left + index * slotWidth + (slotWidth - barWidth) / 2;
-                int barHeight = stageFinished[index]
-                        ? Math.max(4, (int) (height * (stageDurations[index] / (double) maximum))) : 4;
-                int y = bottom - barHeight;
-                chart.setColor(stageFinished[index]
-                    ? stageColor(stageResults[index])
-                        : new Color(190, 198, 207));
-                chart.fillRoundRect(x, y, barWidth, barHeight, 8, 8);
-                chart.setColor(new Color(55, 65, 75));
-                chart.drawString(STAGE_LABELS[index], x, bottom + 20);
-                if (stageFinished[index]) {
-                    chart.drawString(formatAxisTime(stageDurations[index]), x, y - 7);
-                }
-            }
-            chart.setColor(new Color(85, 95, 105));
-            chart.drawString("Estado: " + activeStage, left, top - 10);
-            chart.dispose();
+        private static boolean isFinished(State state) {
+            return state != State.PENDING && state != State.RUNNING;
         }
 
-        private Color stageColor(ExecutionTelemetry.StageResult result) {
-            return switch (result) {
-                case PASSED -> new Color(36, 145, 106);
-                case BLOCKED -> new Color(218, 157, 45);
-                case FAILED -> new Color(212, 91, 72);
-                case SKIPPED -> new Color(125, 135, 145);
+        private static Color stateColor(State state) {
+            return switch (state) {
+                case PASSED -> Theme.SUCCESS;
+                case BLOCKED -> Theme.WARNING;
+                case FAILED -> Theme.DANGER;
+                case SKIPPED -> Theme.NEUTRAL;
+                case RUNNING -> Theme.RUNNING;
+                default -> Theme.PENDING;
             };
         }
 
-        private String resultLabel(ExecutionTelemetry.StageResult result) {
-            return switch (result) {
-                case PASSED -> "superada";
-                case BLOCKED -> "bloqueada";
-                case FAILED -> "fallida";
-                case SKIPPED -> "omitida";
-            };
-        }
-
-        private String formatAxisTime(long millis) {
-            return String.format(Locale.ROOT, "%.1fs", millis / 1000.0);
-        }
-    }
-
-    private static final class DurationChartPanel extends JPanel {
-        private final List<Long> durations = new ArrayList<>();
-        private final List<String> statuses = new ArrayList<>();
-
-        private DurationChartPanel() {
-            setBorder(BorderFactory.createTitledBorder("Duración por corrida"));
-            setPreferredSize(new Dimension(0, 155));
-            setBackground(Color.WHITE);
-            for (ExecutionHistoryStore.Entry entry : ExecutionHistoryStore.readAll()) {
-                if ("RUN".equals(entry.type())) {
-                    durations.add(entry.durationMillis());
-                    statuses.add(entry.status());
-                }
-            }
-        }
-
-        private void addDuration(long durationMillis, String status) {
-            durations.add(durationMillis);
-            statuses.add(status);
-            repaint();
-        }
-
         @Override
-        protected void paintComponent(java.awt.Graphics graphics) {
+        protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
-            if (durations.isEmpty()) {
-                graphics.setColor(new Color(100, 110, 120));
-                graphics.drawString("Las duraciones aparecerán aquí al finalizar una corrida.", 16, 55);
-                return;
+            Graphics2D g2 = quality(graphics);
+
+            g2.setFont(Theme.font(Font.BOLD, 14));
+            g2.setColor(Theme.TEXT);
+            g2.drawString("Avance por etapa de la solicitud actual", 20, 30);
+            if (!caption.isEmpty()) {
+                g2.setFont(Theme.font(Font.PLAIN, 12));
+                g2.setColor(Theme.MUTED);
+                int width = g2.getFontMetrics().stringWidth(caption);
+                g2.drawString(caption, getWidth() - 20 - width, 30);
             }
 
-            long maximum = durations.stream().mapToLong(Long::longValue).max().orElse(1L);
-            int chartWidth = Math.max(1, getWidth() - 48);
-            int chartHeight = Math.max(1, getHeight() - 58);
-            int barWidth = Math.max(16, chartWidth / Math.max(1, durations.size()) - 12);
-            int gap = Math.max(8, (chartWidth - barWidth * durations.size()) / (durations.size() + 1));
+            int slots = states.length;
+            int left = 24;
+            int right = getWidth() - 24;
+            int slotWidth = Math.max(1, (right - left) / slots);
+            int circle = 36;
+            int circleTop = 52;
+            int centerY = circleTop + circle / 2;
 
-            for (int index = 0; index < durations.size(); index++) {
-                int barHeight = (int) (chartHeight * (durations.get(index) / (double) maximum));
-                int x = 24 + gap + index * (barWidth + gap);
-                int y = 28 + chartHeight - barHeight;
-                graphics.setColor(statuses.get(index).equals("OK")
-                        ? new Color(36, 145, 106) : new Color(212, 91, 72));
-                graphics.fillRect(x, y, barWidth, barHeight);
-                graphics.setColor(new Color(70, 80, 90));
-                graphics.drawString("#" + (index + 1), x, 45 + chartHeight);
+            g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            for (int i = 0; i < slots - 1; i++) {
+                int x1 = left + i * slotWidth + slotWidth / 2 + circle / 2 + 6;
+                int x2 = left + (i + 1) * slotWidth + slotWidth / 2 - circle / 2 - 6;
+                g2.setColor(isFinished(states[i]) ? stateColor(states[i]) : Theme.GRID);
+                g2.drawLine(x1, centerY, x2, centerY);
             }
-        }
-    }
 
-    private static final class ActionAverageChartPanel extends JPanel {
-        private final Map<String, Long> totals = new LinkedHashMap<>();
-        private final Map<String, Integer> counts = new LinkedHashMap<>();
-
-        private ActionAverageChartPanel() {
-            setBorder(BorderFactory.createTitledBorder("Promedio histórico de acciones instrumentadas"));
-            setPreferredSize(new Dimension(0, 180));
-            setBackground(Color.WHITE);
-            for (ExecutionHistoryStore.Entry entry : ExecutionHistoryStore.readAll()) {
-                if ("ACTION".equals(entry.type())) {
-                    addAction(entry.key(), entry.durationMillis());
+            for (int i = 0; i < slots; i++) {
+                int centerX = left + i * slotWidth + slotWidth / 2;
+                State state = states[i];
+                if (state == State.RUNNING) {
+                    g2.setColor(withAlpha(Theme.RUNNING, 55));
+                    g2.fillOval(centerX - circle / 2 - 5, centerY - circle / 2 - 5, circle + 10, circle + 10);
                 }
-            }
-        }
+                g2.setColor(state == State.PENDING ? new Color(0xF1F4F8) : stateColor(state));
+                g2.fillOval(centerX - circle / 2, centerY - circle / 2, circle, circle);
+                if (state == State.PENDING) {
+                    g2.setColor(Theme.PENDING);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawOval(centerX - circle / 2, centerY - circle / 2, circle, circle);
+                }
+                drawGlyph(g2, state, centerX, centerY, i + 1);
 
-        private void addAction(String actionName, long durationMillis) {
-            totals.merge(actionName, durationMillis, Long::sum);
-            counts.merge(actionName, 1, Integer::sum);
-            repaint();
-        }
-
-        @Override
-        protected void paintComponent(java.awt.Graphics graphics) {
-            super.paintComponent(graphics);
-            if (totals.isEmpty()) {
-                graphics.setColor(new Color(100, 110, 120));
-                graphics.drawString("Las acciones instrumentadas aparecerán aquí.", 20, 58);
-                return;
+                g2.setFont(Theme.font(Font.BOLD, 13));
+                g2.setColor(state == State.PENDING ? Theme.MUTED : Theme.TEXT);
+                String name = stageLabel(i);
+                FontMetrics metrics = g2.getFontMetrics();
+                g2.drawString(name, centerX - metrics.stringWidth(name) / 2, circleTop + circle + 22);
             }
-            java.awt.Graphics2D chart = (java.awt.Graphics2D) graphics.create();
-            int left = 58;
-            int top = 30;
-            int right = getWidth() - 28;
-            int bottom = getHeight() - 42;
-            long maximum = 1;
-            Map<String, Long> averages = new LinkedHashMap<>();
-            for (String action : totals.keySet()) {
-                long average = totals.get(action) / counts.get(action);
-                averages.put(action, average);
-                maximum = Math.max(maximum, average);
-            }
-            int slotWidth = Math.max(1, (right - left) / averages.size());
-            int index = 0;
-            for (Map.Entry<String, Long> entry : averages.entrySet()) {
-                int barWidth = Math.max(28, slotWidth - 28);
-                int x = left + index * slotWidth + (slotWidth - barWidth) / 2;
-                int height = Math.max(4, (int) ((bottom - top) * (entry.getValue() / (double) maximum)));
-                int y = bottom - height;
-                chart.setColor(new Color(24, 105, 145));
-                chart.fillRoundRect(x, y, barWidth, height, 8, 8);
-                chart.setColor(new Color(55, 65, 75));
-                chart.drawString(entry.getKey(), x, bottom + 20);
-                chart.drawString(String.format(Locale.ROOT, "%.1fs", entry.getValue() / 1000.0), x, y - 7);
-                index++;
-            }
-            chart.dispose();
-        }
-    }
 
-    private static final class StageAverageChartPanel extends JPanel {
-        private static final String[] STAGE_LABELS = {
-                "Consulta", "Radicación", "Análisis", "Producto", "Decisión"
-        };
-        private final long[] totals = new long[ExecutionTelemetry.TOTAL_STAGES];
-        private final int[] counts = new int[ExecutionTelemetry.TOTAL_STAGES];
-
-        private StageAverageChartPanel() {
-            setBorder(BorderFactory.createTitledBorder("Promedio histórico por etapa"));
-            setPreferredSize(new Dimension(0, 180));
-            setBackground(Color.WHITE);
-            for (ExecutionHistoryStore.Entry entry : ExecutionHistoryStore.readAll()) {
-                if ("STAGE".equals(entry.type())) {
-                    int stageNumber = stageNumber(entry.key());
-                    if (stageNumber > 0) {
-                        totals[stageNumber - 1] += entry.durationMillis();
-                        counts[stageNumber - 1]++;
+            int barsTop = circleTop + circle + 44;
+            int barsBottom = getHeight() - 22;
+            if (barsBottom - barsTop > 40) {
+                long maximum = 1;
+                for (int i = 0; i < slots; i++) {
+                    if (isFinished(states[i])) {
+                        maximum = Math.max(maximum, durations[i]);
                     }
                 }
+                g2.setStroke(new BasicStroke(1f));
+                g2.setColor(Theme.GRID);
+                g2.drawLine(left, barsBottom, right, barsBottom);
+                for (int i = 0; i < slots; i++) {
+                    int centerX = left + i * slotWidth + slotWidth / 2;
+                    int barWidth = Math.max(20, Math.min(64, slotWidth - 40));
+                    boolean finished = isFinished(states[i]);
+                    int barHeight = finished
+                            ? Math.max(4, (int) ((barsBottom - barsTop - 20) * (durations[i] / (double) maximum)))
+                            : 4;
+                    g2.setColor(finished ? stateColor(states[i])
+                            : states[i] == State.RUNNING ? withAlpha(Theme.RUNNING, 120) : Theme.GRID);
+                    g2.fillRoundRect(centerX - barWidth / 2, barsBottom - barHeight, barWidth, barHeight, 8, 8);
+
+                    String text = finished ? formatShort(durations[i])
+                            : states[i] == State.RUNNING ? "En curso" : "Pendiente";
+                    g2.setFont(Theme.font(Font.PLAIN, 12));
+                    g2.setColor(finished ? Theme.TEXT : Theme.MUTED);
+                    g2.drawString(text, centerX - g2.getFontMetrics().stringWidth(text) / 2,
+                            barsBottom - barHeight - 7);
+                }
             }
+            g2.dispose();
         }
 
-        private void addStage(int stageNumber, long durationMillis) {
-            int index = stageNumber - 1;
-            if (index >= 0 && index < totals.length) {
-                totals[index] += durationMillis;
-                counts[index]++;
-                repaint();
+        private void drawGlyph(Graphics2D g2, State state, int cx, int cy, int number) {
+            g2.setStroke(new BasicStroke(2.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.setColor(Color.WHITE);
+            switch (state) {
+                case PASSED -> g2.drawPolyline(new int[] {cx - 7, cx - 2, cx + 8}, new int[] {cy, cy + 6, cy - 6}, 3);
+                case FAILED -> {
+                    g2.drawLine(cx - 6, cy - 6, cx + 6, cy + 6);
+                    g2.drawLine(cx - 6, cy + 6, cx + 6, cy - 6);
+                }
+                case BLOCKED -> {
+                    g2.drawLine(cx, cy - 8, cx, cy + 2);
+                    g2.fillOval(cx - 2, cy + 6, 4, 4);
+                }
+                case SKIPPED -> g2.drawLine(cx - 6, cy, cx + 6, cy);
+                default -> {
+                    g2.setColor(state == State.RUNNING ? Color.WHITE : Theme.MUTED);
+                    g2.setFont(Theme.font(Font.BOLD, 14));
+                    FontMetrics metrics = g2.getFontMetrics();
+                    String text = String.valueOf(number);
+                    g2.drawString(text, cx - metrics.stringWidth(text) / 2,
+                            cy - metrics.getHeight() / 2 + metrics.getAscent());
+                }
             }
         }
+    }
 
-        private int stageNumber(String stageName) {
-            if (stageName.startsWith("Consulta")) return 1;
-            if (stageName.startsWith("Radicación")) return 2;
-            if (stageName.startsWith("Análisis")) return 3;
-            if (stageName.startsWith("Registro")) return 4;
-            if (stageName.startsWith("Decisión")) return 5;
-            return 0;
+    /** Gráfico de barras genérico para el historial: eje con referencias, etiquetas ajustadas y valores. */
+    private static final class BarChartPanel extends RoundedPanel {
+        private final String title;
+        private final String emptyMessage;
+        private List<String> labels = new ArrayList<>();
+        private List<Long> values = new ArrayList<>();
+        private List<Color> colors = new ArrayList<>();
+
+        private BarChartPanel(String title, String emptyMessage) {
+            this.title = title;
+            this.emptyMessage = emptyMessage;
+        }
+
+        private void setData(List<String> labels, List<Long> values, List<Color> colors) {
+            this.labels = new ArrayList<>(labels);
+            this.values = new ArrayList<>(values);
+            this.colors = new ArrayList<>(colors);
+            repaint();
         }
 
         @Override
-        protected void paintComponent(java.awt.Graphics graphics) {
+        protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
-            java.awt.Graphics2D chart = (java.awt.Graphics2D) graphics.create();
-            chart.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-            int left = 58;
-            int top = 30;
-            int right = getWidth() - 28;
-            int bottom = getHeight() - 42;
-            int width = Math.max(1, right - left);
-            int height = Math.max(1, bottom - top);
-            long maximum = 1;
-            long[] averages = new long[totals.length];
-            for (int index = 0; index < averages.length; index++) {
-                averages[index] = counts[index] == 0 ? 0 : totals[index] / counts[index];
-                maximum = Math.max(maximum, averages[index]);
-            }
-            int slotWidth = width / averages.length;
-            int barWidth = Math.max(28, slotWidth - 28);
-            chart.setColor(new Color(226, 232, 238));
-            chart.drawLine(left, bottom, right, bottom);
-            for (int index = 0; index < averages.length; index++) {
-                int x = left + index * slotWidth + (slotWidth - barWidth) / 2;
-                int barHeight = averages[index] == 0 ? 4
-                        : Math.max(4, (int) (height * (averages[index] / (double) maximum)));
-                int y = bottom - barHeight;
-                chart.setColor(averages[index] == 0 ? new Color(190, 198, 207) : new Color(104, 77, 160));
-                chart.fillRoundRect(x, y, barWidth, barHeight, 8, 8);
-                chart.setColor(new Color(55, 65, 75));
-                chart.drawString(STAGE_LABELS[index], x, bottom + 20);
-                chart.drawString(averages[index] == 0 ? "Sin datos" : formatChartTime(averages[index]), x, y - 7);
-            }
-            chart.dispose();
-        }
+            Graphics2D g2 = quality(graphics);
+            g2.setFont(Theme.font(Font.BOLD, 13));
+            g2.setColor(Theme.TEXT);
+            g2.drawString(fit(g2.getFontMetrics(), title, getWidth() - 36), 18, 28);
 
-        private String formatChartTime(long millis) {
-            return String.format(Locale.ROOT, "%.1fs", millis / 1000.0);
+            if (values.isEmpty()) {
+                g2.setFont(Theme.font(Font.PLAIN, 12));
+                g2.setColor(Theme.MUTED);
+                g2.drawString(fit(g2.getFontMetrics(), emptyMessage, getWidth() - 36), 18, 62);
+                g2.dispose();
+                return;
+            }
+
+            int left = 52;
+            int right = getWidth() - 18;
+            int top = 54;
+            int bottom = getHeight() - 36;
+            if (bottom - top < 30 || right - left < 30) {
+                g2.dispose();
+                return;
+            }
+            long maximum = 1;
+            for (long value : values) {
+                maximum = Math.max(maximum, value);
+            }
+
+            g2.setFont(Theme.font(Font.PLAIN, 11));
+            FontMetrics metrics = g2.getFontMetrics();
+            for (int i = 0; i <= 3; i++) {
+                int y = bottom - (bottom - top) * i / 3;
+                g2.setColor(Theme.GRID);
+                g2.drawLine(left, y, right, y);
+                String tick = formatShort(maximum * i / 3);
+                g2.setColor(Theme.MUTED);
+                g2.drawString(tick, left - 8 - metrics.stringWidth(tick), y + 4);
+            }
+
+            int count = values.size();
+            int slot = Math.max(1, (right - left) / count);
+            int barWidth = Math.max(6, Math.min(56, slot - 12));
+            int labelStride = Math.max(1, (int) Math.ceil(44.0 / slot));
+            for (int i = 0; i < count; i++) {
+                int centerX = left + i * slot + slot / 2;
+                int barHeight = Math.max(3, (int) ((bottom - top) * (values.get(i) / (double) maximum)));
+                int y = bottom - barHeight;
+                g2.setColor(colors.get(i));
+                g2.fillRoundRect(centerX - barWidth / 2, y, barWidth, barHeight, 6, 6);
+
+                if (slot >= 46) {
+                    String valueText = values.get(i) == 0 ? "—" : formatShort(values.get(i));
+                    g2.setColor(Theme.TEXT);
+                    g2.drawString(valueText, centerX - metrics.stringWidth(valueText) / 2, y - 5);
+                }
+                if (i % labelStride == 0) {
+                    String label = fit(metrics, labels.get(i), slot * labelStride - 4);
+                    g2.setColor(Theme.MUTED);
+                    g2.drawString(label, centerX - metrics.stringWidth(label) / 2, bottom + 18);
+                }
+            }
+            g2.dispose();
         }
     }
 }

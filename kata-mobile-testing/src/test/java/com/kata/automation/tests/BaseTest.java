@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
@@ -14,6 +13,8 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 
 import com.kata.automation.utils.DriverManager;
+import com.kata.automation.utils.EvidenceStorage;
+import com.kata.automation.utils.ExecutionLog;
 
 import io.appium.java_client.android.AndroidDriver;
 
@@ -49,14 +50,14 @@ public class BaseTest {
 
     protected void takeScreenshot(String name) {
         try {
-            Path evidenceDirectory = Paths.get("evidencias");
+            Path evidenceDirectory = EvidenceStorage.evidenceDirectory();
             Files.createDirectories(evidenceDirectory);
 
             File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             Path destination = evidenceDirectory.resolve(name + "_" + System.currentTimeMillis() + ".png");
             Files.copy(sourceFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            System.err.println("No se pudo guardar la captura: " + e.getMessage());
+            ExecutionLog.error("No se pudo guardar la captura", e);
         }
     }
 }

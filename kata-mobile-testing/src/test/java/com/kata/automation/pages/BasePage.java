@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -26,6 +25,8 @@ import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import com.kata.automation.utils.EvidenceStorage;
+import com.kata.automation.utils.ExecutionLog;
 
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
@@ -428,8 +429,8 @@ public class BasePage {
      */
     protected void takeEvidence(String orderIdentifier, String stepName) {
         try {
-            String folderPath = "evidencias/orden_" + orderIdentifier;
-            java.nio.file.Path folder = Paths.get(folderPath);
+            java.nio.file.Path folder = EvidenceStorage.evidenceDirectory()
+                    .resolve("orden_" + orderIdentifier);
             Files.createDirectories(folder);
 
             int evidenceNumber;
@@ -442,11 +443,11 @@ public class BasePage {
 
             File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             String cleanStepName = stepName.replaceFirst("^\\d+_", "");
-            File destFile = new File(folderPath + "/" + String.format("%02d_%s_%d.png",
+                Path destination = folder.resolve(String.format("%02d_%s_%d.png",
                     evidenceNumber, cleanStepName, System.currentTimeMillis()));
-            Files.copy(srcFile.toPath(), destFile.toPath());
+                Files.copy(srcFile.toPath(), destination);
         } catch (IOException e) {
-            System.err.println("Error al guardar la evidencia: " + e.getMessage());
+            ExecutionLog.error("Error al guardar la evidencia", e);
         }
     }
 
@@ -501,7 +502,7 @@ public class BasePage {
                                     + "'), 'registrado en listas')]")));
             return alertElement.getText();
         } catch (Exception e) {
-            System.err.println("No se pudo leer el mensaje de consulta: " + e.getMessage());
+            ExecutionLog.error("No se pudo leer el mensaje de consulta", e);
             return "DESCONOCIDO";
         }
     }
@@ -512,7 +513,7 @@ public class BasePage {
         try {
             driver.executeScript("mobile: shell", Map.of("command", "wm density " + densityDpi));
         } catch (Exception e) {
-            System.err.println("No se pudo cambiar la densidad de pantalla: " + e.getMessage());
+            ExecutionLog.error("No se pudo cambiar la densidad de pantalla", e);
         }
     }
 
@@ -521,7 +522,7 @@ public class BasePage {
         try {
             driver.executeScript("mobile: shell", Map.of("command", "wm density reset"));
         } catch (Exception e) {
-            System.err.println("No se pudo restablecer la densidad: " + e.getMessage());
+            ExecutionLog.error("No se pudo restablecer la densidad", e);
         }
     }
 
