@@ -6,6 +6,7 @@ import com.kata.automation.pages.ProductRegistrationPage;
 import com.kata.automation.pages.RadicationPage;
 import com.kata.automation.pages.AnalysisDecisionPage;
 import com.kata.automation.pages.AnalysisPage;
+import com.kata.automation.pages.IdentityValidationPage;
 import com.kata.automation.pages.OrdersPage.ConsultationOutcome;
 import com.kata.automation.utils.ExcelUtils;
 import com.kata.automation.utils.ExecutionTelemetry;
@@ -26,6 +27,7 @@ public class FlujoCompletoTest extends BaseTest {
     private ProductRegistrationPage productRegistrationPage;
     private AnalysisPage analysisPage;
     private AnalysisDecisionPage analysisDecisionPage;
+    private IdentityValidationPage identityValidationPage;
 
     @BeforeClass
     public void setUpPages() {
@@ -35,6 +37,7 @@ public class FlujoCompletoTest extends BaseTest {
         productRegistrationPage = new ProductRegistrationPage(driver);
         analysisPage = new AnalysisPage(driver);
         analysisDecisionPage = new AnalysisDecisionPage(driver);
+        identityValidationPage = new IdentityValidationPage(driver);
 
         //loginPage.doLogin("Banco2025*");
         ordersPage.setScreenDensity(380);
@@ -247,8 +250,32 @@ public class FlujoCompletoTest extends BaseTest {
             throw exception;
         }
 
-        // // 7. Cerrar y guardar la orden para dejar la app lista para la siguiente fila
-        // ordersPage.closeOrder();
+        long identityStageStarted = startStage("Validación de identidad y firma", 6);
+        try {
+            if (!identityValidationPage.isAvailable()) {
+                finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.SKIPPED,
+                        "No se encontró la pestaña de Validación de identidad y firma", identityStageStarted);
+                Reporter.log("No se encontró la pestaña de Validación de identidad y firma para la cédula: "
+                        + numberId, true);
+            } else {
+                identityValidationPage.processIdentityValidation("Aprobar (En campo)", numberId);
+                finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.PASSED,
+                        "Validación procesada", identityStageStarted);
+            }
+        } catch (Exception exception) {
+            finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.SKIPPED,
+                    "La validación opcional no pudo completarse: " + exception.getMessage(), identityStageStarted);
+            Reporter.log("La validación de identidad y firma no pudo completarse para la cédula " + numberId
+                    + ". El flujo continuará: " + exception.getMessage(), true);
+        } finally {
+            try {
+                ordersPage.closeOrder();
+                Reporter.log("Orden cerrada para la cédula: " + numberId, true);
+            } catch (Exception exception) {
+                Reporter.log("No se pudo cerrar la orden para la cédula " + numberId
+                        + ". El flujo continuará: " + exception.getMessage(), true);
+            }
+        }
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;
         Reporter.log(successMessage, true);

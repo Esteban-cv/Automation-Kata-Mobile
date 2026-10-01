@@ -26,8 +26,12 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -37,6 +41,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import javax.imageio.ImageIO;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -299,6 +304,33 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private static Image createAppIcon(int size) {
+        try {
+            java.net.URL bundledIcon = AutomationDashboard.class.getResource("/icono.ico");
+            if (bundledIcon != null) {
+                Image bundledImage = readIco(bundledIcon.openStream());
+                if (bundledImage != null) {
+                    return bundledImage;
+                }
+            }
+
+            File[] iconCandidates = {
+                    new File("config/icono.ico"),
+                    new File("icono.ico"),
+                    iconFileNextToApplication()
+            };
+            for (File iconFile : iconCandidates) {
+                if (iconFile != null && iconFile.isFile()) {
+                    Image fileImage = readIco(new java.io.FileInputStream(iconFile));
+                    if (fileImage != null) {
+                        return fileImage;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Si falla, continúa con el respaldo por defecto
+        }
+
+        // --- RESPALDO: Dibuja la "K" predeterminada si no encuentra el archivo .ico ---
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = quality(image.getGraphics());
         g2.setPaint(new GradientPaint(0, 0, Theme.RUNNING, size, size, Theme.PRIMARY));
@@ -310,6 +342,44 @@ public final class AutomationDashboard extends JFrame {
                 (size - metrics.getHeight()) / 2 + metrics.getAscent());
         g2.dispose();
         return image;
+    }
+
+    private static Image readIco(InputStream input) throws IOException {
+        try (InputStream source = input) {
+            byte[] ico = source.readAllBytes();
+            if (ico.length < 22 || ico[0] != 0 || ico[1] != 0 || ico[2] != 1 || ico[3] != 0) {
+                return null;
+            }
+
+            int imageSize = littleEndianInt(ico, 14);
+            int imageOffset = littleEndianInt(ico, 18);
+            if (imageSize <= 0 || imageOffset < 0 || imageOffset + imageSize > ico.length) {
+                return null;
+            }
+
+            return ImageIO.read(new ByteArrayInputStream(ico, imageOffset, imageSize));
+        }
+    }
+
+    private static int littleEndianInt(byte[] bytes, int offset) {
+        return (bytes[offset] & 0xFF)
+                | ((bytes[offset + 1] & 0xFF) << 8)
+                | ((bytes[offset + 2] & 0xFF) << 16)
+                | ((bytes[offset + 3] & 0xFF) << 24);
+    }
+
+    private static File iconFileNextToApplication() {
+        try {
+            URI location = AutomationDashboard.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI();
+            File codeLocation = new File(location);
+            File applicationDirectory = codeLocation.isFile()
+                    ? codeLocation.getParentFile()
+                    : codeLocation;
+            return new File(applicationDirectory, "icono.ico");
+        } catch (URISyntaxException | SecurityException exception) {
+            return null;
+        }
     }
 
     // ---------------------------------------------------------------- Pestaña: ejecución en vivo

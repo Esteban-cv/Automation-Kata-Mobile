@@ -1,8 +1,8 @@
 package com.kata.automation.utils;
 
-/** Sends the five business-stage events from the end-to-end flow to the dashboard. */
+/** Sends the business-stage events from the end-to-end flow to the dashboard. */
 public final class ExecutionTelemetry {
-    public static final int TOTAL_STAGES = 5;
+    public static final int TOTAL_STAGES = 6;
 
     public enum StageResult {
         PASSED,

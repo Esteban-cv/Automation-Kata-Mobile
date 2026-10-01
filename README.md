@@ -46,3 +46,8 @@ un instalador `.exe` se necesita instalar WiX Toolset y ejecutar:
 Cada computador que ejecute el robot todavía necesita Appium, ADB y un
 dispositivo Android accesible. El instalador no mata procesos ni borra la
 carpeta temporal del sistema.
+
+La aplicación incluye la carpeta `datos_solicitudes` con el archivo
+`datos_solicitudes.xlsx`, que sirve como plantilla para cargar las solicitudes
+en el dashboard. Las evidencias y el historial de ejecuciones se guardan en
+`evidencias`; los diagnósticos de cada ejecución se guardan en `Logs`.
