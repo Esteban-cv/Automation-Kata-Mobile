@@ -191,6 +191,7 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.PASSED,
                     "Consulta aprobada", stageStarted);
         } catch (RuntimeException exception) {
+                takeScreenshot("Error_Consulta_Cedula_" + numberId);
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
@@ -204,6 +205,7 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Radicación", 2, ExecutionTelemetry.StageResult.PASSED,
                     "Radicación completada", stageStarted);
         } catch (RuntimeException exception) {
+                takeScreenshot("Error_Radicacion_Cedula_" + numberId);
                 finishStage("Radicación", 2, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
@@ -215,6 +217,7 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.PASSED,
                     "Análisis completado", stageStarted);
         } catch (RuntimeException exception) {
+                takeScreenshot("Error_Radicacion_Cedula_" + numberId);
                 finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
@@ -232,6 +235,7 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
                     "Producto registrado", stageStarted);
         } catch (RuntimeException exception) {
+                takeScreenshot("Error_Producto_Cedula_" + numberId);
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
@@ -245,6 +249,7 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.PASSED,
                     "Decisión procesada", stageStarted);
         } catch (RuntimeException exception) {
+                takeScreenshot("Error_Decisión_Cedula_" + numberId);
                 finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
