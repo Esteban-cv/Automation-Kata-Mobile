@@ -41,12 +41,6 @@ try {
         throw "No se pudieron copiar las clases compiladas al staging del paquete."
     }
 
-    $iconPath = Join-Path $repositoryRoot "icono.ico"
-    if (-not (Test-Path $iconPath)) {
-        throw "No se encontró el icono de la aplicación en $iconPath."
-    }
-    Copy-Item $iconPath (Join-Path $stagingRoot "icono.ico") -Force
-
     Write-Host "Extrayendo librerías (esto puede tardar unos segundos)..." -ForegroundColor Cyan
     Get-ChildItem "$distRoot\lib\*.jar" | ForEach-Object {
         Push-Location $stagingRoot
@@ -68,6 +62,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "No se pudo crear el JAR ejecutable del dashboard." }
     
     Copy-Item (Join-Path $repositoryRoot "config") $distRoot -Recurse -Force
+    Copy-Item (Join-Path $repositoryRoot "InstalarDependencias.bat") $distRoot -Force
 
     # Incluye una plantilla lista para diligenciar junto a la aplicación.
     $templateSource = Join-Path $projectRoot "src\test\resources\datos_solicitudes_template.xlsx"
@@ -139,9 +134,11 @@ try {
         "--win-shortcut",
         "--win-menu",
         "--win-dir-chooser",
+        "--win-per-user-install",
+        "--install-dir", "KataMobile",
         "--win-console",
         "--win-upgrade-uuid", "f9a8b7c6-d5e4-3f2a-1b0c-9d8e7f6a5b4c",
-        "--icon", $iconPath
+        "--icon", "icono.ico"
     )
 
     jpackage @jpackageArgs

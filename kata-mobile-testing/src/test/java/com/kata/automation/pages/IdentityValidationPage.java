@@ -72,7 +72,7 @@ public class IdentityValidationPage extends BasePage {
         scrollToText("Procesar decisión", 0.15);
 
         // 4. Seleccionar la decisión (ej: "Aprobar (En campo)")
-        clickComposeDropdown(DECISION_DROPDOWN);
+        scrollAndClickReliable("Procesar decisión", DECISION_DROPDOWN, 0.15);
         clickSafely(byVisibleText(decision));
     
         // 5. Clic en "Procesar decisión"

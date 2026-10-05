@@ -2,6 +2,7 @@ package com.kata.automation.gui;
 
 import com.kata.automation.tests.FlujoCompletoTest;
 import com.kata.automation.utils.DriverManager;
+import com.kata.automation.utils.AppiumServerManager;
 import com.kata.automation.utils.ExcelUtils;
 import com.kata.automation.utils.ExecutionHistoryStore;
 import com.kata.automation.utils.ExecutionLog;
@@ -26,12 +27,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -41,7 +38,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import javax.imageio.ImageIO;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -49,29 +45,34 @@ import java.util.Set;
 /**
  * Centro de control para lanzar y supervisar ejecuciones del flujo TestNG.
  *
- * <p>Vocabulario de la interfaz: una <b>ejecución</b> procesa el archivo Excel completo;
- * cada fila del Excel es una <b>solicitud</b>; cada solicitud atraviesa varias <b>etapas</b>.
+ * <p>
+ * Vocabulario de la interfaz: una <b>ejecución</b> procesa el archivo Excel
+ * completo;
+ * cada fila del Excel es una <b>solicitud</b>; cada solicitud atraviesa varias
+ * <b>etapas</b>.
  */
 public final class AutomationDashboard extends JFrame {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
-    private static final String[] STAGE_LABELS = {"Consulta", "Radicación", "Análisis", "Producto", "Decisión"};
+    private static final String[] STAGE_LABELS = { "Consulta", "Radicación", "Análisis", "Producto", "Decisión" };
     private static final String EXCEL_SHEET = "Hoja1";
     private static final int MAX_RUNS_IN_CHART = 30;
     private static final int MAX_ACTIONS_IN_CHART = 8;
 
-    // ---------------------------------------------------------------- Configuración
+    // ----------------------------------------------------------------
+    // Configuración
     private final JLabel fileNameLabel = new JLabel("Ningún archivo seleccionado");
     private final JLabel fileHintLabel = new JLabel("Arrastra un .xlsx aquí o usa el botón");
     private final JLabel loadedRowsLabel = new JLabel("Sin datos cargados");
     private final JLabel planSummaryLabel = new JLabel(" ");
     private final JSpinner executionsSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
-    private final ModernButton browseButton =
-            new ModernButton("Seleccionar archivo Excel…", ModernButton.Kind.SECONDARY);
+    private final ModernButton browseButton = new ModernButton("Seleccionar archivo Excel…",
+            ModernButton.Kind.SECONDARY);
     private final ModernButton runButton = new ModernButton("Iniciar ejecución", ModernButton.Kind.PRIMARY);
     private final ModernButton stopButton = new ModernButton("Detener ejecución", ModernButton.Kind.DANGER);
 
-    // ---------------------------------------------------------------- Estado en vivo
+    // ---------------------------------------------------------------- Estado en
+    // vivo
     private final PillLabel statusPill = new PillLabel("LISTO");
     private final JLabel executionStatusLabel = new JLabel("Listo para ejecutar");
     private final JLabel currentRequestLabel = new JLabel("Selecciona un archivo Excel para comenzar");
@@ -111,7 +112,8 @@ public final class AutomationDashboard extends JFrame {
     private final Map<String, Long> actionTotals = new LinkedHashMap<>();
     private final Map<String, Integer> actionCounts = new LinkedHashMap<>();
 
-    // ---------------------------------------------------------------- Control de ejecución
+    // ---------------------------------------------------------------- Control de
+    // ejecución
     private File selectedFile;
     private int loadedRows;
     private volatile boolean stopRequested;
@@ -189,7 +191,10 @@ public final class AutomationDashboard extends JFrame {
         static final Color GRID = new Color(0xE6EBF0);
         static final Color TEXT = new Color(0x1B2733);
         static final Color MUTED = new Color(0x667380);
-        static final Color NAVY = new Color(0x0D2B4E);
+
+        // static final Color NAVY = new Color(0x0D2B4E);
+        static final Color NAVY = new Color(0x006B38);
+
         static final Color PRIMARY = new Color(0x1565C0);
         static final Color RUNNING = new Color(0x2F8CFF);
         static final Color SUCCESS = new Color(0x1E9E6A);
@@ -200,7 +205,8 @@ public final class AutomationDashboard extends JFrame {
         static final Color VIOLET = new Color(0x6D4AC4);
         static final String FONT_FAMILY = resolveFontFamily();
 
-        private Theme() { }
+        private Theme() {
+        }
 
         static Font font(int style, int size) {
             return new Font(FONT_FAMILY, style, size);
@@ -209,7 +215,7 @@ public final class AutomationDashboard extends JFrame {
         private static String resolveFontFamily() {
             Set<String> available = new HashSet<>(Arrays.asList(
                     GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
-            for (String candidate : new String[] {"Segoe UI", "Inter", "Helvetica Neue", "Ubuntu", "Roboto"}) {
+            for (String candidate : new String[] { "Segoe UI", "Inter", "Helvetica Neue", "Ubuntu", "Roboto" }) {
                 if (available.contains(candidate)) {
                     return candidate;
                 }
@@ -252,7 +258,8 @@ public final class AutomationDashboard extends JFrame {
         };
     }
 
-    // ================================================================ Construcción de la interfaz
+    // ================================================================ Construcción
+    // de la interfaz
 
     private JPanel buildContent() {
         JPanel root = new JPanel(new BorderLayout());
@@ -305,32 +312,16 @@ public final class AutomationDashboard extends JFrame {
 
     private static Image createAppIcon(int size) {
         try {
-            java.net.URL bundledIcon = AutomationDashboard.class.getResource("/icono.ico");
-            if (bundledIcon != null) {
-                Image bundledImage = readIco(bundledIcon.openStream());
-                if (bundledImage != null) {
-                    return bundledImage;
-                }
-            }
-
-            File[] iconCandidates = {
-                    new File("config/icono.ico"),
-                    new File("icono.ico"),
-                    iconFileNextToApplication()
-            };
-            for (File iconFile : iconCandidates) {
-                if (iconFile != null && iconFile.isFile()) {
-                    Image fileImage = readIco(new java.io.FileInputStream(iconFile));
-                    if (fileImage != null) {
-                        return fileImage;
-                    }
-                }
+            // Lee el recurso directamente desde el interior del JAR compilado
+            java.net.URL iconUrl = AutomationDashboard.class.getResource("/icono.png");
+            if (iconUrl != null) {
+                Image source = new ImageIcon(iconUrl).getImage();
+                return source.getScaledInstance(size, size, Image.SCALE_SMOOTH);
             }
         } catch (Exception ignored) {
-            // Si falla, continúa con el respaldo por defecto
         }
 
-        // --- RESPALDO: Dibuja la "K" predeterminada si no encuentra el archivo .ico ---
+        // Respaldo (La "K")
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = quality(image.getGraphics());
         g2.setPaint(new GradientPaint(0, 0, Theme.RUNNING, size, size, Theme.PRIMARY));
@@ -344,45 +335,8 @@ public final class AutomationDashboard extends JFrame {
         return image;
     }
 
-    private static Image readIco(InputStream input) throws IOException {
-        try (InputStream source = input) {
-            byte[] ico = source.readAllBytes();
-            if (ico.length < 22 || ico[0] != 0 || ico[1] != 0 || ico[2] != 1 || ico[3] != 0) {
-                return null;
-            }
-
-            int imageSize = littleEndianInt(ico, 14);
-            int imageOffset = littleEndianInt(ico, 18);
-            if (imageSize <= 0 || imageOffset < 0 || imageOffset + imageSize > ico.length) {
-                return null;
-            }
-
-            return ImageIO.read(new ByteArrayInputStream(ico, imageOffset, imageSize));
-        }
-    }
-
-    private static int littleEndianInt(byte[] bytes, int offset) {
-        return (bytes[offset] & 0xFF)
-                | ((bytes[offset + 1] & 0xFF) << 8)
-                | ((bytes[offset + 2] & 0xFF) << 16)
-                | ((bytes[offset + 3] & 0xFF) << 24);
-    }
-
-    private static File iconFileNextToApplication() {
-        try {
-            URI location = AutomationDashboard.class.getProtectionDomain()
-                    .getCodeSource().getLocation().toURI();
-            File codeLocation = new File(location);
-            File applicationDirectory = codeLocation.isFile()
-                    ? codeLocation.getParentFile()
-                    : codeLocation;
-            return new File(applicationDirectory, "icono.ico");
-        } catch (URISyntaxException | SecurityException exception) {
-            return null;
-        }
-    }
-
-    // ---------------------------------------------------------------- Pestaña: ejecución en vivo
+    // ---------------------------------------------------------------- Pestaña:
+    // ejecución en vivo
 
     private JPanel buildExecutionPanel() {
         JPanel panel = new JPanel(new BorderLayout(16, 0));
@@ -390,12 +344,24 @@ public final class AutomationDashboard extends JFrame {
         panel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
         panel.add(buildSidebar(), BorderLayout.WEST);
 
+        // El panel central con todo en su lugar original
         JPanel main = new JPanel(new BorderLayout(0, 12));
         main.setOpaque(false);
+        // Margen derecho para que no se pegue la barra de scroll a las tarjetas
+        main.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 8));
         main.add(buildLiveMetricsPanel(), BorderLayout.NORTH);
         main.add(stageChart, BorderLayout.CENTER);
         main.add(buildLogCard(), BorderLayout.SOUTH);
-        panel.add(main, BorderLayout.CENTER);
+
+        // NUEVO: Envolvemos todo el bloque central en un JScrollPane
+        JScrollPane scrollPane = new JScrollPane(main);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Sin bordes
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Hace el scroll con la rueda del ratón más fluido
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); // Solo scroll vertical
+
+        panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
 
@@ -537,7 +503,9 @@ public final class AutomationDashboard extends JFrame {
     private JPanel buildLogCard() {
         RoundedPanel card = new RoundedPanel(new BorderLayout(0, 8));
         card.setBorder(BorderFactory.createEmptyBorder(12, 16, 14, 16));
-        card.setPreferredSize(new Dimension(0, 190));
+        // CAMBIA el 0 por 800 y agrega el setMinimumSize
+        card.setPreferredSize(new Dimension(0, 200));
+        card.setMinimumSize(new Dimension(0, 100));
 
         logArea.setEditable(false);
         logArea.setLineWrap(true);
@@ -555,7 +523,8 @@ public final class AutomationDashboard extends JFrame {
         return card;
     }
 
-    // ---------------------------------------------------------------- Pestaña: historial
+    // ---------------------------------------------------------------- Pestaña:
+    // historial
 
     private JPanel buildStatisticsPanel() {
         JPanel panel = new JPanel(new BorderLayout(14, 14));
@@ -628,7 +597,8 @@ public final class AutomationDashboard extends JFrame {
         header.setDefaultRenderer(new HeaderRenderer());
     }
 
-    // ================================================================ Selección de archivo
+    // ================================================================ Selección de
+    // archivo
 
     private void chooseExcelFile() {
         JFileChooser chooser = new JFileChooser();
@@ -720,7 +690,8 @@ public final class AutomationDashboard extends JFrame {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.WARNING_MESSAGE);
     }
 
-    // ================================================================ Ciclo de vida de la ejecución
+    // ================================================================ Ciclo de
+    // vida de la ejecución
 
     private void startExecution() {
         if (selectedFile == null) {
@@ -846,12 +817,30 @@ public final class AutomationDashboard extends JFrame {
         } catch (RuntimeException exception) {
             ExecutionLog.error("No se pudo cerrar Appium limpiamente", exception);
         } finally {
+            AppiumServerManager.stopOwnedProcess();
             dispose();
             System.exit(0);
         }
     }
 
     private void executeRuns(int executions) {
+        try {
+            AppiumServerManager.ensureRunning();
+            appendLog("Servidor Appium listo en http://127.0.0.1:4723.");
+        } catch (RuntimeException exception) {
+            executionThread = null;
+            ExecutionLog.error("No se pudo iniciar el servidor Appium", exception);
+            SwingUtilities.invokeLater(() -> {
+                setControlsEnabled(true);
+                elapsedTimer.stop();
+                statusPill.setState("ERROR", Theme.DANGER);
+                executionStatusLabel.setText("No se pudo iniciar Appium");
+                currentRequestLabel.setText("Ejecuta InstalarDependencias.bat y revisa Logs\\appium.log.");
+                showWarning("Appium no disponible", exception.getMessage());
+            });
+            return;
+        }
+
         for (int runNumber = 1; runNumber <= executions && !stopRequested; runNumber++) {
             ExecutionListener listener = new ExecutionListener(runNumber);
             Instant started = Instant.now();
@@ -860,7 +849,7 @@ public final class AutomationDashboard extends JFrame {
             try {
                 System.setProperty("kata.excel.path", selectedFile.getAbsolutePath());
                 TestNG testng = new TestNG();
-                testng.setTestClasses(new Class<?>[] {FlujoCompletoTest.class});
+                testng.setTestClasses(new Class<?>[] { FlujoCompletoTest.class });
                 testng.addListener(listener);
                 ExecutionTelemetry.setListener(listener);
                 try {
@@ -906,13 +895,14 @@ public final class AutomationDashboard extends JFrame {
         appendLog(stopped ? "Ejecución detenida por el usuario." : "Ejecución finalizada.");
     }
 
-    // ================================================================ Registro de resultados
+    // ================================================================ Registro de
+    // resultados
 
     private void addStatistics(int runNumber, ExecutionListener listener, Duration duration, String status) {
         SwingUtilities.invokeLater(() -> {
             statisticsModel.addRow(new Object[] {
-                runNumber, status, formatDuration(duration), listener.passed, listener.failed,
-                listener.blockedOrders, listener.skipped
+                    runNumber, status, formatDuration(duration), listener.passed, listener.failed,
+                    listener.blockedOrders, listener.skipped
             });
             runDurations.add(duration.toMillis());
             runStatuses.add(status);
@@ -960,7 +950,7 @@ public final class AutomationDashboard extends JFrame {
             currentRequestLabel.setText("Última solicitud: " + duration);
             stageTimeLabel.setText(duration);
             executionStatusLabel.setText("Solicitud " + displayStatus(status).toLowerCase(Locale.ROOT));
-            orderStatisticsModel.addRow(new Object[] {runNumber, orderId, status, duration});
+            orderStatisticsModel.addRow(new Object[] { runNumber, orderId, status, duration });
             ExecutionHistoryStore.save("ORDER", orderId, durationMillis, status);
         });
     }
@@ -968,7 +958,8 @@ public final class AutomationDashboard extends JFrame {
     private String readOrderId(ITestResult result) {
         Object[] parameters = result.getParameters();
         return parameters.length > 3 && parameters[3] != null
-                ? String.valueOf(parameters[3]) : "Desconocida";
+                ? String.valueOf(parameters[3])
+                : "Desconocida";
     }
 
     private void stageStarted(String stageName, int stageNumber, int totalStages) {
@@ -1036,7 +1027,8 @@ public final class AutomationDashboard extends JFrame {
         };
     }
 
-    // ================================================================ Historial persistente
+    // ================================================================ Historial
+    // persistente
 
     private void loadHistory() {
         try {
@@ -1054,7 +1046,8 @@ public final class AutomationDashboard extends JFrame {
                         }
                     }
                     case "ACTION" -> recordAction(entry.key(), entry.durationMillis());
-                    default -> { }
+                    default -> {
+                    }
                 }
             }
         } catch (RuntimeException exception) {
@@ -1066,12 +1059,18 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private static int stageNumberFromName(String stageName) {
-        if (stageName == null) return 0;
-        if (stageName.startsWith("Consulta")) return 1;
-        if (stageName.startsWith("Radicación")) return 2;
-        if (stageName.startsWith("Análisis")) return 3;
-        if (stageName.startsWith("Registro") || stageName.startsWith("Producto")) return 4;
-        if (stageName.startsWith("Decisión")) return 5;
+        if (stageName == null)
+            return 0;
+        if (stageName.startsWith("Consulta"))
+            return 1;
+        if (stageName.startsWith("Radicación"))
+            return 2;
+        if (stageName.startsWith("Análisis"))
+            return 3;
+        if (stageName.startsWith("Registro") || stageName.startsWith("Producto"))
+            return 4;
+        if (stageName.startsWith("Decisión"))
+            return 5;
         return 0;
     }
 
@@ -1129,7 +1128,8 @@ public final class AutomationDashboard extends JFrame {
         actionAverageChart.setData(labels, values, colors);
     }
 
-    // ================================================================ Utilidades de formato
+    // ================================================================ Utilidades
+    // de formato
 
     private static String stageLabel(int index) {
         return index >= 0 && index < STAGE_LABELS.length ? STAGE_LABELS[index] : "Etapa " + (index + 1);
@@ -1150,7 +1150,10 @@ public final class AutomationDashboard extends JFrame {
         return String.format(Locale.ROOT, "%dh %02dm", seconds / 3600, (seconds % 3600) / 60);
     }
 
-    /** Traduce los códigos internos (que se conservan en el historial) a texto para el operador. */
+    /**
+     * Traduce los códigos internos (que se conservan en el historial) a texto para
+     * el operador.
+     */
     private static String displayStatus(String status) {
         if (status == null) {
             return "—";
@@ -1195,7 +1198,8 @@ public final class AutomationDashboard extends JFrame {
         return text.substring(0, end) + "…";
     }
 
-    // ================================================================ Listener TestNG
+    // ================================================================ Listener
+    // TestNG
 
     private final class ExecutionListener implements ITestListener, ExecutionTelemetry.Listener {
         private final int runNumber;
@@ -1242,10 +1246,22 @@ public final class AutomationDashboard extends JFrame {
             SwingUtilities.invokeLater(() -> eventModel.addElement(line));
         }
 
-        @Override public void onStart(ITestContext context) { }
-        @Override public void onFinish(ITestContext context) { }
-        @Override public void onTestStart(ITestResult result) { requestStarted(result, runNumber); }
-        @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) { }
+        @Override
+        public void onStart(ITestContext context) {
+        }
+
+        @Override
+        public void onFinish(ITestContext context) {
+        }
+
+        @Override
+        public void onTestStart(ITestResult result) {
+            requestStarted(result, runNumber);
+        }
+
+        @Override
+        public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+        }
 
         @Override
         public void onStageStarted(String stageName, int stageNumber, int totalStages) {
@@ -1277,9 +1293,13 @@ public final class AutomationDashboard extends JFrame {
         }
     }
 
-    // ================================================================ Componentes visuales
+    // ================================================================ Componentes
+    // visuales
 
-    /** Tarjeta blanca de esquinas redondeadas con borde sutil y barra de acento opcional. */
+    /**
+     * Tarjeta blanca de esquinas redondeadas con borde sutil y barra de acento
+     * opcional.
+     */
     private static class RoundedPanel extends JPanel {
         private Color accent;
 
@@ -1344,7 +1364,9 @@ public final class AutomationDashboard extends JFrame {
 
     /** Botón propio: se ve igual con FlatLaf, Nimbus o cualquier otro aspecto. */
     private static final class ModernButton extends JButton {
-        enum Kind { PRIMARY, DANGER, SECONDARY }
+        enum Kind {
+            PRIMARY, DANGER, SECONDARY
+        }
 
         private final Kind kind;
         private boolean hover;
@@ -1361,10 +1383,30 @@ public final class AutomationDashboard extends JFrame {
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             setPreferredSize(new Dimension(100, 42));
             addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent event) { hover = true; repaint(); }
-                @Override public void mouseExited(MouseEvent event) { hover = false; pressed = false; repaint(); }
-                @Override public void mousePressed(MouseEvent event) { pressed = true; repaint(); }
-                @Override public void mouseReleased(MouseEvent event) { pressed = false; repaint(); }
+                @Override
+                public void mouseEntered(MouseEvent event) {
+                    hover = true;
+                    repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent event) {
+                    hover = false;
+                    pressed = false;
+                    repaint();
+                }
+
+                @Override
+                public void mousePressed(MouseEvent event) {
+                    pressed = true;
+                    repaint();
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent event) {
+                    pressed = false;
+                    repaint();
+                }
             });
         }
 
@@ -1437,9 +1479,14 @@ public final class AutomationDashboard extends JFrame {
         }
     }
 
-    /** Pipeline de las etapas de la solicitud actual: estado de cada etapa y su duración. */
+    /**
+     * Pipeline de las etapas de la solicitud actual: estado de cada etapa y su
+     * duración.
+     */
     private static final class LiveStagePanel extends RoundedPanel {
-        private enum State { PENDING, RUNNING, PASSED, BLOCKED, FAILED, SKIPPED }
+        private enum State {
+            PENDING, RUNNING, PASSED, BLOCKED, FAILED, SKIPPED
+        }
 
         private final long[] durations = new long[ExecutionTelemetry.TOTAL_STAGES];
         private final State[] states = new State[ExecutionTelemetry.TOTAL_STAGES];
@@ -1447,6 +1494,7 @@ public final class AutomationDashboard extends JFrame {
 
         private LiveStagePanel() {
             setPreferredSize(new Dimension(0, 270));
+            setMinimumSize(new Dimension(0, 190));
             clear();
         }
 
@@ -1589,7 +1637,8 @@ public final class AutomationDashboard extends JFrame {
             g2.setStroke(new BasicStroke(2.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.setColor(Color.WHITE);
             switch (state) {
-                case PASSED -> g2.drawPolyline(new int[] {cx - 7, cx - 2, cx + 8}, new int[] {cy, cy + 6, cy - 6}, 3);
+                case PASSED ->
+                    g2.drawPolyline(new int[] { cx - 7, cx - 2, cx + 8 }, new int[] { cy, cy + 6, cy - 6 }, 3);
                 case FAILED -> {
                     g2.drawLine(cx - 6, cy - 6, cx + 6, cy + 6);
                     g2.drawLine(cx - 6, cy + 6, cx + 6, cy - 6);
@@ -1611,7 +1660,10 @@ public final class AutomationDashboard extends JFrame {
         }
     }
 
-    /** Gráfico de barras genérico para el historial: eje con referencias, etiquetas ajustadas y valores. */
+    /**
+     * Gráfico de barras genérico para el historial: eje con referencias, etiquetas
+     * ajustadas y valores.
+     */
     private static final class BarChartPanel extends RoundedPanel {
         private final String title;
         private final String emptyMessage;

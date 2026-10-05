@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
   <reporter-output>
+    <line>
+      <![CDATA[Flujo procesado y guardado correctamente para la cédula: 38569302]]>
+    </line>
   </reporter-output>
-  <suite started-at="2026-10-01T14:58:43 COT" name="Command line suite" finished-at="2026-10-01T15:00:55 COT" duration-ms="132228">
+  <suite started-at="2026-10-02T10:19:29 COT" name="Command line suite" finished-at="2026-10-02T10:33:04 COT" duration-ms="814690">
     <groups>
     </groups>
-    <test started-at="2026-10-01T14:58:43 COT" name="Command line test" finished-at="2026-10-01T15:00:55 COT" duration-ms="132228">
+    <test started-at="2026-10-02T10:19:29 COT" name="Command line test" finished-at="2026-10-02T10:33:04 COT" duration-ms="814690">
       <class name="com.kata.automation.tests.FlujoCompletoTest">
-        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@5feeac9]" started-at="2026-10-01T14:58:30 COT" name="globalSetUp" finished-at="2026-10-01T14:58:43 COT" duration-ms="13032" status="PASS">
+        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2dee89c1]" started-at="2026-10-02T10:19:07 COT" name="globalSetUp" finished-at="2026-10-02T10:19:29 COT" duration-ms="22838" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalSetUp -->
-        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@5feeac9]" started-at="2026-10-01T14:58:43 COT" name="setUpPages" finished-at="2026-10-01T14:58:43 COT" duration-ms="199" status="PASS">
+        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2dee89c1]" started-at="2026-10-02T10:19:29 COT" name="setUpPages" finished-at="2026-10-02T10:19:30 COT" duration-ms="195" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUpPages -->
-        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@5feeac9]" started-at="2026-10-01T14:58:43 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-10-01T15:00:55 COT" duration-ms="131948" status="PASS">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2dee89c1]" started-at="2026-10-02T10:19:30 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-10-02T10:33:04 COT" duration-ms="814392" status="PASS">
           <params>
             <param index="0">
               <value>
@@ -34,7 +37,7 @@
             </param>
             <param index="3">
               <value>
-                <![CDATA[19441449]]>
+                <![CDATA[38569302]]>
               </value>
             </param>
             <param index="4">
@@ -44,27 +47,27 @@
             </param>
             <param index="5">
               <value>
-                <![CDATA[Montanez]]>
+                <![CDATA[Hernandez]]>
               </value>
             </param>
             <param index="6">
               <value>
-                <![CDATA[Alirio]]>
+                <![CDATA[Naren]]>
               </value>
             </param>
             <param index="7">
               <value>
-                <![CDATA[9]]>
+                <![CDATA[10]]>
               </value>
             </param>
             <param index="8">
               <value>
-                <![CDATA[2]]>
+                <![CDATA[9]]>
               </value>
             </param>
             <param index="9">
               <value>
-                <![CDATA[2000]]>
+                <![CDATA[2005]]>
               </value>
             </param>
             <param index="10">
@@ -134,7 +137,7 @@
             </param>
             <param index="23">
               <value>
-                <![CDATA[3185551313]]>
+                <![CDATA[3185551311]]>
               </value>
             </param>
             <param index="24">
@@ -194,32 +197,32 @@
             </param>
             <param index="35">
               <value>
-                <![CDATA[NO]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="36">
               <value>
-                <![CDATA[NO]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="37">
               <value>
-                <![CDATA[NO]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="38">
               <value>
-                <![CDATA[NO]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="39">
               <value>
-                <![CDATA[NO]]>
+                <![CDATA[No]]>
               </value>
             </param>
             <param index="40">
               <value>
-                <![CDATA[15]]>
+                <![CDATA[20]]>
               </value>
             </param>
             <param index="41">
@@ -269,9 +272,12 @@
             </param>
           </params>
           <reporter-output>
+            <line>
+              <![CDATA[Flujo procesado y guardado correctamente para la cédula: 38569302]]>
+            </line>
           </reporter-output>
         </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
-        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@5feeac9]" started-at="2026-10-01T15:00:56 COT" name="globalTearDown" finished-at="2026-10-01T15:00:56 COT" duration-ms="815" status="PASS">
+        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2dee89c1]" started-at="2026-10-02T10:33:04 COT" name="globalTearDown" finished-at="2026-10-02T10:33:05 COT" duration-ms="819" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalTearDown -->

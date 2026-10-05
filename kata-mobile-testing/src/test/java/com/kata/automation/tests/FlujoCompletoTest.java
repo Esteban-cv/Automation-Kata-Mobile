@@ -267,14 +267,6 @@ public class FlujoCompletoTest extends BaseTest {
                     "La validación opcional no pudo completarse: " + exception.getMessage(), identityStageStarted);
             Reporter.log("La validación de identidad y firma no pudo completarse para la cédula " + numberId
                     + ". El flujo continuará: " + exception.getMessage(), true);
-        } finally {
-            try {
-                ordersPage.closeOrder();
-                Reporter.log("Orden cerrada para la cédula: " + numberId, true);
-            } catch (Exception exception) {
-                Reporter.log("No se pudo cerrar la orden para la cédula " + numberId
-                        + ". El flujo continuará: " + exception.getMessage(), true);
-            }
         }
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;

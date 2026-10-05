@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 
 /** Resolves the writable evidence folder for Maven runs and packaged apps. */
 public final class EvidenceStorage {
-    private static final String EVIDENCE_FOLDER = "evidencias";
+    private static final String EVIDENCE_FOLDER = "Evidencias_KataMobile";
 
     private EvidenceStorage() {
     }
