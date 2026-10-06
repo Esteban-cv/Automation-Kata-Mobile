@@ -54,7 +54,8 @@ import java.util.Set;
 public final class AutomationDashboard extends JFrame {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
-    private static final String[] STAGE_LABELS = { "Consulta", "Radicación", "Análisis", "Producto", "Decisión" };
+    private static final String[] STAGE_LABELS = { "Consulta", "Radicación", "Análisis", "Producto", "Decisión",
+            "Validación Identidad" };
     private static final String EXCEL_SHEET = "Hoja1";
     private static final int MAX_RUNS_IN_CHART = 30;
     private static final int MAX_ACTIONS_IN_CHART = 8;

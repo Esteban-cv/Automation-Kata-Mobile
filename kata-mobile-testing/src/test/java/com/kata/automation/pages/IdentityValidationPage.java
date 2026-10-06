@@ -66,11 +66,10 @@ public class IdentityValidationPage extends BasePage {
                 takeEvidence(numberId, "Validacion_Identidad");
 
                 // 2. Clic en "Iniciar validación del cliente"
-                // scrollAndClickReliable("Iniciar validación del cliente",
-                // START_VALIDATION_BTN, 0.15);
+                scrollAndClickReliable("Iniciar validación del cliente", START_VALIDATION_BTN, 0.15);
 
-                // waitForVisibility(ACCEPT_BUTTON);
-                // click(ACCEPT_BUTTON);
+                waitForVisibility(ACCEPT_BUTTON);
+                click(ACCEPT_BUTTON);
 
                 // 3. Clic en "Consultar resultados de validación y firmas"
                 scrollAndClickReliable("Consultar resultados de validación y firmas", CONSULT_RESULTS_BTN, 0.15);
@@ -79,6 +78,8 @@ public class IdentityValidationPage extends BasePage {
                 // 3. Leer el mensaje del pop-up para tomar la decisión
                 String alertText = getAlertMessageText();
                 ExecutionLog.info("Mensaje del popup leido: " + alertText);
+                waitForVisibility(ACCEPT_BUTTON);
+                takeEvidence(numberId, "Consultar_cliente");
                 click(ACCEPT_BUTTON);
 
                 scrollToText("Procesar decisión", 0.15);
@@ -103,7 +104,7 @@ public class IdentityValidationPage extends BasePage {
 
                         // Reemplaza "Validación de identidad no exitosa" por el texto exacto que
                         // despliegue tu app en ese menú
-                        clickSafely(byVisibleText("Validación de identidad no exitosa"));
+                        clickSafely(byVisibleText("Avaluo desfavorable"));
                 }
 
                 // 6. Clic en "Procesar decisión" una sola vez

@@ -44,6 +44,15 @@ public class AnalysisDecisionPage extends BasePage {
         private static final By PROCESS_DECISION_BTN = By.xpath(
                         "//android.widget.TextView[@text=\"Procesar decisión\"]/following::android.view.View[1]");
 
+        private static final By DECISION_PROCESSED_MESSAGE = By.xpath(
+                        "//*[contains(@text, \"Actualización exitosa\") or contains(@text, \"Decisión procesada\")]");
+
+        private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
+                        "//*[contains(translate(@text, \"ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ\", "
+                                        + "\"abcdefghijklmnopqrstuvwxyzáéíóúü\"), \"tiempo de espera\") "
+                                        + "or contains(translate(@text, \"ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ\", "
+                                        + "\"abcdefghijklmnopqrstuvwxyzáéíóúü\"), \"timeout\")]");
+
         public AnalysisDecisionPage(AndroidDriver driver) {
                 super(driver);
         }
@@ -88,8 +97,8 @@ public class AnalysisDecisionPage extends BasePage {
                 scrollAndClickReliable("Decisión del análisis", ANALYSIS_DECISION, 0.15);
                 clickSafely(byVisibleText(decision));
 
-                // Botón final para enviar todo
-                scrollAndClickReliable("Procesar decisión", PROCESS_DECISION_BTN, 0.15);
+                scrollToText("Procesar decisión", 0.15);
+                clickWithRetry(PROCESS_DECISION_BTN, DECISION_PROCESSED_MESSAGE, TIMEOUT_ERROR_MESSAGE);
 
                 // Normalmente aquí salta un pop-up de confirmación, así que agregamos un sleep
                 // y el click en Aceptar
