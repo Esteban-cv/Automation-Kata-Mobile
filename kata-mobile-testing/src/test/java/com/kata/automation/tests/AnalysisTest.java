@@ -20,7 +20,7 @@ public class AnalysisTest extends BaseTest {
         try {
 
 
-            analysisPage.fillQualitativeAndQuantitativeAnalysis();
+            analysisPage.fillQualitativeAndQuantitativeAnalysis("36999831");
             // 3. Validación de éxito
             String successMessage = "✅ Prueba superada: Se completaron las Geo Referencias, Ingreso de Referencias y el Formulario Financiero sin errores.";
             Reporter.log(successMessage, true);

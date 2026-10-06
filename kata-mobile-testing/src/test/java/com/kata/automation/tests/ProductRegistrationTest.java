@@ -28,13 +28,13 @@ public class ProductRegistrationTest extends BaseTest {
                 "No",
                 "No",
                 "No",
+                "No",
+                "NO",
+                "No",
                 "NO",
                 "NO",
-                "NO",
-                "NO",
-                "NO",
-                28,
-                9,
+                20,
+                10,
                 2026,
                 "No");
     }

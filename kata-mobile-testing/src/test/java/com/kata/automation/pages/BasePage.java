@@ -499,7 +499,9 @@ public class BasePage {
                                     + "contains(translate(@text, '" + uppercase + "', '" + lowercase
                                     + "'), 'mora mayor') or "
                                     + "contains(translate(@text, '" + uppercase + "', '" + lowercase
-                                    + "'), 'registrado en listas')]")));
+                                    + "'), 'registrado en listas') or "
+                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
+                                    + "'), 'no exitoso')]")));
             return alertElement.getText();
         } catch (Exception e) {
             ExecutionLog.error("No se pudo leer el mensaje de consulta", e);

@@ -261,7 +261,7 @@ public class AnalysisPage extends BasePage {
          * Llena exclusivamente los campos obligatorios (rojos) de la pestaña de
          * Análisis Cualitativo y Cuantitativo.
          */
-        public void fillQualitativeAndQuantitativeAnalysis() {
+        public void fillQualitativeAndQuantitativeAnalysis(String numberId) {
                 click(ANALYSIS_BUTTON);
 
                 fillGeoReferences(OPEN_GEO_REFERENCES);
@@ -273,6 +273,8 @@ public class AnalysisPage extends BasePage {
                 type(STABILITY, "Negocio estable con ubicación fija.");
 
                 type(BUSINESS_ABILITY, "Adecuada administración y conocimiento del negocio.");
+
+                takeEvidence(numberId, "Analisis_cualitativo");
 
                 scrollToText("Comportamiento de pagos", 0.15);
                 type(PAYMENT_BEHAVIOR, "Buen hábito de pago, al día con proveedores.");
@@ -331,6 +333,8 @@ public class AnalysisPage extends BasePage {
 
                 // 7. Cierre del formulario[cite: 12]
                 scrollAndClickReliable("Validar información financiera", VALIDATE_FINANCIAL_INFO_BTN, 0.15);
+                waitForVisibility(ACCEPT_BUTTON);
+                takeEvidence(numberId, "Validación_analisis_cualitativo");
                 click(ACCEPT_BUTTON);
 
         }

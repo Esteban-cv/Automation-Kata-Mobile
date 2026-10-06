@@ -112,7 +112,7 @@ public class OrdersPage extends BasePage {
 
         public boolean preliminaryConsultation(String idType, String numberId, String country, String firstName,
                         String name,
-                        int birthDay, int birthMonth, int birthYear, String numberPhone, int corporationDay,
+                        int birthDay, int birthMonth, int birthYear, String numberPhone,String restructuring, int corporationDay,
                         int corporationMonth,
                         int corporationYear, String bussinessLongevity, String originOrderText) {
 
@@ -155,10 +155,10 @@ public class OrdersPage extends BasePage {
                 type(CONFIRM_PHONE_CLIENT, numberPhone);
 
                 sleep(1000);
-                answerQuestion("¿Autoriza el tratamiento de datos personales?", "SI");
-                answerQuestion("¿Autoriza la consulta y reporte a las centrales de información?", "SI");
-                answerQuestion("¿Acepta Autorización de canales, horarios de contacto y visitas?", "SI");
-                answerQuestion("¿La solicitud de crédito es una refinanciación o reestructuración?", "NO");
+                answerQuestion("¿Autoriza el tratamiento de datos personales?", "Si");
+                answerQuestion("¿Autoriza la consulta y reporte a las centrales de información?", "Si");
+                answerQuestion("¿Acepta Autorización de canales, horarios de contacto y visitas?", "Si");
+                answerQuestion("¿La solicitud de crédito es una refinanciación o reestructuración?", restructuring);
 
                 scrollToText("Fecha de constitución del negocio", 0.15);
                 clickSafely(BUSSINESS_INCORPORATION_DATE);

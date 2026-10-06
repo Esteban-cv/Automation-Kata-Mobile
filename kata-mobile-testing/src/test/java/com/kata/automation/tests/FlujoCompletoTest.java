@@ -87,7 +87,7 @@ public class FlujoCompletoTest extends BaseTest {
     public void verificarCreacionDeOrdenMicrocredito(String orderType, String personType,
             String idType, String numberId, String country,
             String firstName, String name, String birthDay,
-            String birthMonth, String birthYear, String numberPhone,
+            String birthMonth, String birthYear, String numberPhone, String restructuring,
             String corpDay, String corpMonth, String corpYear,
             String longevity, String origin, String email, String analystDept,
             String analysCity, String analystNeighborhood,
@@ -106,7 +106,7 @@ public class FlujoCompletoTest extends BaseTest {
 
         executeOrderWithRetry(() -> processOrder(orderType, personType,
                 idType, numberId, country, firstName, name, birthDay, birthMonth, birthYear,
-                numberPhone, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
+                numberPhone,restructuring, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
                 analysCity, analystNeighborhood, lastYearCompleted, affiliation, networkAccess,
                 businessPhone, productType, product, amount, term, paymentFreq, destination,
                 hasFNG, hasBail, hasRealGuarantee, comprehensiveInsurance, coDebtors,
@@ -144,7 +144,7 @@ public class FlujoCompletoTest extends BaseTest {
     private void processOrder(String orderType, String personType,
             String idType, String numberId, String country,
             String firstName, String name, String birthDay,
-            String birthMonth, String birthYear, String numberPhone,
+            String birthMonth, String birthYear, String numberPhone,String restructuring,
             String corpDay, String corpMonth, String corpYear,
             String longevity, String origin, String email, String analystDept,
             String analysCity, String analystNeighborhood,
@@ -175,6 +175,7 @@ public class FlujoCompletoTest extends BaseTest {
                     Integer.parseInt(birthMonth.replace(".0", "")),
                     Integer.parseInt(birthYear.replace(".0", "")),
                     numberPhone,
+                    restructuring,
                     Integer.parseInt(corpDay.replace(".0", "")),
                     Integer.parseInt(corpMonth.replace(".0", "")),
                     Integer.parseInt(corpYear.replace(".0", "")),
@@ -213,7 +214,7 @@ public class FlujoCompletoTest extends BaseTest {
 
         stageStarted = startStage("Análisis cualitativo y cuantitativo", 3);
         try {
-            analysisPage.fillQualitativeAndQuantitativeAnalysis();
+            analysisPage.fillQualitativeAndQuantitativeAnalysis(numberId);
                 finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.PASSED,
                     "Análisis completado", stageStarted);
         } catch (RuntimeException exception) {

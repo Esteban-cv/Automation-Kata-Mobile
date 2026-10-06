@@ -28,12 +28,13 @@ public class OrdersTest extends BaseTest {
         // 2. Consulta preliminar con los datos de prueba de Esteban
         ordersPage.preliminaryConsultation(
                 "Cedula ciudadanía",
-                "38569302",
+                "36999831",
                 "COLOMBIA",
-                "Hernandez",
-                "Naren",
-                10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
+                "Mera",
+                "Sonia",
+                10, 10, 1964, // Ajustado el año para que coincida con tus 20 años
                 "3185551310",
+                "Si",
                 17, 9, 2020,
                 "60",
                 "Gestión front o contact center");

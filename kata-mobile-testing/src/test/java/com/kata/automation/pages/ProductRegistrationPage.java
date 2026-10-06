@@ -52,14 +52,19 @@ public class ProductRegistrationPage extends BasePage {
 
         // CHECKBOXES DE SEGUROS VOLUNTARIOS
 
+        // ========================================================================
+        // CHECKBOXES DE SEGUROS VOLUNTARIOS (Ajustados para hacer clic en la casilla)
+        // ========================================================================
+
         private static final By PROTECTED_FAMILY = By.xpath(
                         "//android.widget.TextView[@text=\"Tu familia protegida\"]");
 
         private static final By PROTECTED_HOME_BUSSINESS = By.xpath(
                         "//android.widget.TextView[@text=\"Tu hogar y negocio protegidos\"]");
 
+        // ¡CORREGIDO! Ya tiene la 'r' como aparece en la app actual
         private static final By PROTECTED_MICRO_ENTREPRENEURS = By.xpath(
-                        "//android.widget.TextView[@text=\"Microempesarios protegidos\"]");
+                        "//android.widget.TextView[@text=\"Microempresarios protegidos\"]");
 
         private static final By PROTECTED_LIFE = By.xpath(
                         "//android.widget.TextView[@text=\"Tu vida protegida\"]");
@@ -151,7 +156,6 @@ public class ProductRegistrationPage extends BasePage {
                         int disbDay, int disbMonth, int disbYear,
                         String hasSavings) {
 
-
                 LocalDate calculatedDate = LocalDate.of(disbYear, disbMonth, disbDay).plusDays(30);
 
                 waitForVisibility(PRODUCT_REGISTRATION_BUTTON);
@@ -209,7 +213,7 @@ public class ProductRegistrationPage extends BasePage {
                 // OJO: Texto exacto de la app, sin signo de interrogación al final
                 answerQuestion("¿Requiere garantía FNG", hasFNG);
 
-                answerQuestion("¿Requiere Fianza?", hasBail);
+                //answerQuestion("¿Requiere Fianza?", hasBail);
 
                 answerQuestion("¿Tiene garantía real?", hasRealGuarantee);
 
@@ -233,31 +237,25 @@ public class ProductRegistrationPage extends BasePage {
                         String hasMicroEntrepreneursInsurance, String hasLifeInsurance,
                         String hasFuneralPlanning, String numberId) {
 
-
                 // ==========================================
                 // 1. MARCAR LOS CHECKBOXES HACIENDO CLIC EN EL TEXTO
                 // ==========================================
                 if ("si".equalsIgnoreCase(hasFamilyInsurance)) {
                         scrollAndClickReliable("Tu familia protegida", PROTECTED_FAMILY, 0.15);
-                        sleep(700);
                 }
                 if ("si".equalsIgnoreCase(hasHomeBussinessInsurance)) {
                         scrollAndClickReliable("Tu hogar y negocio protegidos", PROTECTED_HOME_BUSSINESS, 0.15);
-                        sleep(700);
                 }
                 if ("si".equalsIgnoreCase(hasMicroEntrepreneursInsurance)) {
                         scrollAndClickReliable("Microempesarios protegidos", PROTECTED_MICRO_ENTREPRENEURS, 0.15);
-                        sleep(700);
                 }
                 takeEvidence(numberId, "Seguros_Voluntarios");
                 if ("si".equalsIgnoreCase(hasLifeInsurance)) {
                         scrollAndClickReliable("Tu vida protegida", PROTECTED_LIFE, 0.15);
-                        sleep(700);
                 }
                 if ("si".equalsIgnoreCase(hasFuneralPlanning)) {
                         // Usa también el scroll confiable aquí, por si el último seguro queda oculto
                         scrollAndClickReliable("Previsión Exequial", FUNERAL_PLANNING, 0.15);
-                        sleep(700);
                 }
 
                 takeEvidence(numberId, "Seguros_Voluntarios");
