@@ -2,26 +2,23 @@
 <testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
   <reporter-output>
     <line>
-      <![CDATA[No se encontró la pestaña de Validación de identidad y firma para la cédula: 36999831]]>
-    </line>
-    <line>
       <![CDATA[Flujo procesado y guardado correctamente para la cédula: 36999831]]>
     </line>
   </reporter-output>
-  <suite started-at="2026-10-06T12:51:39 COT" name="Command line suite" finished-at="2026-10-06T13:03:23 COT" duration-ms="704187">
+  <suite started-at="2026-10-06T14:28:18 COT" name="Command line suite" finished-at="2026-10-06T14:40:04 COT" duration-ms="705138">
     <groups>
     </groups>
-    <test started-at="2026-10-06T12:51:39 COT" name="Command line test" finished-at="2026-10-06T13:03:23 COT" duration-ms="704187">
+    <test started-at="2026-10-06T14:28:18 COT" name="Command line test" finished-at="2026-10-06T14:40:04 COT" duration-ms="705138">
       <class name="com.kata.automation.tests.FlujoCompletoTest">
-        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2a8f0dcd]" started-at="2026-10-06T12:51:35 COT" name="globalSetUp" finished-at="2026-10-06T12:51:39 COT" duration-ms="4331" status="PASS">
+        <test-method is-config="true" signature="globalSetUp()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@79b8097e]" started-at="2026-10-06T14:28:13 COT" name="globalSetUp" finished-at="2026-10-06T14:28:18 COT" duration-ms="5680" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalSetUp -->
-        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2a8f0dcd]" started-at="2026-10-06T12:51:39 COT" name="setUpPages" finished-at="2026-10-06T12:51:39 COT" duration-ms="205" status="PASS">
+        <test-method is-config="true" signature="setUpPages()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@79b8097e]" started-at="2026-10-06T14:28:18 COT" name="setUpPages" finished-at="2026-10-06T14:28:19 COT" duration-ms="233" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setUpPages -->
-        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2a8f0dcd]" started-at="2026-10-06T12:51:39 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-10-06T13:03:23 COT" duration-ms="703926" status="PASS">
+        <test-method signature="verificarCreacionDeOrdenMicrocredito(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@79b8097e]" started-at="2026-10-06T14:28:19 COT" name="verificarCreacionDeOrdenMicrocredito" data-provider="excelData" finished-at="2026-10-06T14:40:04 COT" duration-ms="704832" status="PASS">
           <params>
             <param index="0">
               <value>
@@ -281,14 +278,11 @@
           </params>
           <reporter-output>
             <line>
-              <![CDATA[No se encontró la pestaña de Validación de identidad y firma para la cédula: 36999831]]>
-            </line>
-            <line>
               <![CDATA[Flujo procesado y guardado correctamente para la cédula: 36999831]]>
             </line>
           </reporter-output>
         </test-method> <!-- verificarCreacionDeOrdenMicrocredito -->
-        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@2a8f0dcd]" started-at="2026-10-06T13:03:23 COT" name="globalTearDown" finished-at="2026-10-06T13:03:24 COT" duration-ms="730" status="PASS">
+        <test-method is-config="true" signature="globalTearDown()[pri:0, instance:com.kata.automation.tests.FlujoCompletoTest@79b8097e]" started-at="2026-10-06T14:40:04 COT" name="globalTearDown" finished-at="2026-10-06T14:40:04 COT" duration-ms="832" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- globalTearDown -->

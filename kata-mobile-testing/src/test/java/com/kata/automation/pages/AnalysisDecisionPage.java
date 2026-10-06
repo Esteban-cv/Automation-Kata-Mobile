@@ -45,7 +45,7 @@ public class AnalysisDecisionPage extends BasePage {
                         "//android.widget.TextView[@text=\"Procesar decisión\"]/following::android.view.View[1]");
 
         private static final By DECISION_PROCESSED_MESSAGE = By.xpath(
-                        "//*[contains(@text, \"Actualización exitosa\") or contains(@text, \"Decisión procesada\")]");
+                        "//*[contains(@text, \"Validación exitosa y procesamiento exitoso.\") or contains(@text, \"Decisión procesada\")]");
 
         private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
                         "//*[contains(translate(@text, \"ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ\", "
