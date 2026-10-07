@@ -1,8 +1,11 @@
 package com.kata.automation.pages;
 
 import java.time.LocalDate;
+import java.time.Duration;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.android.AndroidDriver;
@@ -219,11 +222,54 @@ public class ProductRegistrationPage extends BasePage {
 
                 // 5. Simular
                 scrollAndClickReliable("Simular crédito", SIMULATE_CREDIT_BTN, 0.15);
-                waitForVisibility(ACCEPT_BUTTON);
-                takeEvidence(numberId, "Simulación_crédito");
+                takeEvidence(numberId, "simulacion_credito_respuesta");
+                waitForSimulationResponse();
 
                 click(ACCEPT_BUTTON);
 
+        }
+
+        private void waitForSimulationResponse() {
+                try {
+                        new WebDriverWait(driver, Duration.ofSeconds(15)).until(currentDriver -> {
+                                String source = currentDriver.getPageSource();
+                                return !currentDriver.findElements(ACCEPT_BUTTON).isEmpty()
+                                                || containsSimulationError(source);
+                        });
+                } catch (TimeoutException exception) {
+                        throw new RuntimeException(
+                                        "La simulación no respondió: no apareció confirmación ni mensaje de error.",
+                                        exception);
+                }
+
+                String pageSource = driver.getPageSource();
+                if (containsSimulationError(pageSource)) {
+                        throw new RuntimeException(
+                                        "La simulación devolvió un error técnico. Revise la evidencia del caso.");
+                }
+                waitForVisibility(ACCEPT_BUTTON);
+        }
+
+        private boolean containsSimulationError(String pageSource) {
+                if (pageSource == null) {
+                        return false;
+                }
+                String normalized = pageSource.toLowerCase();
+                return normalized.contains("ocurrió un error")
+                                || normalized.contains("ocurrio un error")
+                                || normalized.contains("error durante")
+                                || normalized.contains("tasa obtenida")
+                                || normalized.contains("código de pizarra")
+                                || normalized.contains("codigo de pizarra");
+        }
+
+        /**
+         * Acepta el mensaje mostrado por la aplicación después de una simulación
+         * rechazada. El cierre de la orden lo coordina el flujo principal.
+         */
+        public void acceptSimulationMessage() {
+                waitForVisibility(ACCEPT_BUTTON);
+                click(ACCEPT_BUTTON);
         }
 
         /**

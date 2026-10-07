@@ -18,6 +18,13 @@ public final class EvidenceStorage {
         return applicationDirectory.resolve(EVIDENCE_FOLDER);
     }
 
+    public static Path caseDirectory(String caseId) {
+        String safeCaseId = caseId == null || caseId.isBlank()
+                ? "sin_id"
+                : caseId.replaceAll("[^a-zA-Z0-9._-]", "_");
+        return evidenceDirectory().resolve("caso_" + safeCaseId);
+    }
+
     public static void ensureEvidenceDirectory() {
         try {
             Files.createDirectories(evidenceDirectory());

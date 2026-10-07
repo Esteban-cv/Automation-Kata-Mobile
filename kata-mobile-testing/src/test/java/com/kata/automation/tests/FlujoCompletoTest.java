@@ -11,6 +11,8 @@ import com.kata.automation.pages.OrdersPage.ConsultationOutcome;
 import com.kata.automation.utils.ExcelUtils;
 import com.kata.automation.utils.ExecutionTelemetry;
 import com.kata.automation.utils.DriverManager;
+import com.kata.automation.utils.ErrorEvidenceHandler;
+import com.kata.automation.utils.TestScenario;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -40,7 +42,6 @@ public class FlujoCompletoTest extends BaseTest {
         identityValidationPage = new IdentityValidationPage(driver);
 
         //loginPage.doLogin("Banco2025*");
-        ordersPage.setScreenDensity(380);
     }
 
     // @Test(groups = "smoke")
@@ -104,7 +105,12 @@ public class FlujoCompletoTest extends BaseTest {
             String contractualPurpose, String extractsInfo, String analystConcept,
             String analysisDecision) {
 
-        executeOrderWithRetry(() -> processOrder(orderType, personType,
+        String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes.xlsx");
+        String sheetName = System.getProperty("kata.excel.sheet", "Hoja1");
+        TestScenario scenario = ExcelUtils.findScenario(excelPath, sheetName, numberId)
+                .orElse(null);
+
+        executeOrderWithRetry(() -> processOrder(scenario, orderType, personType,
                 idType, numberId, country, firstName, name, birthDay, birthMonth, birthYear,
                 numberPhone,restructuring, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
                 analysCity, analystNeighborhood, lastYearCompleted, affiliation, networkAccess,
@@ -125,13 +131,19 @@ public class FlujoCompletoTest extends BaseTest {
             } catch (RuntimeException exception) {
                 lastFailure = exception;
                 boolean stopRequested = Boolean.parseBoolean(System.getProperty("kata.stop.requested", "false"));
-                if (stopRequested || attempt == MAX_ORDER_ATTEMPTS) {
+                if (stopRequested || attempt == MAX_ORDER_ATTEMPTS || !isRetryableFailure(exception)) {
                     throw exception;
                 }
                 recoverDriverForRetry();
             }
         }
         throw lastFailure;
+    }
+
+    private boolean isRetryableFailure(RuntimeException exception) {
+        String exceptionType = exception.getClass().getName();
+        return exceptionType.contains("UnreachableBrowserException")
+                || exceptionType.contains("NoSuchSessionException");
     }
 
     private void recoverDriverForRetry() {
@@ -141,7 +153,7 @@ public class FlujoCompletoTest extends BaseTest {
         setUpPages();
     }
 
-    private void processOrder(String orderType, String personType,
+    private void processOrder(TestScenario scenario, String orderType, String personType,
             String idType, String numberId, String country,
             String firstName, String name, String birthDay,
             String birthMonth, String birthYear, String numberPhone,String restructuring,
@@ -161,6 +173,7 @@ public class FlujoCompletoTest extends BaseTest {
             String contractualPurpose, String extractsInfo, String analystConcept,
             String analysisDecision) {
 
+        System.setProperty("kata.current.case.id", caseId(scenario, numberId));
 
         long stageStarted = startStage("Consulta preliminar", 1);
         try {
@@ -192,6 +205,8 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.PASSED,
                     "Consulta aprobada", stageStarted);
         } catch (RuntimeException exception) {
+                ErrorEvidenceHandler.capture(driver, caseId(scenario, numberId),
+                        "consulta_preliminar", scenario, exception);
                 takeScreenshot("Error_Consulta_Cedula_" + numberId);
                 finishStage("Consulta preliminar", 1, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
@@ -206,6 +221,8 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Radicación", 2, ExecutionTelemetry.StageResult.PASSED,
                     "Radicación completada", stageStarted);
         } catch (RuntimeException exception) {
+                ErrorEvidenceHandler.capture(driver, caseId(scenario, numberId),
+                        "radicacion", scenario, exception);
                 takeScreenshot("Error_Radicacion_Cedula_" + numberId);
                 finishStage("Radicación", 2, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
@@ -218,6 +235,8 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.PASSED,
                     "Análisis completado", stageStarted);
         } catch (RuntimeException exception) {
+                ErrorEvidenceHandler.capture(driver, caseId(scenario, numberId),
+                        "analisis", scenario, exception);
                 takeScreenshot("Error_Radicacion_Cedula_" + numberId);
                 finishStage("Análisis cualitativo y cuantitativo", 3, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
@@ -236,7 +255,18 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
                     "Producto registrado", stageStarted);
         } catch (RuntimeException exception) {
+                ErrorEvidenceHandler.CaptureResult evidence = ErrorEvidenceHandler.capture(
+                        driver, scenario == null ? numberId : scenario.getCaseId(),
+                        "registro_producto", scenario, exception);
                 takeScreenshot("Error_Producto_Cedula_" + numberId);
+                if (isExpectedRejection(scenario, evidence)) {
+                    productRegistrationPage.acceptSimulationMessage();
+                    ordersPage.closeOrder();
+                    finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
+                            "Rechazo esperado: " + evidence.visibleMessage(), stageStarted);
+                    Reporter.log("Caso negativo aprobado: " + caseId(scenario, numberId), true);
+                    return;
+                }
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
             throw exception;
@@ -250,6 +280,8 @@ public class FlujoCompletoTest extends BaseTest {
                 finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.PASSED,
                     "Decisión procesada", stageStarted);
         } catch (RuntimeException exception) {
+                ErrorEvidenceHandler.capture(driver, caseId(scenario, numberId),
+                        "decision_analisis", scenario, exception);
                 takeScreenshot("Error_Decisión_Cedula_" + numberId);
                 finishStage("Decisión del análisis", 5, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), stageStarted);
@@ -262,6 +294,8 @@ public class FlujoCompletoTest extends BaseTest {
             finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.PASSED,
                     "Validación procesada", identityStageStarted);
         } catch (RuntimeException exception) {
+            ErrorEvidenceHandler.capture(driver, caseId(scenario, numberId),
+                    "validacion_identidad", scenario, exception);
             finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.FAILED,
                     exception.getMessage(), identityStageStarted);
             throw exception;
@@ -273,6 +307,19 @@ public class FlujoCompletoTest extends BaseTest {
 
     private int parseInt(String value) {
         return Integer.parseInt(value.replace(".0", ""));
+    }
+
+    private boolean isExpectedRejection(
+            TestScenario scenario,
+            ErrorEvidenceHandler.CaptureResult evidence) {
+        return scenario != null
+                && scenario.getType() != TestScenario.Type.VALID
+                && scenario.getExpectedResult() == TestScenario.ExpectedResult.REJECTED
+                && evidence.category() == ErrorEvidenceHandler.Category.CONTROLLED_REJECTION;
+    }
+
+    private String caseId(TestScenario scenario, String numberId) {
+        return scenario == null || scenario.getCaseId().isBlank() ? numberId : scenario.getCaseId();
     }
 
     private long startStage(String stageName, int stageNumber) {

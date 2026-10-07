@@ -424,13 +424,14 @@ public class BasePage {
     }
 
     /**
-     * Guarda una captura en evidencias/orden_<identificador> con el nombre del
-     * paso y un consecutivo independiente por orden.
+     * Guarda una captura dentro de la carpeta del caso activo, manteniendo las
+     * capturas de pantalla separadas de los diagnósticos de error.
      */
     protected void takeEvidence(String orderIdentifier, String stepName) {
         try {
-            java.nio.file.Path folder = EvidenceStorage.evidenceDirectory()
-                    .resolve("orden_" + orderIdentifier);
+            String caseId = System.getProperty("kata.current.case.id", orderIdentifier);
+            java.nio.file.Path folder = EvidenceStorage.caseDirectory(caseId)
+                    .resolve("pantallas");
             Files.createDirectories(folder);
 
             int evidenceNumber;

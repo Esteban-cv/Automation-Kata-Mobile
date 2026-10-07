@@ -8,6 +8,9 @@ import com.kata.automation.utils.ExecutionHistoryStore;
 import com.kata.automation.utils.ExecutionLog;
 import com.kata.automation.utils.ExecutionTelemetry;
 import com.kata.automation.utils.EvidenceStorage;
+import com.kata.automation.utils.ExcelScenarioLoader;
+import com.kata.automation.utils.ProductParameter;
+import com.kata.automation.utils.TestScenario;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
@@ -29,6 +32,9 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -94,6 +100,13 @@ public final class AutomationDashboard extends JFrame {
             "Ejecución", "Estado", "Duración", "Exitosas", "Fallidas", "Bloqueadas", "Omitidas");
     private final DefaultTableModel orderStatisticsModel = readOnlyModel(
             "Ejecución", "Cédula", "Estado", "Duración");
+    private final DefaultTableModel scenarioModel = readOnlyModel(
+            "Caso", "Tipo", "Resultado esperado", "Continuar", "Monto");
+    private final DefaultTableModel parameterModel = readOnlyModel(
+            "Producto", "Parámetro", "Mínimo", "Máximo", "Valores permitidos", "Obligatorio");
+    private final DefaultListModel<String> evidenceModel = new DefaultListModel<>();
+    private final JTextArea evidenceDetail = new JTextArea();
+    private final JLabel scenarioSummaryLabel = new JLabel("Selecciona un Excel para cargar los escenarios");
     private final DefaultListModel<String> eventModel = new DefaultListModel<>();
     private final JTable statisticsTable = new JTable(statisticsModel);
     private final JTable orderStatisticsTable = new JTable(orderStatisticsModel);
@@ -271,6 +284,7 @@ public final class AutomationDashboard extends JFrame {
         tabs.setFont(Theme.font(Font.BOLD, 13));
         tabs.addTab("Ejecución en vivo", buildExecutionPanel());
         tabs.addTab("Historial y estadísticas", buildStatisticsPanel());
+        tabs.addTab("Casos y evidencias", buildScenarioPanel());
 
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
@@ -278,6 +292,65 @@ public final class AutomationDashboard extends JFrame {
         body.add(tabs, BorderLayout.CENTER);
         root.add(body, BorderLayout.CENTER);
         return root;
+    }
+
+    private JPanel buildScenarioPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setBackground(Theme.BACKGROUND);
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
+
+        JPanel header = new JPanel(new BorderLayout(12, 0));
+        header.setOpaque(false);
+        scenarioSummaryLabel.setFont(Theme.font(Font.BOLD, 14));
+        scenarioSummaryLabel.setForeground(Theme.TEXT);
+        ModernButton refresh = new ModernButton("Actualizar", ModernButton.Kind.SECONDARY);
+        refresh.addActionListener(event -> refreshScenarioPanel());
+        header.add(scenarioSummaryLabel, BorderLayout.WEST);
+        header.add(refresh, BorderLayout.EAST);
+        panel.add(header, BorderLayout.NORTH);
+
+        JTable scenarios = new JTable(scenarioModel);
+        JTable parameters = new JTable(parameterModel);
+        styleTable(scenarios);
+        styleTable(parameters);
+        JPanel casesCard = new RoundedPanel(new BorderLayout(0, 8));
+        casesCard.setBorder(BorderFactory.createEmptyBorder(12, 14, 14, 14));
+        casesCard.add(sectionTitle("Escenarios definidos en el Excel"), BorderLayout.NORTH);
+        casesCard.add(tableScroll(scenarios), BorderLayout.CENTER);
+
+        JPanel parametersCard = new RoundedPanel(new BorderLayout(0, 8));
+        parametersCard.setBorder(BorderFactory.createEmptyBorder(12, 14, 14, 14));
+        parametersCard.add(sectionTitle("Parámetros configurables"), BorderLayout.NORTH);
+        parametersCard.add(tableScroll(parameters), BorderLayout.CENTER);
+
+        JPanel top = new JPanel(new GridLayout(1, 2, 12, 0));
+        top.setOpaque(false);
+        top.add(casesCard);
+        top.add(parametersCard);
+
+        JList<String> evidenceList = new JList<>(evidenceModel);
+        evidenceList.setFont(Theme.font(Font.PLAIN, 12));
+        evidenceList.addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && evidenceList.getSelectedValue() != null) {
+                showEvidenceDetail(evidenceList.getSelectedValue());
+            }
+        });
+        evidenceDetail.setEditable(false);
+        evidenceDetail.setLineWrap(true);
+        evidenceDetail.setWrapStyleWord(true);
+        evidenceDetail.setFont(Theme.font(Font.PLAIN, 12));
+        JPanel evidenceCard = new RoundedPanel(new BorderLayout(8, 0));
+        evidenceCard.setBorder(BorderFactory.createEmptyBorder(12, 14, 14, 14));
+        evidenceCard.add(sectionTitle("Evidencias de casos"), BorderLayout.NORTH);
+        evidenceCard.add(new JScrollPane(evidenceList), BorderLayout.WEST);
+        evidenceCard.add(new JScrollPane(evidenceDetail), BorderLayout.CENTER);
+
+        JPanel content = new JPanel(new BorderLayout(0, 12));
+        content.setOpaque(false);
+        content.add(top, BorderLayout.CENTER);
+        content.add(evidenceCard, BorderLayout.SOUTH);
+        panel.add(content, BorderLayout.CENTER);
+        return panel;
     }
 
     private JPanel buildHeader() {
@@ -618,9 +691,89 @@ public final class AutomationDashboard extends JFrame {
         fileHintLabel.setToolTipText(file.getAbsolutePath());
         fileNameLabel.setToolTipText(file.getAbsolutePath());
         updateLoadedRowCount();
+        refreshScenarioPanel();
         appendLog("Archivo seleccionado: " + file.getName());
         if (loadedRows > 0) {
             currentRequestLabel.setText("Archivo listo. Pulsa «Iniciar ejecución» para comenzar.");
+        }
+    }
+
+    private void refreshScenarioPanel() {
+            scenarioModel.setRowCount(0);
+            parameterModel.setRowCount(0);
+            evidenceModel.clear();
+            evidenceDetail.setText("");
+            if (selectedFile == null) {
+                scenarioSummaryLabel.setText("Selecciona un Excel para cargar los escenarios");
+                return;
+            }
+            try {
+                List<TestScenario> scenarios = ExcelScenarioLoader.readScenarios(
+                        selectedFile.toPath(), EXCEL_SHEET);
+                List<ProductParameter> parameters = ExcelScenarioLoader.readParameters(selectedFile.toPath());
+                for (TestScenario scenario : scenarios) {
+                    scenarioModel.addRow(new Object[] {
+                            scenario.getCaseId(),
+                            scenario.getType().name(),
+                            scenario.getExpectedResult().name(),
+                            scenario.shouldContinue() ? "SI" : "NO",
+                            scenario.getAmountText()
+                    });
+                }
+                for (ProductParameter parameter : parameters) {
+                    parameterModel.addRow(new Object[] {
+                            parameter.product(),
+                            parameter.parameter(),
+                            parameter.minimum(),
+                            parameter.maximum(),
+                            String.join(" | ", parameter.allowedValues()),
+                            parameter.required() ? "SI" : "NO"
+                    });
+                }
+                scenarioSummaryLabel.setText(scenarios.size() + " casos · "
+                        + parameters.size() + " parámetros · " + selectedFile.getName());
+            } catch (RuntimeException exception) {
+                scenarioSummaryLabel.setText("No se pudieron cargar los escenarios: " + exception.getMessage());
+                appendLog("No se pudieron cargar los escenarios: " + exception.getMessage());
+            }
+            refreshEvidenceList();
+    }
+
+    private void refreshEvidenceList() {
+            Path evidenceDirectory = EvidenceStorage.evidenceDirectory();
+            if (!Files.isDirectory(evidenceDirectory)) {
+                return;
+            }
+            try (var cases = Files.list(evidenceDirectory)) {
+                cases.filter(Files::isDirectory)
+                        .sorted()
+                        .forEach(folder -> evidenceModel.addElement(folder.toString()));
+            } catch (IOException exception) {
+                appendLog("No se pudieron cargar las evidencias: " + exception.getMessage());
+            }
+    }
+
+    private void showEvidenceDetail(String folderName) {
+        Path folder = Path.of(folderName);
+        try (var files = Files.walk(folder)) {
+            StringBuilder detail = new StringBuilder();
+            files.filter(Files::isRegularFile).sorted().forEach(file -> {
+                detail.append(folder.relativize(file)).append(System.lineSeparator());
+                String fileName = file.getFileName().toString();
+                if (fileName.endsWith(".json") || fileName.endsWith(".txt")) {
+                    try {
+                        detail.append(Files.readString(file, StandardCharsets.UTF_8))
+                                .append(System.lineSeparator());
+                    } catch (IOException exception) {
+                        detail.append("No se pudo leer el archivo: ").append(exception.getMessage())
+                                .append(System.lineSeparator());
+                    }
+                }
+            });
+            evidenceDetail.setText(detail.toString());
+            evidenceDetail.setCaretPosition(0);
+        } catch (IOException exception) {
+            evidenceDetail.setText("No se pudo leer la carpeta de evidencia: " + exception.getMessage());
         }
     }
 

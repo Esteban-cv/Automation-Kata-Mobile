@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Properties;
+import java.util.Map;
 
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
@@ -49,14 +50,38 @@ public class DriverManager {
                 long implicitTimeout = Long.parseLong(
                     configuration.getProperty("implicit.timeout.seconds", "10"));
                 driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(implicitTimeout));
+                applyScreenDensity(configuration);
 
                 System.out.println("¡Conexion a el dispositiva EXITOSA!");
 
             } catch (MalformedURLException e) {
                 throw new RuntimeException("La URL es Invalida...");
             }
+
         }
         return driver;
+    }
+
+    private static void applyScreenDensity(Properties configuration) {
+        if (!Boolean.parseBoolean(configuration.getProperty("screen.density.enabled", "false"))) {
+            return;
+        }
+        String configuredDensity = configuration.getProperty("screen.density", "").trim();
+        if (configuredDensity.isBlank()) {
+            return;
+        }
+        try {
+            int density = Integer.parseInt(configuredDensity);
+            if (density < 120 || density > 640) {
+                throw new IllegalArgumentException("Fuera del rango soportado (120-640): " + density);
+            }
+            driver.executeScript("mobile: shell", Map.of("command", "wm density " + density));
+            System.out.println("Densidad de pantalla aplicada: " + density + " dpi");
+        } catch (NumberFormatException exception) {
+            throw new RuntimeException("screen.density debe ser un número entero.", exception);
+        } catch (RuntimeException exception) {
+            throw new RuntimeException("No se pudo aplicar screen.density=" + configuredDensity, exception);
+        }
     }
 
     private static Properties loadConfiguration() {
@@ -65,8 +90,9 @@ public class DriverManager {
         Path path = Paths.get(configuredPath == null || configuredPath.isBlank()
                 ? "config/robot.properties" : configuredPath);
         if ((configuredPath == null || configuredPath.isBlank()) && !Files.exists(path)) {
-            path = configurationPathNearApplication();
+            path = findConfigurationPath();
         }
+
         if (!Files.exists(path)) {
             return configuration;
         }
@@ -76,6 +102,21 @@ public class DriverManager {
             throw new RuntimeException("No se pudo leer la configuracion del robot: " + path, exception);
         }
         return configuration;
+    }
+
+    private static Path findConfigurationPath() {
+        Path nearApplication = configurationPathNearApplication();
+        if (Files.exists(nearApplication)) {
+            return nearApplication;
+        }
+
+        Path currentDirectory = Paths.get(System.getProperty("user.dir"));
+        Path parentConfiguration = currentDirectory.resolve("..").resolve("config").resolve("robot.properties")
+                .normalize();
+        if (Files.exists(parentConfiguration)) {
+            return parentConfiguration;
+        }
+        return nearApplication;
     }
 
     private static Path configurationPathNearApplication() {

@@ -50,13 +50,15 @@ public class BaseTest {
 
     protected void takeScreenshot(String name) {
         try {
-            Path evidenceDirectory = EvidenceStorage.evidenceDirectory();
+            String caseId = System.getProperty("kata.current.case.id", name);
+            Path evidenceDirectory = EvidenceStorage.caseDirectory(caseId)
+                    .resolve("pantallas");
             Files.createDirectories(evidenceDirectory);
 
             File sourceFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             Path destination = evidenceDirectory.resolve(name + "_" + System.currentTimeMillis() + ".png");
             Files.copy(sourceFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             ExecutionLog.error("No se pudo guardar la captura", e);
         }
     }
