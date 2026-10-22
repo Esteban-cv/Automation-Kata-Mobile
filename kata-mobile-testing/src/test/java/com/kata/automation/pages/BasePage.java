@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -17,12 +18,14 @@ import java.util.stream.Stream;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
+import org.openqa.selenium.Rectangle;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
+import org.openqa.selenium.remote.RemoteWebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import com.kata.automation.utils.EvidenceStorage;
@@ -239,6 +242,7 @@ public class BasePage {
     /** Selecciona una fecha completa en el calendario nativo de Android. */
     protected void selectDateInCalendar(int day, int month, int year) {
         LocalDate targetDate = LocalDate.of(year, month, day);
+        long started = System.currentTimeMillis();
 
         int startYear = readSelectedYearBeforeOpening(); // se lee ANTES de abrir el picker
         if (year != startYear) {
@@ -251,6 +255,8 @@ public class BasePage {
         clickSafely(AppiumBy.accessibilityId(dayAccessibilityId));
         clickSafely(By.xpath(
                 "//android.widget.FrameLayout[@resource-id=\"android:id/content\"]/android.view.ViewGroup/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.widget.Button"));
+        System.out.println("📅 Fecha " + targetDate + " seleccionada en "
+                + (System.currentTimeMillis() - started) + " ms");
     }
 
     private int readSelectedYearBeforeOpening() {
@@ -264,73 +270,126 @@ public class BasePage {
     }
 
     private void selectYearInPicker(int year, int startYear) {
-        boolean goBackward = year < startYear;
-        By yearLocator = AppiumBy.androidUIAutomator("new UiSelector().text(\"" + year + "\")");
+        By yearList = By.id("android:id/date_picker_year_picker");
+        By visibleYears = By.xpath("//*[@resource-id=\"android:id/date_picker_year_picker\"]"
+                + "/*[@resource-id=\"android:id/text1\"]");
+        By yearLocator = AppiumBy.androidUIAutomator(
+                "new UiSelector().resourceId(\"android:id/text1\").text(\"" + year + "\")");
+        int maxSteps = 40;
 
-        int maxSteps = 30;
-        String previousSource = null;
-        int noProgressCount = 0;
+        // Espera a que la lista de años termine de aparecer (animación tras tocar el encabezado).
+        String listId = ((RemoteWebElement) wait.until(
+                ExpectedConditions.visibilityOfElementLocated(yearList))).getId();
 
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(200));
+        // Sin espera implícita: cada búsqueda responde de inmediato. El avance se mide
+        // comparando el primer año visible, porque el booleano de scrollGesture no es
+        // confiable en este ListView (devuelve false aunque sí se haya desplazado).
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        try {
+            int previousFirstYear = Integer.MIN_VALUE;
+            int stuckSteps = 0;
 
-        for (int i = 0; i < maxSteps; i++) {
-            try {
-                WebElement yearElement = driver.findElement(yearLocator);
-                if (yearElement.isDisplayed()) {
-                    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
-                    yearElement.click();
+            for (int i = 0; i < maxSteps; i++) {
+                List<WebElement> matches = driver.findElements(yearLocator);
+                if (!matches.isEmpty() && matches.get(0).isDisplayed()) {
+                    matches.get(0).click();
                     return;
                 }
-            } catch (Exception e) {
-                String currentSource = driver.getPageSource();
-                if (currentSource.equals(previousSource)) {
-                    noProgressCount++;
-                    if (noProgressCount >= 2) {
-                        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
-                        throw new IllegalStateException(
-                                "El picker dejó de moverse buscando el año " + year + " (arrancó en " + startYear
-                                        + ").");
-                    }
-                } else {
-                    noProgressCount = 0;
-                }
-                previousSource = currentSource;
 
-                // Un paso nativo de UiAutomator en la dirección correcta — más confiable que
-                // pixeles fijos
-                driver.findElement(AppiumBy.androidUIAutomator(
-                        "new UiScrollable(new UiSelector().scrollable(true).instance(0))" +
-                                ".setAsVerticalList()." + (goBackward ? "scrollBackward();" : "scrollForward();")));
+                int[] range = readVisibleYearRange(visibleYears);
+                if (range == null) {
+                    sleep(150);
+                    continue;
+                }
+                if (range[0] == previousFirstYear && ++stuckSteps >= 2) {
+                    throw new IllegalStateException("El picker dejó de moverse buscando el año " + year
+                            + " (visibles " + range[0] + "-" + range[1] + ", arrancó en " + startYear + ").");
+                }
+                if (range[0] != previousFirstYear) {
+                    stuckSteps = 0;
+                }
+                previousFirstYear = range[0];
+
+                driver.executeScript("mobile: scrollGesture", Map.of(
+                        "elementId", listId,
+                        "direction", year < range[0] ? "up" : "down",
+                        "percent", 0.9));
             }
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         }
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         throw new IllegalStateException("No se encontró el año " + year + " tras " + maxSteps + " pasos.");
     }
 
-    /** Navega mes a mes hasta encontrar el mes y anio solicitado. */
+    /** Devuelve {primer, último} año visible en la lista, o null si aún no se puede leer. */
+    private int[] readVisibleYearRange(By visibleYears) {
+        List<WebElement> items = driver.findElements(visibleYears);
+        if (items.isEmpty()) {
+            return null;
+        }
+        try {
+            return new int[] {
+                    Integer.parseInt(items.get(0).getText().trim()),
+                    Integer.parseInt(items.get(items.size() - 1).getText().trim()) };
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    /**
+     * Calcula cuántos meses faltan y toca el botón de navegación esa cantidad de
+     * veces seguidas; luego verifica y corrige si alguna animación se tragó un toque.
+     */
     private void navigateToMonth(YearMonth targetYearMonth) {
-        int maxAttempts = 100;
+        int maxRounds = 3;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("es", "ES"));
         By anyDayCell = By.xpath(
                 "//android.view.View[@resource-id=\"android:id/month_view\"]/android.view.View[@content-desc]");
 
-        for (int i = 0; i < maxAttempts; i++) {
-            YearMonth currentYearMonth = readCurrentMonthFromCalendar(anyDayCell, formatter);
-            if (currentYearMonth == null) {
-                sleep(300); // aún no terminó de renderizar el grid, reintenta la lectura
-                continue;
-            }
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        try {
+            for (int round = 0; round < maxRounds; round++) {
+                YearMonth currentYearMonth = readSettledMonth(anyDayCell, formatter);
+                long monthsToMove = ChronoUnit.MONTHS.between(currentYearMonth, targetYearMonth);
+                if (monthsToMove == 0) {
+                    return;
+                }
 
-            if (targetYearMonth.equals(currentYearMonth)) {
+                WebElement navigationButton = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        AppiumBy.accessibilityId(monthsToMove < 0 ? "Mes anterior" : "Mes siguiente")));
+                Rectangle bounds = navigationButton.getRect();
+                Map<String, Object> tapAtButton = Map.of(
+                        "x", bounds.getX() + bounds.getWidth() / 2,
+                        "y", bounds.getY() + bounds.getHeight() / 2);
+                for (long tap = 0; tap < Math.abs(monthsToMove); tap++) {
+                    driver.executeScript("mobile: clickGesture", tapAtButton);
+                    sleep(120);
+                }
+            }
+            if (targetYearMonth.equals(readSettledMonth(anyDayCell, formatter))) {
                 return;
             }
-
-            clickSafely(targetYearMonth.isBefore(currentYearMonth)
-                    ? AppiumBy.accessibilityId("Mes anterior")
-                    : AppiumBy.accessibilityId("Mes siguiente"));
-            sleep(350);
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         }
         throw new IllegalStateException("No se pudo llegar al mes/año objetivo: " + targetYearMonth);
+    }
+
+    /** Lee el mes visible cuando dos lecturas seguidas coinciden (fin de la animación). */
+    private YearMonth readSettledMonth(By anyDayCell, DateTimeFormatter formatter) {
+        YearMonth previous = null;
+        for (int attempt = 0; attempt < 20; attempt++) {
+            YearMonth current = readCurrentMonthFromCalendar(anyDayCell, formatter);
+            if (current != null && current.equals(previous)) {
+                return current;
+            }
+            previous = current;
+            sleep(150);
+        }
+        if (previous == null) {
+            throw new IllegalStateException("No se pudo leer el mes visible del calendario.");
+        }
+        return previous;
     }
 
     private YearMonth readCurrentMonthFromCalendar(By anyDayCell, DateTimeFormatter formatter) {
