@@ -55,14 +55,23 @@ instalarse, cierra la consola y vuelve a ejecutar el script en una ventana
 nueva para que el PATH se actualice. El script configura automáticamente las
 variables de usuario `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `JAVA_HOME` y las
 entradas de PATH para ADB, npm y Appium; no es necesario editarlas a mano.
-Finalmente, conecta un dispositivo Android con **USB debugging** activo y
-acepta la autorización RSA.
+
+Al final el script pregunta qué dispositivo se usará:
+
+1. **Celular por cable USB** (recomendado): conecta el celular con
+   **Depuración USB** activa y acepta la autorización RSA.
+2. **Emulador de Android Studio**: requiere Android Studio con al menos un
+   dispositivo virtual creado en *Device Manager*; el script lo enciende y
+   espera a que termine de arrancar.
+
+En ambos casos el serial detectado se guarda en `device.name` de
+`config/robot.properties`.
 
 El servidor se inicia de forma transparente al presionar **Iniciar ejecución**;
 no es necesario abrir otra consola con Appium. Si no inicia, revisa
 `Logs\appium.log` dentro de la carpeta de trabajo de la aplicación.
 
 La aplicación incluye la carpeta `datos_solicitudes` con el archivo
-`datos_solicitudes.xlsx`, que sirve como plantilla para cargar las solicitudes
-en el dashboard. Las evidencias y el historial de ejecuciones se guardan en
+`datos_solicitudes_configurado.xlsx` (hojas `Hoja1` y `Parametros`), que sirve
+como plantilla para cargar las solicitudes en el dashboard. Las evidencias y el historial de ejecuciones se guardan en
 `evidencias`; los diagnósticos de cada ejecución se guardan en `Logs`.

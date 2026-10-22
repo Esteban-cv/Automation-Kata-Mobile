@@ -64,14 +64,15 @@ try {
     Copy-Item (Join-Path $repositoryRoot "config") $distRoot -Recurse -Force
     Copy-Item (Join-Path $repositoryRoot "InstalarDependencias.bat") $distRoot -Force
 
-    # Incluye una plantilla lista para diligenciar junto a la aplicación.
-    $templateSource = Join-Path $projectRoot "src\test\resources\datos_solicitudes_template.xlsx"
+    # Incluye únicamente el Excel configurado (casos + hoja Parametros) para no confundir al usuario.
+    $templateName = "datos_solicitudes_configurado.xlsx"
+    $templateSource = Join-Path $projectRoot "src\test\resources\$templateName"
     $templateDirectory = Join-Path $distRoot "datos_solicitudes"
     if (-not (Test-Path $templateSource)) {
         throw "No se encontró la plantilla de solicitudes en $templateSource."
     }
     New-Item -ItemType Directory -Path $templateDirectory -Force | Out-Null
-    Copy-Item $templateSource (Join-Path $templateDirectory "datos_solicitudes.xlsx") -Force
+    Copy-Item $templateSource (Join-Path $templateDirectory $templateName) -Force
     Write-Host "Plantilla de solicitudes incluida en: $templateDirectory" -ForegroundColor DarkCyan
 
     # =========================================================================

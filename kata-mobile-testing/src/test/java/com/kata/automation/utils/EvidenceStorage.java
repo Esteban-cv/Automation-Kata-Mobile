@@ -22,7 +22,7 @@ public final class EvidenceStorage {
         String safeCaseId = caseId == null || caseId.isBlank()
                 ? "sin_id"
                 : caseId.replaceAll("[^a-zA-Z0-9._-]", "_");
-        return evidenceDirectory().resolve("caso_" + safeCaseId);
+        return evidenceDirectory().resolve(safeCaseId);
     }
 
     public static void ensureEvidenceDirectory() {

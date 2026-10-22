@@ -45,7 +45,7 @@ public final class ExcelScenarioLoader {
                     Cell cell = row.getCell(columnIndex);
                     values.put(headers.get(columnIndex), cell == null ? "" : formatter.formatCellValue(cell).trim());
                 }
-                if (values.getOrDefault(CASE_ID, "").isBlank()) {
+                if (new TestScenario(values).getCaseId().isBlank()) {
                     values.put(CASE_ID, "FILA-" + (rowIndex + 1));
                 }
                 scenarios.add(new TestScenario(values));

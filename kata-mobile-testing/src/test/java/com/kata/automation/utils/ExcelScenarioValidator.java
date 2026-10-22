@@ -32,6 +32,10 @@ public final class ExcelScenarioValidator {
                         severity));
             }
             for (ProductParameter parameter : parameters) {
+                // Con el encabezado "Monto" la regla de cada producto solo aplica a su propio producto.
+                if (!appliesTo(parameter, scenario)) {
+                    continue;
+                }
                 String value = scenario.get(parameter.parameter());
                 if (!value.isBlank() && !parameter.accepts(value)) {
                     ScenarioValidationIssue.Severity severity = scenario.getType() == TestScenario.Type.VALID
@@ -51,15 +55,14 @@ public final class ExcelScenarioValidator {
     private static ProductParameter find(TestScenario scenario, List<ProductParameter> parameters, String... names) {
         return parameters.stream()
                 .filter(parameter -> matches(parameter.parameter(), names))
-                .filter(parameter -> scenarioProduct(scenario).isBlank()
-                        || parameter.product().equalsIgnoreCase(scenarioProduct(scenario)))
+                .filter(parameter -> appliesTo(parameter, scenario))
                 .findFirst()
                 .orElse(null);
     }
 
-    private static String scenarioProduct(TestScenario scenario) {
-        String product = scenario.get("product");
-        return product.isBlank() ? scenario.get("productType") : product;
+    private static boolean appliesTo(ProductParameter parameter, TestScenario scenario) {
+        String product = scenario.getProduct();
+        return product.isBlank() || parameter.product().equalsIgnoreCase(product);
     }
 
     private static boolean matches(String value, String[] names) {

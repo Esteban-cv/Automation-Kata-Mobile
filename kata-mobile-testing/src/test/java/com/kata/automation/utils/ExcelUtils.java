@@ -7,8 +7,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class ExcelUtils {
+    /** Normalized names of the optional scenario columns ("idCaso" or "ID caso", etc.). */
+    private static final Set<String> SCENARIO_METADATA_HEADERS = Set.of(
+            "idcaso", "tipoprueba", "tipodeprueba", "resultadoesperado", "continuarflujo");
 
     /** Typed scenario reader for new tests; the legacy Object[][] API remains unchanged. */
     public static List<TestScenario> getScenarios(String filePath, String sheetName) {
@@ -22,8 +26,7 @@ public class ExcelUtils {
 
     public static Optional<TestScenario> findScenario(String filePath, String sheetName, String numberId) {
         return getScenarios(filePath, sheetName).stream()
-                .filter(scenario -> numberId.equals(scenario.get("numberId"))
-                        || numberId.equals(scenario.get("numeroIdentificacion")))
+                .filter(scenario -> numberId.equals(scenario.getNumberId()))
                 .findFirst();
     }
 
@@ -68,11 +71,8 @@ public class ExcelUtils {
             if (cell == null) {
                 continue;
             }
-            String headerName = cell.getStringCellValue().trim();
-            if ("idCaso".equalsIgnoreCase(headerName)
-                    || "tipoPrueba".equalsIgnoreCase(headerName)
-                    || "resultadoEsperado".equalsIgnoreCase(headerName)
-                    || "continuarFlujo".equalsIgnoreCase(headerName)) {
+            String headerName = TestScenario.normalizeHeader(cell.getStringCellValue());
+            if (SCENARIO_METADATA_HEADERS.contains(headerName)) {
                 return columnIndex;
             }
         }

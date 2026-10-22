@@ -1,8 +1,10 @@
 package com.kata.automation.utils;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /** Represents one Excel row and the expected behavior for that test case. */
@@ -22,29 +24,55 @@ public final class TestScenario {
     }
 
     private final Map<String, String> values;
+    private final Map<String, String> normalizedValues = new LinkedHashMap<>();
 
     public TestScenario(Map<String, String> values) {
         this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
+        values.forEach((column, value) -> normalizedValues.merge(
+                normalizeHeader(column), value, (current, next) -> next.isBlank() ? current : next));
     }
 
-    public String get(String column) {
-        return values.getOrDefault(column, "");
+    /** Lets "Número de identificación", "numero_identificacion" and "NumeroIdentificacion" match. */
+    public static String normalizeHeader(String header) {
+        String withoutAccents = Normalizer.normalize(header == null ? "" : header, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return withoutAccents.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    /** Returns the first non-blank value among the given column names (English or Spanish). */
+    public String get(String... columns) {
+        for (String column : columns) {
+            String value = normalizedValues.getOrDefault(normalizeHeader(column), "");
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 
     public String getCaseId() {
-        return firstNonBlank(get("idCaso"), get("caseId"), get("id_caso"));
+        return get("idCaso", "caseId", "id_caso");
+    }
+
+    public String getNumberId() {
+        return get("numberId", "numeroIdentificacion", "Número de identificación");
+    }
+
+    public String getProduct() {
+        return get("product", "Producto", "productType", "Tipo de producto");
     }
 
     public Type getType() {
-        return parseEnum("tipoPrueba", Type.class, Type.VALID);
+        return parseEnum(get("tipoPrueba", "Tipo de prueba"), "Tipo de prueba", Type.class, Type.VALID);
     }
 
     public ExpectedResult getExpectedResult() {
-        return parseEnum("resultadoEsperado", ExpectedResult.class, ExpectedResult.SUCCESS);
+        return parseEnum(get("resultadoEsperado"), "Resultado esperado",
+                ExpectedResult.class, ExpectedResult.SUCCESS);
     }
 
     public boolean shouldContinue() {
-        String value = firstNonBlank(get("continuarFlujo"), get("continueFlow"));
+        String value = get("continuarFlujo", "continueFlow");
         return value.isBlank() || "SI".equalsIgnoreCase(value) || "YES".equalsIgnoreCase(value);
     }
 
@@ -53,7 +81,7 @@ public final class TestScenario {
      * silently rounded by a double conversion.
      */
     public String getAmountText() {
-        return firstNonBlank(get("amount"), get("monto"));
+        return get("amount", "monto").trim();
     }
 
     public BigDecimal getAmount() {
@@ -65,8 +93,8 @@ public final class TestScenario {
         return values;
     }
 
-    private <T extends Enum<T>> T parseEnum(String column, Class<T> type, T fallback) {
-        String value = get(column).trim();
+    private <T extends Enum<T>> T parseEnum(String rawValue, String column, Class<T> type, T fallback) {
+        String value = rawValue.trim();
         if (value.isBlank()) {
             return fallback;
         }
@@ -76,14 +104,5 @@ public final class TestScenario {
             throw new IllegalArgumentException(
                     "Valor inválido en la columna '" + column + "': " + value, exception);
         }
-    }
-
-    private static String firstNonBlank(String... candidates) {
-        for (String candidate : candidates) {
-            if (candidate != null && !candidate.isBlank()) {
-                return candidate.trim();
-            }
-        }
-        return "";
     }
 }

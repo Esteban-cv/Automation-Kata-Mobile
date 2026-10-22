@@ -25,7 +25,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public final class ExcelWorkbookTemplate {
     public static final String PARAMETERS_SHEET = ExcelScenarioLoader.PARAMETERS_SHEET;
     private static final String[] SCENARIO_HEADERS = {
-            "idCaso", "tipoPrueba", "resultadoEsperado", "continuarFlujo"
+            "ID caso", "Tipo de prueba", "Resultado esperado", "Continuar flujo"
     };
     private static final String[] TYPE_OPTIONS = { "VALID", "BOUNDARY", "INVALID", "CONFIGURATION" };
     private static final String[] RESULT_OPTIONS = { "SUCCESS", "REJECTED", "CONTROLLED_ERROR", "TECHNICAL_ERROR" };
@@ -156,7 +156,8 @@ public final class ExcelWorkbookTemplate {
     private static int findColumn(Row header, String name) {
         for (int index = 0; index < header.getLastCellNum(); index++) {
             Cell cell = header.getCell(index);
-            if (cell != null && name.equalsIgnoreCase(cell.getStringCellValue().trim())) {
+            if (cell != null && TestScenario.normalizeHeader(name)
+                    .equals(TestScenario.normalizeHeader(cell.getStringCellValue()))) {
                 return index;
             }
         }

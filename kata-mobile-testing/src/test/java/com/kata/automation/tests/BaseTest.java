@@ -37,15 +37,15 @@ public class BaseTest {
 
     @AfterSuite
     public void globalTearDown() {
-        DriverManager.quitDriver();
         try {
-            // Desactiva el modo "No Molestar" (0 = Apagado)
+            // Desactiva el modo "No Molestar" (0 = Apagado) antes de cerrar la sesión
             driver.executeScript("mobile: shell", java.util.Map.of(
                     "command", "settings put global zen_mode 0"
             ));
         } catch (Exception e) {
             /* Ignorado */
         }
+        DriverManager.quitDriver();
     }
 
     protected void takeScreenshot(String name) {

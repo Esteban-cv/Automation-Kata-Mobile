@@ -9,8 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
@@ -18,6 +23,17 @@ import io.appium.java_client.android.options.UiAutomator2Options;
 public class DriverManager {
     private static AndroidDriver driver;
     private static final String DEFAULT_APPIUM_URL = "http://127.0.0.1:4723";
+    private static final Pattern OVERRIDE_DENSITY = Pattern.compile("Override density:\\s*(\\d+)");
+
+    // Comando que devuelve la pantalla al estado previo; null cuando no hay nada pendiente.
+    private static volatile String densityRestoreCommand;
+    private static volatile String deviceSerial;
+
+    static {
+        // Último recurso si la JVM termina sin pasar por quitDriver (cierre de ventana, Ctrl+C).
+        Runtime.getRuntime().addShutdownHook(new Thread(DriverManager::restoreDensityWithAdb,
+                "kata-mobile-restore-density"));
+    }
 
     public static AndroidDriver getDriver() {
         if (driver == null) {
@@ -25,7 +41,8 @@ public class DriverManager {
                 Properties configuration = loadConfiguration();
                 UiAutomator2Options options = new UiAutomator2Options();
                 options.setPlatformName("Android");
-                options.setDeviceName(configuration.getProperty("device.name", "RZCX10KND8P"));
+                deviceSerial = configuration.getProperty("device.name", "RZCX10KND8P");
+                options.setDeviceName(deviceSerial);
                 options.setAppPackage(configuration.getProperty("app.package", "com.kata.mobile"));
                 options.setAutomationName(configuration.getProperty("automation.name", "UiAutomator2"));
 
@@ -75,6 +92,9 @@ public class DriverManager {
             if (density < 120 || density > 640) {
                 throw new IllegalArgumentException("Fuera del rango soportado (120-640): " + density);
             }
+            if (densityRestoreCommand == null) {
+                densityRestoreCommand = restoreCommandFor(density);
+            }
             driver.executeScript("mobile: shell", Map.of("command", "wm density " + density));
             System.out.println("Densidad de pantalla aplicada: " + density + " dpi");
         } catch (NumberFormatException exception) {
@@ -82,6 +102,78 @@ public class DriverManager {
         } catch (RuntimeException exception) {
             throw new RuntimeException("No se pudo aplicar screen.density=" + configuredDensity, exception);
         }
+    }
+
+    /**
+     * Conserva un override que el usuario ya tuviera. Si el override coincide con la densidad
+     * del robot se asume que quedó de una ejecución interrumpida y se vuelve al valor de fábrica.
+     */
+    private static String restoreCommandFor(int automationDensity) {
+        try {
+            Object output = driver.executeScript("mobile: shell", Map.of("command", "wm density"));
+            Matcher matcher = OVERRIDE_DENSITY.matcher(String.valueOf(output));
+            if (matcher.find() && Integer.parseInt(matcher.group(1)) != automationDensity) {
+                return "wm density " + matcher.group(1);
+            }
+        } catch (RuntimeException exception) {
+            ExecutionLog.error("No se pudo leer la densidad original; se usará la de fábrica", exception);
+        }
+        return "wm density reset";
+    }
+
+    private static void restoreScreenDensity() {
+        String command = densityRestoreCommand;
+        if (command == null) {
+            return;
+        }
+        try {
+            driver.executeScript("mobile: shell", Map.of("command", command));
+            densityRestoreCommand = null;
+            System.out.println("Densidad de pantalla restablecida (" + command + ")");
+        } catch (RuntimeException exception) {
+            // La sesión puede estar caída (detención o fallo de Appium); se intenta por ADB.
+            restoreDensityWithAdb();
+        }
+    }
+
+    private static void restoreDensityWithAdb() {
+        String command = densityRestoreCommand;
+        if (command == null) {
+            return;
+        }
+        List<String> adbCommand = new ArrayList<>(List.of(adbExecutable()));
+        if (deviceSerial != null && !deviceSerial.isBlank()) {
+            adbCommand.addAll(List.of("-s", deviceSerial));
+        }
+        adbCommand.add("shell");
+        adbCommand.addAll(List.of(command.split(" ")));
+        try {
+            Process process = new ProcessBuilder(adbCommand).redirectErrorStream(true).start();
+            if (process.waitFor(10, TimeUnit.SECONDS) && process.exitValue() == 0) {
+                densityRestoreCommand = null;
+                System.out.println("Densidad de pantalla restablecida por ADB (" + command + ")");
+            } else {
+                process.destroyForcibly();
+                System.err.println("No se pudo restablecer la densidad. Ejecuta manualmente: adb shell " + command);
+            }
+        } catch (IOException exception) {
+            System.err.println("No se pudo restablecer la densidad. Ejecuta manualmente: adb shell " + command);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static String adbExecutable() {
+        for (String variable : List.of("ANDROID_HOME", "ANDROID_SDK_ROOT")) {
+            String sdk = System.getenv(variable);
+            if (sdk != null && !sdk.isBlank()) {
+                Path adb = Paths.get(sdk, "platform-tools", "adb.exe");
+                if (Files.exists(adb)) {
+                    return adb.toString();
+                }
+            }
+        }
+        return "adb";
     }
 
     private static Properties loadConfiguration() {
@@ -131,8 +223,9 @@ public class DriverManager {
         }
     }
 
-    public static void quitDriver() {
+    public static synchronized void quitDriver() {
         if (driver != null) {
+            restoreScreenDensity();
             driver.quit();
             driver = null;
             System.out.println("Sesion de Appium finalizada correctamente...");
