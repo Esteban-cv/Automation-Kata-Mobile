@@ -50,6 +50,12 @@ public class BasePage {
     private static final Locale LOCALE_ES = new Locale("es", "ES");
     private static final DateTimeFormatter DAY_ACCESSIBILITY_FORMAT = DateTimeFormatter.ofPattern("dd MMMM yyyy",
             LOCALE_ES);
+    /** Una etiqueta que termina por debajo del 70% del alto deja poco espacio para su control. */
+    private static final double LOWER_ZONE_THRESHOLD = 0.70;
+    /** Mismo ajuste que se aplicaba antes siempre tras encontrar una etiqueta. */
+    private static final double LABEL_NUDGE_PERCENT = 0.12;
+
+    private Dimension screenSize;
 
     /** Inicializa el driver y una espera explicita de hasta 45 segundos. */
     public BasePage(AndroidDriver driver) {
@@ -171,8 +177,14 @@ public class BasePage {
 
         for (int i = 0; i < 8; i++) {
             try {
-                if (driver.findElement(locator).isDisplayed()) {
-                    scrollDownPercent(0.12);
+                WebElement label = driver.findElement(locator);
+                if (label.isDisplayed()) {
+                    // El control del campo va debajo de su etiqueta: solo se ajusta la
+                    // pantalla cuando la etiqueta quedó en la zona baja y ese control
+                    // podría quedar cortado. Si ya está arriba, el scroll extra sobra.
+                    if (isInLowerZone(label)) {
+                        scrollDownPercent(LABEL_NUDGE_PERCENT);
+                    }
                     driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
                     return;
                 }
@@ -182,6 +194,21 @@ public class BasePage {
         }
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
         throw new RuntimeException("No se encontró el texto '" + text + "' tras 8 scrolls.");
+    }
+
+    /** Indica si el borde inferior del elemento está por debajo del umbral de la pantalla. */
+    private boolean isInLowerZone(WebElement element) {
+        org.openqa.selenium.Rectangle rect = element.getRect();
+        int screenHeight = screenSize().getHeight();
+        return rect.getY() + rect.getHeight() > screenHeight * LOWER_ZONE_THRESHOLD;
+    }
+
+    /** El tamaño de pantalla no cambia durante la sesión; se consulta una sola vez por página. */
+    private Dimension screenSize() {
+        if (screenSize == null) {
+            screenSize = driver.manage().window().getSize();
+        }
+        return screenSize;
     }
 
     /**
