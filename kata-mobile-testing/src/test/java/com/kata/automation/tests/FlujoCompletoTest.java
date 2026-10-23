@@ -110,6 +110,7 @@ public class FlujoCompletoTest extends BaseTest {
         TestScenario scenario = ExcelUtils.findScenario(excelPath, sheetName, numberId)
                 .orElse(null);
 
+        ensureDeviceReady();
         executeOrderWithRetry(() -> processOrder(scenario, orderType, personType,
                 idType, numberId, country, firstName, name, birthDay, birthMonth, birthYear,
                 numberPhone,restructuring, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
@@ -134,16 +135,46 @@ public class FlujoCompletoTest extends BaseTest {
                 if (stopRequested || attempt == MAX_ORDER_ATTEMPTS || !isRetryableFailure(exception)) {
                     throw exception;
                 }
+                ensureDeviceConnected(exception);
                 recoverDriverForRetry();
             }
         }
         throw lastFailure;
     }
 
-    private boolean isRetryableFailure(RuntimeException exception) {
-        String exceptionType = exception.getClass().getName();
-        return exceptionType.contains("UnreachableBrowserException")
-                || exceptionType.contains("NoSuchSessionException");
+    /**
+     * Antes de cada solicitud: si el celular no está conectado se falla con un mensaje
+     * claro, y si la sesión anterior quedó caída se crea una nueva en lugar de arrancar
+     * la solicitud contra una conexión muerta.
+     */
+    private void ensureDeviceReady() {
+        ensureDeviceConnected(null);
+        if (!DriverManager.isSessionAlive()) {
+            recoverDriverForRetry();
+        }
+    }
+
+    private void ensureDeviceConnected(Throwable cause) {
+        if (DriverManager.isDeviceDisconnected()) {
+            throw new IllegalStateException("El celular " + DriverManager.deviceSerial()
+                    + " no está conectado al PC. Revisa el cable USB y que la depuración USB siga autorizada.",
+                    cause);
+        }
+    }
+
+    /** Fallas de sesión o del servicio UiAutomator2 del celular, buscadas en toda la cadena de causas. */
+    private boolean isRetryableFailure(Throwable exception) {
+        for (Throwable current = exception; current != null; current = current.getCause()) {
+            String exceptionType = current.getClass().getName();
+            String message = String.valueOf(current.getMessage());
+            if (exceptionType.contains("UnreachableBrowserException")
+                    || exceptionType.contains("NoSuchSessionException")
+                    || message.contains("instrumentation process is not running")
+                    || message.contains("ECONNRESET")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void recoverDriverForRetry() {

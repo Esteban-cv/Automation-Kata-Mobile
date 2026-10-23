@@ -17,6 +17,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.WebDriverException;
+
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
 
@@ -63,6 +66,7 @@ public class DriverManager {
 
                 URL appiumServer = new URL(appiumUrl);
                 driver = new AndroidDriver(appiumServer,options);
+                deviceSerial = connectedDeviceSerial(deviceSerial);
 
                 long implicitTimeout = Long.parseLong(
                     configuration.getProperty("implicit.timeout.seconds", "10"));
@@ -77,6 +81,22 @@ public class DriverManager {
 
         }
         return driver;
+    }
+
+    /**
+     * Serial del celular al que Appium realmente se conectó. UiAutomator2 no usa
+     * device.name para elegir el dispositivo, así que ese valor puede no coincidir
+     * con el celular conectado; los comandos ADB deben apuntar al de la sesión.
+     */
+    private static String connectedDeviceSerial(String configuredSerial) {
+        Capabilities capabilities = driver.getCapabilities();
+        for (String name : List.of("appium:deviceUDID", "deviceUDID", "appium:udid", "udid")) {
+            Object serial = capabilities.getCapability(name);
+            if (serial != null && !serial.toString().isBlank()) {
+                return serial.toString();
+            }
+        }
+        return configuredSerial;
     }
 
     private static void applyScreenDensity(Properties configuration) {
@@ -141,14 +161,10 @@ public class DriverManager {
         if (command == null) {
             return;
         }
-        List<String> adbCommand = new ArrayList<>(List.of(adbExecutable()));
-        if (deviceSerial != null && !deviceSerial.isBlank()) {
-            adbCommand.addAll(List.of("-s", deviceSerial));
-        }
-        adbCommand.add("shell");
-        adbCommand.addAll(List.of(command.split(" ")));
+        List<String> shellCommand = new ArrayList<>(List.of("shell"));
+        shellCommand.addAll(List.of(command.split(" ")));
         try {
-            Process process = new ProcessBuilder(adbCommand).redirectErrorStream(true).start();
+            Process process = new ProcessBuilder(adbCommand(shellCommand)).redirectErrorStream(true).start();
             if (process.waitFor(10, TimeUnit.SECONDS) && process.exitValue() == 0) {
                 densityRestoreCommand = null;
                 System.out.println("Densidad de pantalla restablecida por ADB (" + command + ")");
@@ -161,6 +177,58 @@ public class DriverManager {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Indica si ADB confirma que el dispositivo configurado no está disponible (cable
+     * desconectado o depuración no autorizada). Si ADB no se puede ejecutar el estado es
+     * desconocido y devuelve false, para no bloquear la ejecución por un falso negativo.
+     */
+    public static boolean isDeviceDisconnected() {
+        try {
+            Process process = new ProcessBuilder(adbCommand(List.of("get-state")))
+                    .redirectErrorStream(true).start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return false;
+            }
+            String state = new String(process.getInputStream().readAllBytes()).trim();
+            return !"device".equals(state);
+        } catch (IOException exception) {
+            return false;
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * Comprueba con un comando liviano que la sesión responde. Falla cuando el servicio
+     * UiAutomator2 del celular se cayó aunque el objeto driver siga existiendo.
+     */
+    public static synchronized boolean isSessionAlive() {
+        if (driver == null) {
+            return false;
+        }
+        try {
+            driver.manage().window().getSize();
+            return true;
+        } catch (WebDriverException exception) {
+            return false;
+        }
+    }
+
+    public static String deviceSerial() {
+        return deviceSerial;
+    }
+
+    private static List<String> adbCommand(List<String> arguments) {
+        List<String> command = new ArrayList<>(List.of(adbExecutable()));
+        if (deviceSerial != null && !deviceSerial.isBlank()) {
+            command.addAll(List.of("-s", deviceSerial));
+        }
+        command.addAll(arguments);
+        return command;
     }
 
     private static String adbExecutable() {
