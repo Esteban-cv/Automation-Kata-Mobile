@@ -18,7 +18,7 @@ if %ERRORLEVEL% EQU 0 (
 :: 2. VERIFICAR PLATFORM TOOLS (ADB)
 adb version >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo [OK] Android Platform-Tools (ADB) ya esta instalado.
+    echo [OK] Android Platform-Tools ^(ADB^) ya esta instalado.
 ) else (
     echo [PROCESO] Instalando Android Platform-Tools...
     winget install --id Google.PlatformTools --exact --source winget --accept-source-agreements --accept-package-agreements

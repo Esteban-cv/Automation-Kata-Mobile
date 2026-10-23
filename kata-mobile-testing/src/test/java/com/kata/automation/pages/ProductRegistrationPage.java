@@ -2,6 +2,7 @@ package com.kata.automation.pages;
 
 import java.time.LocalDate;
 import java.time.Duration;
+import java.util.Locale;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
@@ -53,27 +54,33 @@ public class ProductRegistrationPage extends BasePage {
 
         private static final By ACCEPT_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
 
+        // --- Periodicidad de la primera cuota (días después del desembolso) ---
+        // Fragmentos en minúscula de los productos "Crédito pop prod Urban Gota Sem360/Quin360".
+        private static final String WEEKLY_GOTA_PRODUCT = "gota sem";
+        private static final String BIWEEKLY_GOTA_PRODUCT = "gota quin";
+        private static final int WEEKLY_INSTALLMENT_DAYS = 7;
+        private static final int BIWEEKLY_INSTALLMENT_DAYS = 15;
+        private static final int MONTHLY_INSTALLMENT_DAYS = 30;
+
+        // --- Garantía FNG ---
+        // Texto exacto de la app, sin signo de interrogación al final.
+        private static final String FNG_QUESTION = "¿Requiere garantía FNG";
+        // Desplegable que la app muestra solo al responder "Si" a la pregunta FNG.
+        private static final String FNG_TYPE_LABEL = "Garantía FNG";
+        private static final By FNG_TYPE = By.xpath(
+                        "//android.widget.TextView[@text=\"" + FNG_TYPE_LABEL
+                                        + "\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
+
+        // ========================================================================
         // CHECKBOXES DE SEGUROS VOLUNTARIOS
-
-        // ========================================================================
-        // CHECKBOXES DE SEGUROS VOLUNTARIOS (Ajustados para hacer clic en la casilla)
+        // Cada seguro es una fila marcable (View checkable) con su texto y su CheckBox.
         // ========================================================================
 
-        private static final By PROTECTED_FAMILY = By.xpath(
-                        "//android.widget.TextView[@text=\"Tu familia protegida\"]");
-
-        private static final By PROTECTED_HOME_BUSSINESS = By.xpath(
-                        "//android.widget.TextView[@text=\"Tu hogar y negocio protegidos\"]");
-
-        // ¡CORREGIDO! Ya tiene la 'r' como aparece en la app actual
-        private static final By PROTECTED_MICRO_ENTREPRENEURS = By.xpath(
-                        "//android.widget.TextView[@text=\"Microempresarios protegidos\"]");
-
-        private static final By PROTECTED_LIFE = By.xpath(
-                        "//android.widget.TextView[@text=\"Tu vida protegida\"]");
-
-        private static final By FUNERAL_PLANNING = By.xpath(
-                        "//android.widget.TextView[@text=\"Previsión Exequial\"]");
+        private static final String PROTECTED_FAMILY = "Tu familia protegida";
+        private static final String PROTECTED_HOME_BUSSINESS = "Tu hogar y negocio protegidos";
+        private static final String PROTECTED_MICRO_ENTREPRENEURS = "Microempresarios protegidos";
+        private static final String PROTECTED_LIFE = "Tu vida protegida";
+        private static final String FUNERAL_PLANNING = "Previsión Exequial";
 
         // BOTONCES DE LOS FORMULARIOS DE SEGUROS
         private static final By BENEFICIARIES_BTN = By.xpath(
@@ -131,15 +138,6 @@ public class ProductRegistrationPage extends BasePage {
         // BOTON GUARDAR
         private static final By SAVE_BUTTON = By.xpath("//android.widget.TextView[@text=\"GUARDAR\"]");
 
-        // --- Checkboxes de Seguros (Para usar después) ---
-        // Ojo al error de la app: "Microempesarios" (sin R)
-        // private static final By INS_FAMILY =
-        // By.xpath("//android.widget.TextView[@text=\"Tu familia
-        // protegida\"]/following-sibling::android.widget.CheckBox");
-        // private static final By INS_MICRO =
-        // By.xpath("//android.widget.TextView[@text=\"Microempesarios
-        // protegidos\"]/following-sibling::android.widget.CheckBox");
-
         public ProductRegistrationPage(AndroidDriver driver) {
                 super(driver);
         }
@@ -159,7 +157,8 @@ public class ProductRegistrationPage extends BasePage {
                         int disbDay, int disbMonth, int disbYear,
                         String hasSavings) {
 
-                LocalDate calculatedDate = LocalDate.of(disbYear, disbMonth, disbDay).plusDays(30);
+                LocalDate calculatedDate = LocalDate.of(disbYear, disbMonth, disbDay)
+                                .plusDays(daysToFirstInstallment(product));
 
                 waitForVisibility(PRODUCT_REGISTRATION_BUTTON);
                 click(PRODUCT_REGISTRATION_BUTTON);
@@ -213,8 +212,7 @@ public class ProductRegistrationPage extends BasePage {
                 sleep(3000); // Pausa vital para que el sistema procese y marque los radio buttons solos.
 
                 // 4. Llenar obligatoriamente FNG y Garantía Real (Como lo pediste)
-                // OJO: Texto exacto de la app, sin signo de interrogación al final
-                answerQuestion("¿Requiere garantía FNG", hasFNG);
+                configureFngGuarantee(hasFNG);
 
                 //answerQuestion("¿Requiere Fianza?", hasBail);
 
@@ -227,6 +225,41 @@ public class ProductRegistrationPage extends BasePage {
 
                 click(ACCEPT_BUTTON);
 
+        }
+
+        /**
+         * Días entre el desembolso y la primera cuota según la periodicidad del producto:
+         * los productos Gota semanal pagan cada 7 días, los Gota quincenal cada 15 y el
+         * resto cada 30. Se compara por fragmento para cubrir sus variantes (ej. "Urban").
+         */
+        private static int daysToFirstInstallment(String product) {
+                String normalizedProduct = product == null ? "" : product.toLowerCase(Locale.ROOT);
+                if (normalizedProduct.contains(WEEKLY_GOTA_PRODUCT)) {
+                        return WEEKLY_INSTALLMENT_DAYS;
+                }
+                if (normalizedProduct.contains(BIWEEKLY_GOTA_PRODUCT)) {
+                        return BIWEEKLY_INSTALLMENT_DAYS;
+                }
+                return MONTHLY_INSTALLMENT_DAYS;
+        }
+
+        /**
+         * La columna "Garantía FNG" del Excel trae "No" o el tipo de garantía que se
+         * debe seleccionar (por ejemplo RECONSTRUYE), tal como aparece en la app.
+         */
+        private void configureFngGuarantee(String fngGuarantee) {
+                String guaranteeType = fngGuarantee == null ? "" : fngGuarantee.trim();
+                if ("si".equalsIgnoreCase(guaranteeType)) {
+                        throw new IllegalArgumentException("La columna 'Garantía FNG' debe indicar el tipo de "
+                                        + "garantía tal como aparece en la app (por ejemplo RECONSTRUYE), no 'Si'.");
+                }
+
+                boolean requiresFng = !guaranteeType.isEmpty() && !"no".equalsIgnoreCase(guaranteeType);
+                answerQuestion(FNG_QUESTION, requiresFng ? "Si" : "No");
+                if (requiresFng) {
+                        scrollAndClickReliable(FNG_TYPE_LABEL, FNG_TYPE, 0.15);
+                        clickSafely(byVisibleText(guaranteeType));
+                }
         }
 
         private void waitForSimulationResponse() {
@@ -284,25 +317,13 @@ public class ProductRegistrationPage extends BasePage {
                         String hasFuneralPlanning, String numberId) {
 
                 // ==========================================
-                // 1. MARCAR LOS CHECKBOXES HACIENDO CLIC EN EL TEXTO
+                // 1. MARCAR LOS SEGUROS SELECCIONADOS EN EL EXCEL
                 // ==========================================
-                if ("si".equalsIgnoreCase(hasFamilyInsurance)) {
-                        scrollAndClickReliable("Tu familia protegida", PROTECTED_FAMILY, 0.15);
-                }
-                if ("si".equalsIgnoreCase(hasHomeBussinessInsurance)) {
-                        scrollAndClickReliable("Tu hogar y negocio protegidos", PROTECTED_HOME_BUSSINESS, 0.15);
-                }
-                if ("si".equalsIgnoreCase(hasMicroEntrepreneursInsurance)) {
-                        scrollAndClickReliable("Microempesarios protegidos", PROTECTED_MICRO_ENTREPRENEURS, 0.15);
-                }
-                takeEvidence(numberId, "Seguros_Voluntarios");
-                if ("si".equalsIgnoreCase(hasLifeInsurance)) {
-                        scrollAndClickReliable("Tu vida protegida", PROTECTED_LIFE, 0.15);
-                }
-                if ("si".equalsIgnoreCase(hasFuneralPlanning)) {
-                        // Usa también el scroll confiable aquí, por si el último seguro queda oculto
-                        scrollAndClickReliable("Previsión Exequial", FUNERAL_PLANNING, 0.15);
-                }
+                selectVoluntaryInsurance(PROTECTED_FAMILY, hasFamilyInsurance);
+                selectVoluntaryInsurance(PROTECTED_HOME_BUSSINESS, hasHomeBussinessInsurance);
+                selectVoluntaryInsurance(PROTECTED_MICRO_ENTREPRENEURS, hasMicroEntrepreneursInsurance);
+                selectVoluntaryInsurance(PROTECTED_LIFE, hasLifeInsurance);
+                selectVoluntaryInsurance(FUNERAL_PLANNING, hasFuneralPlanning);
 
                 takeEvidence(numberId, "Seguros_Voluntarios");
 
@@ -310,8 +331,11 @@ public class ProductRegistrationPage extends BasePage {
                 // 2. LLENAR LOS FORMULARIOS DINÁMICOS
                 // ==========================================
 
-                // Regla A: Si se seleccionó Familia O Vida, se llena Beneficiarios
-                if ("si".equalsIgnoreCase(hasFamilyInsurance) || "si".equalsIgnoreCase(hasLifeInsurance)) {
+                // Regla A: Familia, Vida y Previsión Exequial comparten un único formulario de
+                // beneficiarios (un solo beneficiario), así que se llena una vez.
+                // Microempresarios protegidos no habilita ningún formulario.
+                if ("si".equalsIgnoreCase(hasFamilyInsurance) || "si".equalsIgnoreCase(hasLifeInsurance)
+                                || "si".equalsIgnoreCase(hasFuneralPlanning)) {
                         scrollAndClickReliable("Beneficiarios seguros voluntarios", BENEFICIARIES_BTN, 0.15);
                         // método que llena el modal de beneficiarios
                         fillBeneficiariesModal(numberId);
@@ -324,6 +348,34 @@ public class ProductRegistrationPage extends BasePage {
                         // método que llena el modal de inmuebles
                         fillPropertyModal(numberId);
                 }
+        }
+
+        /**
+         * Marca el seguro solo si el Excel lo pide y aún no está marcado: un segundo
+         * toque lo desmarcaría. Confirma el estado porque de él dependen los campos
+         * que la app habilita debajo (beneficiarios o inmueble).
+         */
+        private void selectVoluntaryInsurance(String insuranceLabel, String decision) {
+                if (!"si".equalsIgnoreCase(decision)) {
+                        return;
+                }
+                By insuranceRow = By.xpath("//android.view.View[@checkable=\"true\"][android.widget.TextView[@text=\""
+                                + insuranceLabel + "\"]]");
+
+                scrollToText(insuranceLabel, 0.15);
+                if (!isChecked(insuranceRow)) {
+                        clickSafely(insuranceRow);
+                }
+                try {
+                        new WebDriverWait(driver, Duration.ofSeconds(5)).until(currentDriver -> isChecked(insuranceRow));
+                } catch (TimeoutException exception) {
+                        throw new IllegalStateException("No se pudo marcar el seguro '" + insuranceLabel + "'.",
+                                        exception);
+                }
+        }
+
+        private boolean isChecked(By locator) {
+                return Boolean.parseBoolean(waitForStableElement(locator, 1).getAttribute("checked"));
         }
 
         public void fillBeneficiariesModal(String numberId) {

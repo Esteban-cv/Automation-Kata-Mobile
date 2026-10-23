@@ -19,8 +19,10 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.Rectangle;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
@@ -445,7 +447,7 @@ public class BasePage {
         int maxAttempts = 3;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             scrollToText(questionText, 0.20);
-            clickSafely(dynamicLocator); // ya usa waitForStableElement internamente
+            clickSafely(dynamicLocator);
             sleep(400);
 
             // Verifica releyendo: si el TextView de la opción sigue existiendo con el mismo
@@ -467,12 +469,19 @@ public class BasePage {
      */
     protected WebElement waitForStableElement(By locator, int maxChecks) {
         WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
-        org.openqa.selenium.Rectangle previousRect = element.getRect();
+        Rectangle previousRect = element.getRect();
 
         for (int i = 0; i < maxChecks; i++) {
             sleep(120); // ventana corta para detectar si sigue en inercia
-            element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
-            org.openqa.selenium.Rectangle currentRect = element.getRect();
+            Rectangle currentRect;
+            try {
+                // Se relee la posición del mismo elemento: evita una búsqueda completa por cada chequeo.
+                currentRect = element.getRect();
+            } catch (StaleElementReferenceException e) {
+                // La pantalla redibujó el nodo; se localiza de nuevo y se sigue comparando.
+                element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+                currentRect = element.getRect();
+            }
 
             if (currentRect.equals(previousRect)) {
                 return element; // dos lecturas iguales seguidas = ya se asentó
@@ -482,27 +491,24 @@ public class BasePage {
         return element; // no se estabilizó del todo, pero devolvemos la última lectura
     }
 
-    /** Hace clic y usa un toque nativo como respaldo si el clic WebDriver falla. */
+    /** Hace clic y usa un toque nativo sobre el mismo elemento si el clic WebDriver falla. */
     protected void clickSafely(By locator) {
         int maxAttempts = 5;
         Exception lastError = null;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                WebElement element = waitForStableElement(locator, 3); // <-- el cambio clave
-                element.click();
+                WebElement element = waitForStableElement(locator, 3);
+                try {
+                    element.click();
+                } catch (WebDriverException clickError) {
+                    driver.executeScript("mobile: clickGesture", Map.of(
+                            "elementId", ((RemoteWebElement) element).getId()));
+                }
                 return;
             } catch (Exception e) {
                 lastError = e;
-                try {
-                    WebElement element = waitForStableElement(locator, 3);
-                    driver.executeScript("mobile: clickGesture", Map.of(
-                            "elementId", ((org.openqa.selenium.remote.RemoteWebElement) element).getId()));
-                    return;
-                } catch (Exception fallbackError) {
-                    lastError = fallbackError;
-                    sleep(400);
-                }
+                sleep(400);
             }
         }
         throw new RuntimeException("No se pudo hacer click en " + locator + " tras " + maxAttempts + " intentos.",
