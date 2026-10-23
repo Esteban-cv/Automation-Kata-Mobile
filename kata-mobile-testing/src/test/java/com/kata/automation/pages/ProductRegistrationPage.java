@@ -62,6 +62,10 @@ public class ProductRegistrationPage extends BasePage {
         private static final int BIWEEKLY_INSTALLMENT_DAYS = 15;
         private static final int MONTHLY_INSTALLMENT_DAYS = 30;
 
+        // --- Deuda alivio (pregunta que muestran los productos Gota) ---
+        private static final String ALIVIO_DEBT_QUESTION = "¿El solicitante desea recoger el saldo de la deuda alivio?";
+        private static final double NEARBY_SEARCH_SCROLL_PERCENT = 0.25;
+
         // --- Garantía FNG ---
         // Texto exacto de la app, sin signo de interrogación al final.
         private static final String FNG_QUESTION = "¿Requiere garantía FNG";
@@ -185,15 +189,14 @@ public class ProductRegistrationPage extends BasePage {
                                 0.15);
                 clickSafely(byVisibleText(destination));
 
-                // AQUI VA EL SALTO: Los seguros voluntarios se ignoran en este método
-                // principal.
+                declineAlivioDebtIfPresent(product);
 
                 configureVoluntaryInsurances(hasFamilyInsurance, hasHomeBussinessInsurance,
                                 hasMicroEntrepreneursInsurance, hasLifeInsurance, hasFuneralPlanning, numberId);
 
                 // 2. Ahorros y Fechas
                 scrollToText("¿Tiene ahorro?", 0.20);
-                answerQuestion("¿Tiene ahorro?", hasSavings);
+                answerQuestion("¿Tiene ahorro?", savingsAnswer(product, hasSavings));
 
                 scrollAndClickReliable("Fecha de desembolso", DISBURSEMENT_DATE, 0.15);
                 selectDateInCalendar(disbDay, disbMonth, disbYear);
@@ -233,14 +236,76 @@ public class ProductRegistrationPage extends BasePage {
          * resto cada 30. Se compara por fragmento para cubrir sus variantes (ej. "Urban").
          */
         private static int daysToFirstInstallment(String product) {
-                String normalizedProduct = product == null ? "" : product.toLowerCase(Locale.ROOT);
-                if (normalizedProduct.contains(WEEKLY_GOTA_PRODUCT)) {
+                if (isWeeklyGotaProduct(product)) {
                         return WEEKLY_INSTALLMENT_DAYS;
                 }
-                if (normalizedProduct.contains(BIWEEKLY_GOTA_PRODUCT)) {
+                if (isBiweeklyGotaProduct(product)) {
                         return BIWEEKLY_INSTALLMENT_DAYS;
                 }
                 return MONTHLY_INSTALLMENT_DAYS;
+        }
+
+        /**
+         * Los productos Gota (semanal y quincenal) exigen ahorro: con "No" la simulación
+         * del crédito se rechaza. Para ellos se responde "Si" aunque el Excel diga otra cosa.
+         */
+        private static String savingsAnswer(String product, String hasSavings) {
+                boolean requiresSavings = isWeeklyGotaProduct(product) || isBiweeklyGotaProduct(product);
+                if (requiresSavings && !"si".equalsIgnoreCase(hasSavings)) {
+                        System.out.println("ℹ️ El producto '" + product + "' exige ahorro: se marca 'Si' aunque el Excel indique '"
+                                        + hasSavings + "'.");
+                        return "Si";
+                }
+                return hasSavings;
+        }
+
+        /**
+         * Los productos Gota pueden mostrar, debajo del destino económico, la pregunta de
+         * recoger la deuda alivio; se responde "No" solo si aparece.
+         */
+        private void declineAlivioDebtIfPresent(String product) {
+                if (!isWeeklyGotaProduct(product) && !isBiweeklyGotaProduct(product)) {
+                        return;
+                }
+                if (isTextNearCurrentPosition(ALIVIO_DEBT_QUESTION)) {
+                        answerQuestion(ALIVIO_DEBT_QUESTION, "No");
+                } else {
+                        System.out.println("ℹ️ El producto '" + product + "' no mostró la pregunta de deuda alivio.");
+                }
+        }
+
+        /**
+         * Busca el texto en la pantalla actual y un desplazamiento más abajo. Si no aparece,
+         * devuelve la pantalla a su posición para no saltarse los campos siguientes.
+         */
+        private boolean isTextNearCurrentPosition(String text) {
+                By locator = By.xpath("//android.widget.TextView[contains(@text, '" + text + "')]");
+                driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+                try {
+                        if (!driver.findElements(locator).isEmpty()) {
+                                return true;
+                        }
+                        scrollDownPercent(NEARBY_SEARCH_SCROLL_PERCENT);
+                        if (!driver.findElements(locator).isEmpty()) {
+                                return true;
+                        }
+                        scrollDownPercent(-NEARBY_SEARCH_SCROLL_PERCENT);
+                        return false;
+                } finally {
+                        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
+                }
+        }
+
+        private static boolean isWeeklyGotaProduct(String product) {
+                return normalizeProduct(product).contains(WEEKLY_GOTA_PRODUCT);
+        }
+
+        private static boolean isBiweeklyGotaProduct(String product) {
+                return normalizeProduct(product).contains(BIWEEKLY_GOTA_PRODUCT);
+        }
+
+        private static String normalizeProduct(String product) {
+                return product == null ? "" : product.toLowerCase(Locale.ROOT);
         }
 
         /**
