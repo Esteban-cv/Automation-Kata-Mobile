@@ -1,0 +1,9 @@
+Coloca aqui el APK de Kata Mobile (un solo archivo .apk).
+
+EmpaquetarDashboard.ps1 lo incluye en el instalador como apk\KataMobile.apk.
+Si hay varios .apk, toma el mas reciente.
+
+InstalarDependencias.bat lo instala automaticamente cuando se elige la opcion
+[2] Emulador de Android Studio. Con celular por cable no se usa.
+
+El APK no se guarda en git (ver .gitignore).

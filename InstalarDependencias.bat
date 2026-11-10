@@ -1,10 +1,15 @@
 @echo off
 setlocal
 color 0B
+set "SCRIPT_DIR=%~dp0"
 echo =======================================================
 echo     INSTALADOR DE DEPENDENCIAS - KATA MOBILE
 echo =======================================================
 echo.
+
+:: Lo que winget instala no queda en el PATH de esta ventana; si se instala algo,
+:: hay que abrir una ventana nueva para continuar.
+set "NEEDS_RESTART="
 
 :: 1. VERIFICAR NODE.JS
 node -v >nul 2>&1
@@ -13,6 +18,7 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo [PROCESO] Instalando Node.js...
     winget install --id OpenJS.NodeJS.LTS --exact --source winget --accept-source-agreements --accept-package-agreements
+    set "NEEDS_RESTART=1"
 )
 
 :: 2. VERIFICAR PLATFORM TOOLS (ADB)
@@ -22,6 +28,7 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo [PROCESO] Instalando Android Platform-Tools...
     winget install --id Google.PlatformTools --exact --source winget --accept-source-agreements --accept-package-agreements
+    set "NEEDS_RESTART=1"
 )
 
 :: 3. VERIFICAR JAVA 17
@@ -31,15 +38,31 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo [PROCESO] Instalando Java 17...
     winget install --id Microsoft.OpenJDK.17 --exact --source winget --accept-source-agreements --accept-package-agreements
+    set "NEEDS_RESTART=1"
 )
 
-:: 4. VERIFICAR APPIUM Y DRIVER
+if defined NEEDS_RESTART (
+    echo.
+    echo [IMPORTANTE] Se instalaron programas nuevos. Cierra esta ventana y vuelve a
+    echo ejecutar InstalarDependencias.bat para terminar la configuracion.
+    echo.
+    pause
+    exit /b 0
+)
+
+:: 4. VERIFICAR APPIUM Y SU DRIVER (se revisan por separado: Appium puede estar sin el driver)
 call appium -v >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo [OK] Appium ya esta instalado.
 ) else (
-    echo [PROCESO] Instalando Appium y UiAutomator2...
+    echo [PROCESO] Instalando Appium...
     call npm install --location=global appium
+)
+call appium driver list --installed 2>&1 | findstr /i "uiautomator2" >nul
+if %ERRORLEVEL% EQU 0 (
+    echo [OK] Driver UiAutomator2 ya esta instalado.
+) else (
+    echo [PROCESO] Instalando driver UiAutomator2...
     call appium driver install uiautomator2
 )
 
@@ -58,9 +81,15 @@ if not defined ADB_PATH (
 )
 
 for %%I in ("%ADB_PATH%") do set "PLATFORM_TOOLS=%%~dpI"
-for %%I in ("%JAVA_PATH%") do set "JAVA_BIN=%%~dpI"
-for %%I in ("%JAVA_BIN:~0,-1%") do set "JAVA_HOME=%%~dpI"
-set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
+call :RESOLVER_ANDROID_HOME
+if not defined ANDROID_HOME (
+    echo [ADVERTENCIA] No se pudo ubicar la carpeta del SDK de Android a partir de "%ADB_PATH%".
+    echo Appium necesita ANDROID_HOME. Reinstala Platform-Tools o instala Android Studio.
+    pause
+    exit /b 1
+)
+echo [OK] SDK de Android: %ANDROID_HOME%
+call :RESOLVER_JAVA_HOME
 
 :: Bloque de PowerShell para inyectar variables al sistema sin duplicar (Tu logica original)
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
@@ -71,7 +100,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "[Environment]::SetEnvironmentVariable('Path',($parts -join ';'),'User');" ^
   "[Environment]::SetEnvironmentVariable('ANDROID_HOME','%ANDROID_HOME%','User');" ^
   "[Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT','%ANDROID_HOME%','User');" ^
-  "[Environment]::SetEnvironmentVariable('JAVA_HOME','%JAVA_HOME%','User');"
+  "if('%JAVA_HOME%'){[Environment]::SetEnvironmentVariable('JAVA_HOME','%JAVA_HOME%','User')};"
 
 echo [OK] Variables configuradas con exito.
 echo.
@@ -137,6 +166,7 @@ for /f "skip=1 tokens=1,2" %%A in ('"%ADB_PATH%" devices 2^>nul') do (
 )
 if defined DEVICE_SERIAL (
     echo [OK] Ya hay un emulador encendido: %DEVICE_SERIAL%
+    call :INSTALAR_APP
     goto :GUARDAR_DISPOSITIVO
 )
 
@@ -172,12 +202,34 @@ timeout /t 2 /nobreak >nul
 goto :ESPERAR_EMULADOR
 :EMULADOR_LISTO
 echo [OK] Emulador listo: %DEVICE_SERIAL%
+call :INSTALAR_APP
 goto :GUARDAR_DISPOSITIVO
 
 :AGREGAR_AVD
 set /a AVD_COUNT+=1
 set "AVD_%AVD_COUNT%=%~1"
 echo  [%AVD_COUNT%] %~1
+exit /b
+
+:: -------------------------------------------------------
+:: Instala (o actualiza conservando datos) la app incluida en el instalador.
+:: Justo despues del arranque el gestor de paquetes puede no estar listo: un reintento.
+:: -------------------------------------------------------
+:INSTALAR_APP
+set "APP_APK=%SCRIPT_DIR%apk\KataMobile.apk"
+if not exist "%APP_APK%" (
+    echo [ADVERTENCIA] No se encontro la app en "%APP_APK%".
+    echo Instala la app manualmente en el emulador antes de abrir el Dashboard.
+    exit /b
+)
+echo [PROCESO] Instalando la app Kata Mobile en el emulador, puede tardar un minuto...
+"%ADB_PATH%" -s %DEVICE_SERIAL% install -r "%APP_APK%" && goto :APP_INSTALADA
+timeout /t 10 /nobreak >nul
+"%ADB_PATH%" -s %DEVICE_SERIAL% install -r "%APP_APK%" && goto :APP_INSTALADA
+echo [ERROR] No se pudo instalar la app. Revisa el mensaje anterior.
+exit /b
+:APP_INSTALADA
+echo [OK] App instalada en el emulador.
 exit /b
 
 :: -------------------------------------------------------
@@ -201,3 +253,35 @@ echo Cierra esta ventana negra y ya puedes abrir el Dashboard.
 echo.
 pause
 endlocal
+exit /b
+
+:: -------------------------------------------------------
+:: ANDROID_HOME debe ser la carpeta que contiene platform-tools\adb.exe.
+:: Orden: valor actual valido, SDK de Android Studio, carpeta real del adb instalado.
+:: -------------------------------------------------------
+:RESOLVER_ANDROID_HOME
+if defined ANDROID_HOME if exist "%ANDROID_HOME%\platform-tools\adb.exe" exit /b
+set "ANDROID_HOME="
+if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" (
+    set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
+    exit /b
+)
+:: winget puede dejar en el PATH un acceso directo; se resuelve a la ubicacion real.
+set "ADB_REAL="
+for /f "delims=" %%I in ('powershell -NoProfile -Command "[string](Get-Item -LiteralPath $env:ADB_PATH).Target"') do set "ADB_REAL=%%I"
+if not defined ADB_REAL set "ADB_REAL=%ADB_PATH%"
+for %%I in ("%ADB_REAL%") do set "ADB_DIR=%%~dpI"
+for %%D in ("%ADB_DIR:~0,-1%") do if /i "%%~nxD"=="platform-tools" set "ANDROID_HOME=%%~dpD"
+if defined ANDROID_HOME set "ANDROID_HOME=%ANDROID_HOME:~0,-1%"
+exit /b
+
+:: -------------------------------------------------------
+:: JAVA_HOME debe ser la carpeta que contiene bin\java.exe; se respeta si ya es valido.
+:: -------------------------------------------------------
+:RESOLVER_JAVA_HOME
+if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" exit /b
+set "JAVA_HOME="
+for %%I in ("%JAVA_PATH%") do set "JAVA_BIN=%%~dpI"
+for %%D in ("%JAVA_BIN:~0,-1%") do if /i "%%~nxD"=="bin" set "JAVA_HOME=%%~dpD"
+if defined JAVA_HOME set "JAVA_HOME=%JAVA_HOME:~0,-1%"
+exit /b

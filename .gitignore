@@ -28,3 +28,6 @@ replay_pid*
 Evidencias_KataMobile
 
 test-output/
+
+# APK de la app: binario pesado, se copia a mano en apk/ y no se versiona
+apk/*.apk

@@ -2,13 +2,22 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Cerrando procesos anteriores de KataMobile..." -ForegroundColor Yellow
 Stop-Process -Name "KataMobile" -Force -ErrorAction SilentlyContinue
-Stop-Process -Name "javaw" -Force -ErrorAction SilentlyContinue
+# Solo los Java que ejecutan el dashboard; otros programas Java del equipo no se tocan.
+Get-CimInstance Win32_Process -Filter "Name = 'java.exe' OR Name = 'javaw.exe'" |
+    Where-Object { $_.CommandLine -like "*AutomationDashboard*" -or $_.CommandLine -like "*KataMobileDashboard*" } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 Start-Sleep -Seconds 2
 
 # =========================================================================
 # 1. INYECCIÓN DEL PATH DE WiX
 # =========================================================================
-$env:PATH += ";C:\Archivos de programa (x86)\WiX Toolset v3.14\bin"
+$wixBin = Join-Path ${env:ProgramFiles(x86)} "WiX Toolset v3.14\bin"
+if (Test-Path $wixBin) {
+    $env:PATH += ";$wixBin"
+}
+elseif (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+    throw "No se encontró WiX Toolset 3.14 (necesario para jpackage). Instálalo o agrega su carpeta bin al PATH."
+}
 
 $repositoryRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Join-Path $repositoryRoot "kata-mobile-testing"
@@ -62,7 +71,25 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "No se pudo crear el JAR ejecutable del dashboard." }
     
     Copy-Item (Join-Path $repositoryRoot "config") $distRoot -Recurse -Force
-    Copy-Item (Join-Path $repositoryRoot "InstalarDependencias.bat") $distRoot -Force
+    # cmd falla al saltar a etiquetas si el .bat tiene finales de línea LF; se garantiza CRLF.
+    $installerSource = Join-Path $repositoryRoot "InstalarDependencias.bat"
+    $installerText = [System.IO.File]::ReadAllText($installerSource) -replace "`r?`n", "`r`n"
+    [System.IO.File]::WriteAllText((Join-Path $distRoot "InstalarDependencias.bat"), $installerText,
+        [System.Text.Encoding]::Default)
+
+    # APK de la app para instalarla en el emulador (opción [2] de InstalarDependencias.bat).
+    # Se toma el más reciente de la carpeta apk\ y se copia con un nombre fijo.
+    $apk = Get-ChildItem (Join-Path $repositoryRoot "apk") -Filter "*.apk" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($apk) {
+        $apkDirectory = Join-Path $distRoot "apk"
+        New-Item -ItemType Directory -Path $apkDirectory -Force | Out-Null
+        Copy-Item $apk.FullName (Join-Path $apkDirectory "KataMobile.apk") -Force
+        Write-Host "APK incluido: $($apk.Name)" -ForegroundColor DarkCyan
+    }
+    else {
+        Write-Host "⚠️ No hay APK en la carpeta apk\: el instalador no podrá instalar la app en un emulador." -ForegroundColor Yellow
+    }
 
     # Incluye únicamente el Excel configurado (casos + hoja Parametros) para no confundir al usuario.
     $templateName = "datos_solicitudes_configurado.xlsx"
@@ -88,9 +115,6 @@ try {
     $versionParts = $lastVersion.Split('.')
     $newBuild = [int]$versionParts[2] + 1
     $dynamicVersion = "$($versionParts[0]).$($versionParts[1]).$newBuild"
-    
-    # Guarda la nueva versión para la próxima vez
-    Set-Content -Path $versionFile -Value $dynamicVersion
 
     $packageType = "exe"
     # Ahora cada build se guarda en su propia carpeta, evadiendo bloqueos de Windows
@@ -147,6 +171,9 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "jpackage no pudo generar el paquete. Revisa los logs de arriba."
     }
+
+    # La versión solo se consume cuando el instalador se generó correctamente.
+    Set-Content -Path $versionFile -Value $dynamicVersion
 
     Write-Host "✅ ¡Instalador EXE generado exitosamente!" -ForegroundColor Green
     Write-Host "Encuentra tu instalador en: $outputPath" -ForegroundColor Yellow
