@@ -31,6 +31,7 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -75,6 +76,7 @@ public final class AutomationDashboard extends JFrame {
     private final JSpinner executionsSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final ModernButton browseButton = new ModernButton("Seleccionar archivo Excel…",
             ModernButton.Kind.SECONDARY);
+    private final ModernButton reloadButton = new ModernButton("Recargar archivo", ModernButton.Kind.SECONDARY);
     private final ModernButton runButton = new ModernButton("Iniciar ejecución", ModernButton.Kind.PRIMARY);
     private final ModernButton stopButton = new ModernButton("Detener ejecución", ModernButton.Kind.DANGER);
 
@@ -458,6 +460,9 @@ public final class AutomationDashboard extends JFrame {
         fileBox.add(fileHintLabel);
 
         browseButton.addActionListener(event -> chooseExcelFile());
+        reloadButton.addActionListener(event -> reloadExcel());
+        reloadButton.setToolTipText("Vuelve a leer el mismo archivo para tomar los cambios hechos en Excel");
+        reloadButton.setEnabled(false);
         runButton.addActionListener(event -> startExecution());
         stopButton.addActionListener(event -> requestStop());
         stopButton.setEnabled(false);
@@ -479,6 +484,7 @@ public final class AutomationDashboard extends JFrame {
         addRow(card, caption("Archivo de solicitudes"), row++, 18);
         addRow(card, fileBox, row++, 6);
         addRow(card, browseButton, row++, 8);
+        addRow(card, reloadButton, row++, 6);
         addRow(card, caption("Número de ejecuciones"), row++, 18);
         addRow(card, executionsSpinner, row++, 6);
         addRow(card, spinnerHint, row++, 4);
@@ -684,17 +690,51 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private void loadExcel(File file) {
+        applyExcel(file);
+        appendLog("Archivo seleccionado: " + file.getName());
+    }
+
+    /** Vuelve a leer el archivo ya seleccionado, sin pasar otra vez por el explorador. */
+    private void reloadExcel() {
+        if (selectedFile == null) {
+            return;
+        }
+        if (!selectedFile.isFile()) {
+            showWarning("Archivo no encontrado", "El archivo ya no existe en:\n" + selectedFile.getAbsolutePath()
+                    + "\n\nSelecciónalo de nuevo con «Seleccionar archivo Excel…».");
+            return;
+        }
+        int previousRows = loadedRows;
+        applyExcel(selectedFile);
+        appendLog("Archivo recargado: " + requestCount(loadedRows)
+                + (loadedRows != previousRows ? " (antes " + previousRows + ")" : ""));
+    }
+
+    private void applyExcel(File file) {
         selectedFile = file;
         fileNameLabel.setText(file.getName());
         File parent = file.getParentFile();
         fileHintLabel.setText(parent == null ? file.getAbsolutePath() : parent.getAbsolutePath());
         fileHintLabel.setToolTipText(file.getAbsolutePath());
         fileNameLabel.setToolTipText(file.getAbsolutePath());
+        reloadButton.setEnabled(true);
         updateLoadedRowCount();
         refreshScenarioPanel();
-        appendLog("Archivo seleccionado: " + file.getName());
         if (loadedRows > 0) {
             currentRequestLabel.setText("Archivo listo. Pulsa «Iniciar ejecución» para comenzar.");
+        }
+    }
+
+    private static String requestCount(int rows) {
+        return rows + (rows == 1 ? " solicitud" : " solicitudes");
+    }
+
+    /** Excel bloquea el archivo mientras está abierto; se detecta para no informar "sin solicitudes". */
+    private static boolean isLockedByAnotherProgram(File file) {
+        try (FileInputStream ignored = new FileInputStream(file)) {
+            return false;
+        } catch (IOException exception) {
+            return true;
         }
     }
 
@@ -778,12 +818,20 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private void updateLoadedRowCount() {
+        if (isLockedByAnotherProgram(selectedFile)) {
+            loadedRows = 0;
+            loadedRowsLabel.setText("Archivo abierto en Excel: ciérralo y recarga");
+            loadedRowsLabel.setForeground(Theme.DANGER);
+            loadedRowsLabel.setToolTipText("Windows no permite leer el archivo mientras otro programa lo tiene abierto.");
+            appendLog("No se pudo leer el archivo: está abierto en otro programa (¿Excel?).");
+            updatePlanSummary();
+            return;
+        }
         try {
             Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), EXCEL_SHEET);
             loadedRows = data == null ? 0 : data.length;
             if (loadedRows > 0) {
-                loadedRowsLabel.setText(loadedRows + (loadedRows == 1 ? " solicitud" : " solicitudes")
-                        + " en la hoja «" + EXCEL_SHEET + "»");
+                loadedRowsLabel.setText(requestCount(loadedRows) + " en la hoja «" + EXCEL_SHEET + "»");
                 loadedRowsLabel.setForeground(Theme.SUCCESS);
             } else {
                 loadedRowsLabel.setText("La hoja «" + EXCEL_SHEET + "» no tiene solicitudes");
@@ -879,6 +927,7 @@ public final class AutomationDashboard extends JFrame {
 
     private void setControlsEnabled(boolean idle) {
         browseButton.setEnabled(idle);
+        reloadButton.setEnabled(idle && selectedFile != null);
         executionsSpinner.setEnabled(idle);
         runButton.setEnabled(idle);
         stopButton.setEnabled(!idle);

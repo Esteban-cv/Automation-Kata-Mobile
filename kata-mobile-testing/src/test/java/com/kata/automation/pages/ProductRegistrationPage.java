@@ -59,21 +59,19 @@ public class ProductRegistrationPage extends BasePage {
         private static final String WEEKLY_GOTA_PRODUCT = "gota sem";
         private static final String BIWEEKLY_GOTA_PRODUCT = "gota quin";
         private static final int WEEKLY_INSTALLMENT_DAYS = 7;
-        private static final int BIWEEKLY_INSTALLMENT_DAYS = 15;
+        private static final int BIWEEKLY_INSTALLMENT_DAYS = 14;
         private static final int MONTHLY_INSTALLMENT_DAYS = 30;
 
         // --- Deuda alivio (pregunta que muestran los productos Gota) ---
         private static final String ALIVIO_DEBT_QUESTION = "¿El solicitante desea recoger el saldo de la deuda alivio?";
         private static final double NEARBY_SEARCH_SCROLL_PERCENT = 0.25;
 
-        // --- Garantía FNG ---
+        // --- Garantías con tipo: al responder "Si" la app muestra un desplegable para elegirlo ---
         // Texto exacto de la app, sin signo de interrogación al final.
         private static final String FNG_QUESTION = "¿Requiere garantía FNG";
-        // Desplegable que la app muestra solo al responder "Si" a la pregunta FNG.
         private static final String FNG_TYPE_LABEL = "Garantía FNG";
-        private static final By FNG_TYPE = By.xpath(
-                        "//android.widget.TextView[@text=\"" + FNG_TYPE_LABEL
-                                        + "\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
+        private static final String BAIL_QUESTION = "¿Requiere Fianza?";
+        private static final String BAIL_TYPE_LABEL = "Producto Fianza";
 
         // ========================================================================
         // CHECKBOXES DE SEGUROS VOLUNTARIOS
@@ -215,9 +213,9 @@ public class ProductRegistrationPage extends BasePage {
                 sleep(3000); // Pausa vital para que el sistema procese y marque los radio buttons solos.
 
                 // 4. Llenar obligatoriamente FNG y Garantía Real (Como lo pediste)
-                configureFngGuarantee(hasFNG);
-
-                //answerQuestion("¿Requiere Fianza?", hasBail);
+                configureGuarantee(FNG_QUESTION, FNG_TYPE_LABEL, "Garantía FNG", hasFNG);
+                configureGuarantee(BAIL_QUESTION, BAIL_TYPE_LABEL, "Fianza", hasBail);
+                takeEvidence(numberId, "Garantias_FNG_Fianza");
 
                 answerQuestion("¿Tiene garantía real?", hasRealGuarantee);
 
@@ -232,7 +230,7 @@ public class ProductRegistrationPage extends BasePage {
 
         /**
          * Días entre el desembolso y la primera cuota según la periodicidad del producto:
-         * los productos Gota semanal pagan cada 7 días, los Gota quincenal cada 15 y el
+         * los productos Gota semanal pagan cada 7 días, los Gota quincenal cada 14 y el
          * resto cada 30. Se compara por fragmento para cubrir sus variantes (ej. "Urban").
          */
         private static int daysToFirstInstallment(String product) {
@@ -260,15 +258,24 @@ public class ProductRegistrationPage extends BasePage {
         }
 
         /**
-         * Los productos Gota pueden mostrar, debajo del destino económico, la pregunta de
-         * recoger la deuda alivio; se responde "No" solo si aparece.
+         * Varios productos (Gota, prod mayor monto360 y posiblemente otros) muestran debajo
+         * del destino económico la pregunta de recoger la deuda alivio. Se revisa en todos:
+         * si aparece se responde "No" para no sumar esa deuda al crédito; si no, no se hace nada.
          */
         private void declineAlivioDebtIfPresent(String product) {
-                if (!isWeeklyGotaProduct(product) && !isBiweeklyGotaProduct(product)) {
-                        return;
-                }
                 if (isTextNearCurrentPosition(ALIVIO_DEBT_QUESTION)) {
                         answerQuestion(ALIVIO_DEBT_QUESTION, "No");
+                        // Si el "No" no queda marcado la deuda se suma al crédito y la simulación falla
+                        // más adelante; se confirma aquí para fallar con un mensaje claro.
+                        By noOption = By.xpath("//android.widget.TextView[@text=\"" + ALIVIO_DEBT_QUESTION
+                                        + "\"]/following::android.view.View[@checkable=\"true\"]"
+                                        + "[android.widget.TextView[@text=\"No\"]][1]");
+                        try {
+                                new WebDriverWait(driver, Duration.ofSeconds(5)).until(currentDriver -> isChecked(noOption));
+                        } catch (TimeoutException exception) {
+                                throw new IllegalStateException(
+                                                "No se pudo marcar 'No' en la pregunta de deuda alivio.", exception);
+                        }
                 } else {
                         System.out.println("ℹ️ El producto '" + product + "' no mostró la pregunta de deuda alivio.");
                 }
@@ -309,22 +316,28 @@ public class ProductRegistrationPage extends BasePage {
         }
 
         /**
-         * La columna "Garantía FNG" del Excel trae "No" o el tipo de garantía que se
-         * debe seleccionar (por ejemplo RECONSTRUYE), tal como aparece en la app.
+         * La columna del Excel trae "No" o el tipo que se debe seleccionar en el
+         * desplegable (por ejemplo RECONSTRUYE para FNG), tal como aparece en la app.
+         * Con un tipo se responde "Si" a la pregunta y se elige ese tipo.
          */
-        private void configureFngGuarantee(String fngGuarantee) {
-                String guaranteeType = fngGuarantee == null ? "" : fngGuarantee.trim();
+        private void configureGuarantee(String question, String typeLabel, String excelColumn, String excelValue) {
+                String guaranteeType = excelValue == null ? "" : excelValue.trim();
                 if ("si".equalsIgnoreCase(guaranteeType)) {
-                        throw new IllegalArgumentException("La columna 'Garantía FNG' debe indicar el tipo de "
-                                        + "garantía tal como aparece en la app (por ejemplo RECONSTRUYE), no 'Si'.");
+                        throw new IllegalArgumentException("La columna '" + excelColumn + "' debe indicar el tipo "
+                                        + "tal como aparece en la app en el desplegable '" + typeLabel + "', no 'Si'.");
                 }
 
-                boolean requiresFng = !guaranteeType.isEmpty() && !"no".equalsIgnoreCase(guaranteeType);
-                answerQuestion(FNG_QUESTION, requiresFng ? "Si" : "No");
-                if (requiresFng) {
-                        scrollAndClickReliable(FNG_TYPE_LABEL, FNG_TYPE, 0.15);
+                boolean required = !guaranteeType.isEmpty() && !"no".equalsIgnoreCase(guaranteeType);
+                answerQuestion(question, required ? "Si" : "No");
+                if (required) {
+                        scrollAndClickReliable(typeLabel, dropdownBelow(typeLabel), 0.15);
                         clickSafely(byVisibleText(guaranteeType));
                 }
+        }
+
+        private static By dropdownBelow(String label) {
+                return By.xpath("//android.widget.TextView[@text=\"" + label
+                                + "\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
         }
 
         private void waitForSimulationResponse() {
