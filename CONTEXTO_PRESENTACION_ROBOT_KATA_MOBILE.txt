@@ -1,0 +1,468 @@
+CONTEXTO PARA PRESENTACION - ROBOT KATA MOBILE
+================================================
+
+1. RESUMEN EJECUTIVO
+---------------------
+
+Este proyecto es un robot de automatizacion movil para la aplicacion Android
+com.kata.mobile. Automatiza de principio a fin el proceso de una solicitud de
+microcredito usando Appium, UiAutomator2, Selenium, Java 17, Maven y TestNG.
+
+El robot permite cargar solicitudes desde un archivo Excel, ejecutar una o varias
+corridas, interactuar con la aplicacion movil como un usuario real, capturar
+evidencias y mostrar el avance en un panel de control de escritorio.
+
+El objetivo principal es validar que una solicitud pueda recorrer correctamente
+los procesos de consulta, radicacion, analisis, registro del producto,
+decision y validacion de identidad.
+
+2. TECNOLOGIAS Y ARQUITECTURA
+-----------------------------
+
+- Lenguaje: Java 17.
+- Gestor de proyecto: Maven.
+- Pruebas: TestNG.
+- Automatizacion movil: Appium Java Client 9.2.2.
+- Motor movil: UiAutomator2 sobre Android.
+- Automatizacion de elementos: Selenium 4.19.1.
+- Interfaz del panel: Java Swing.
+- Apariencia del panel: FlatLaf, con Nimbus como respaldo.
+- Entrada de datos: archivos Excel XLSX mediante Apache POI.
+- Evidencias: capturas de pantalla almacenadas en la carpeta evidencias.
+- Historial: persistencia local de ejecuciones y resultados.
+- Comunicacion: Appium local en http://127.0.0.1:4723.
+
+Estructura principal:
+
+- kata-mobile-testing/src/test/java/com/kata/automation/gui/
+  Contiene el panel de control AutomationDashboard.
+- kata-mobile-testing/src/test/java/com/kata/automation/pages/
+  Contiene el patron Page Object con una clase por pantalla o proceso.
+- kata-mobile-testing/src/test/java/com/kata/automation/tests/
+  Contiene los casos TestNG y el flujo completo.
+- kata-mobile-testing/src/test/java/com/kata/automation/utils/
+  Contiene driver, Appium, Excel, evidencias, historial y telemetria.
+- config/robot.properties
+  Contiene la configuracion local del dispositivo y Appium. No debe contener
+  contrasenas.
+
+3. PANEL DE CONTROL DE EJECUCIONES
+----------------------------------
+
+La clase principal del panel es:
+
+kata-mobile-testing/src/test/java/com/kata/automation/gui/AutomationDashboard.java
+
+El panel permite:
+
+1. Seleccionar un archivo Excel mediante un boton o arrastrandolo a la ventana.
+2. Consultar cuantas solicitudes fueron cargadas.
+3. Elegir cuantas veces se procesara el archivo completo.
+4. Iniciar la ejecucion del robot.
+5. Detener la ejecucion cuando sea necesario.
+6. Visualizar el estado de la corrida en tiempo real.
+7. Ver la solicitud que se esta procesando.
+8. Ver la etapa actual y su duracion.
+9. Ver el avance total mediante una barra de progreso.
+10. Consultar contadores de etapas completadas, superadas, fallidas,
+    bloqueadas y omitidas.
+11. Consultar el registro de eventos y mensajes tecnicos.
+12. Ver evidencias e historial de ejecuciones.
+13. Consultar estadisticas historicas por ejecucion, etapa y accion.
+14. Identificar las acciones mas lentas mediante un grafico historico.
+
+La interfaz muestra seis etapas:
+
+1. Consulta
+2. Radicacion
+3. Analisis
+4. Producto
+5. Decision
+6. Validacion Identidad
+
+La sexta etapa no es opcional. La validacion de identidad y firma es obligatoria
+para que el flujo completo termine correctamente.
+
+El dashboard recibe eventos mediante ExecutionTelemetry. Cada etapa puede
+terminar como PASSED, BLOCKED, FAILED o SKIPPED. En el flujo completo actual,
+la etapa de validacion de identidad se maneja como obligatoria y un error la
+marca como FAILED, deteniendo la ejecucion.
+
+4. FLUJO COMPLETO DE NEGOCIO
+----------------------------
+
+El flujo principal esta en:
+
+kata-mobile-testing/src/test/java/com/kata/automation/tests/FlujoCompletoTest.java
+
+Cada fila del Excel representa una solicitud. La solicitud pasa por estas
+etapas:
+
+ETAPA 1 - CONSULTA PRELIMINAR
+-----------------------------
+
+Pagina:
+  pages/OrdersPage.java
+
+Acciones principales:
+
+- Crear una nueva orden.
+- Seleccionar tipo de orden y tipo de persona.
+- Seleccionar tipo de identificacion.
+- Ingresar numero de identificacion y confirmarlo.
+- Seleccionar pais de origen de la identificacion.
+- Ingresar nombres y apellidos.
+- Seleccionar fecha de nacimiento.
+- Seleccionar pais de nacimiento.
+- Ingresar y confirmar telefono.
+- Responder autorizaciones de tratamiento de datos, consulta de centrales y
+  canales de contacto.
+- Responder si la solicitud es una refinanciacion o reestructuracion.
+- Seleccionar fecha de constitucion del negocio.
+- Ingresar antiguedad del negocio.
+- Seleccionar origen de la solicitud.
+- Consultar el cliente.
+
+La consulta usa clickWithRetry para volver a intentar el boton cuando el
+servicio no responde inmediatamente. El robot espera una respuesta exitosa o un
+mensaje de timeout.
+
+Escenario A - Cliente apto:
+
+- El sistema no informa mora mayor a 30 dias ni presencia en listas.
+- La solicitud continua a radicacion.
+- El robot genera o consulta la vista 360.
+- Selecciona la decision "Continuar".
+- Guarda la decision preliminar.
+
+Escenario B - Cliente con mora mayor a 30 dias:
+
+- El mensaje del sistema contiene "mora mayor".
+- La solicitud queda bloqueada por politicas de riesgo.
+- Se registra el estado BLOCKED.
+- Se captura evidencia del bloqueo.
+- Se selecciona una causal de rechazo.
+- Se guarda la decision.
+- La solicitud no continua a las etapas posteriores.
+
+Escenario C - Cliente registrado en listas:
+
+- El mensaje del sistema contiene "listas".
+- La solicitud queda bloqueada por listas o validacion SARLAFT.
+- Se registra el estado BLOCKED.
+- Se captura evidencia.
+- Se selecciona una causal de rechazo.
+- Se guarda la decision.
+- La solicitud no continua a radicacion.
+
+La telemetria diferencia los dos bloqueos:
+
+- BLOCKED_BY_ARREARS: mora mayor a 30 dias.
+- BLOCKED_BY_LISTS: cliente registrado en listas.
+
+ETAPA 2 - RADICACION
+--------------------
+
+Pagina:
+  pages/RadicationPage.java
+
+Acciones principales:
+
+- Completar informacion de radicacion del cliente existente.
+- Seleccionar departamento, ciudad y barrio.
+- Registrar composicion familiar.
+- Registrar referencias comerciales, personales y familiares.
+- Registrar datos de vivienda, negocio y ubicacion.
+- Capturar coordenadas o registrar que no fue posible capturarlas.
+- Capturar selfie del analista y del negocio.
+- Seleccionar tipo de local.
+- Confirmar telefono del negocio.
+- Consultar la vista 360 con reintentos.
+- Seleccionar sector y actividad economica.
+- Completar informacion tributaria y de residencia fiscal.
+- Responder preguntas de Estados Unidos, tarjeta verde, ingresos FDAP y
+  reincorporacion.
+- Seleccionar "Continuar a analisis".
+- Procesar la decision de radicacion con clickWithRetry.
+
+Esta etapa tiene manejo de errores y evidencias para identificar en que parte
+de la radicacion fallo una solicitud.
+
+ETAPA 3 - ANALISIS CUALITATIVO Y CUANTITATIVO
+---------------------------------------------
+
+Pagina:
+  pages/AnalysisPage.java
+
+Acciones principales:
+
+- Abrir el formulario de analisis.
+- Registrar dos georeferencias.
+- Registrar tres referencias: dos comerciales/personales y una familiar.
+- Completar observaciones de reputacion.
+- Registrar estabilidad y capacidad del negocio.
+- Registrar comportamiento de pagos.
+- Responder si el cliente es exclusivo.
+- Seleccionar pais de origen de recursos.
+- Registrar ventas, compras y gastos.
+- Registrar gastos financieros.
+- Registrar otros ingresos y descripcion de recursos.
+- Registrar aportes familiares.
+- Registrar gastos familiares.
+- Registrar activos y pasivos del negocio.
+- Completar las preguntas obligatorias del formulario.
+- Guardar evidencia del analisis cualitativo.
+- Validar y cerrar el formulario.
+
+La informacion de prueba esta orientada a un cliente de microcredito con un
+negocio estable, referencias verificadas y datos financieros completos.
+
+ETAPA 4 - REGISTRO DEL PRODUCTO
+-------------------------------
+
+Pagina:
+  pages/ProductRegistrationPage.java
+
+Acciones principales:
+
+- Seleccionar producto y tipo de producto.
+- Ingresar monto sugerido.
+- Ingresar plazo.
+- Seleccionar frecuencia de pago.
+- Seleccionar destino economico del credito.
+- Configurar seguros voluntarios segun los datos del Excel.
+- Responder si tiene ahorro.
+- Seleccionar fecha de desembolso.
+- Seleccionar fecha de primera cuota, calculada como fecha de desembolso
+  mas 30 dias.
+- Validar garantias y seguros.
+- Responder si requiere garantia FNG.
+- Responder si tiene garantia real.
+- Simular el credito.
+- Aceptar los mensajes de validacion y simulacion.
+
+Seguros voluntarios soportados:
+
+- Tu familia protegida.
+- Tu hogar y negocio protegidos.
+- Microempesarios protegidos.
+- Tu vida protegida.
+- Prevision exequial.
+
+Cuando corresponde, el robot tambien completa formularios de beneficiarios e
+inmueble asegurado.
+
+ETAPA 5 - DECISION DEL ANALISIS
+-------------------------------
+
+Pagina:
+  pages/AnalysisDecisionPage.java
+
+Acciones principales:
+
+- Abrir la pestaña "Decision del analisis".
+- Consultar el resumen de comite.
+- Seleccionar lugar de entrevista.
+- Seleccionar resultado de entrevista.
+- Seleccionar proposito de la relacion contractual.
+- Seleccionar donde recibe informacion de extractos y certificaciones.
+- Escribir el concepto de aprobacion del analista.
+- Seleccionar la decision del analisis.
+- Procesar la decision.
+
+El boton "Procesar decision" utiliza clickWithRetry. El robot espera un
+mensaje de actualizacion exitosa o decision procesada. Si aparece un mensaje
+de tiempo de espera o timeout, vuelve a intentar el click hasta el limite
+configurado.
+
+ETAPA 6 - VALIDACION DE IDENTIDAD Y FIRMA
+-----------------------------------------
+
+Pagina:
+  pages/IdentityValidationPage.java
+
+Esta etapa es obligatoria.
+
+Acciones principales:
+
+- Entrar a la pestaña "Validacion de identidad y firma".
+- Iniciar la validacion del cliente.
+- Aceptar el mensaje inicial.
+- Consultar resultados de validacion y firmas.
+- Leer el mensaje de resultado.
+- Registrar el mensaje en el log.
+- Seleccionar la decision.
+- Si el resultado indica "titular: no exitoso" o "no validado", forzar la
+  decision a "Rechazar".
+- Si la decision es rechazar, seleccionar la causal de rechazo.
+- Procesar la decision.
+- Aceptar el mensaje final.
+- Guardar evidencia de la validacion.
+
+La validacion no se omite. Si no existe la pestaña, si falla la consulta o si
+no puede procesarse la decision, la etapa se marca como FAILED y el flujo
+termina con error.
+
+5. MANEJO DE ESPERAS Y ROBUSTEZ
+-------------------------------
+
+La clase base es:
+
+pages/BasePage.java
+
+Contiene utilidades reutilizables:
+
+- Esperas explicitas con WebDriverWait.
+- Click seguro de elementos.
+- Scroll por texto.
+- Scroll y click confiable.
+- Seleccion de fechas en el calendario nativo de Android.
+- Gestos tactiles.
+- Respuestas a preguntas.
+- Captura de screenshots.
+- Restauracion de densidad de pantalla.
+- clickWithRetry para operaciones que dependen de respuestas del backend.
+
+clickWithRetry:
+
+- Realiza hasta tres intentos.
+- Hace click sobre el boton.
+- Espera resultado exitoso o mensaje de timeout.
+- Si aparece timeout, espera brevemente y vuelve a intentar.
+- Restaura el implicit wait original al terminar.
+- Lanza un error explicito si no obtiene resultado.
+
+El robot evita continuar silenciosamente cuando una etapa critica falla.
+
+6. DATOS DE ENTRADA
+--------------------
+
+El archivo de solicitudes es un XLSX y usa por defecto la hoja "Hoja1".
+Cada fila representa una solicitud y contiene datos como:
+
+- Tipo de orden.
+- Tipo de persona.
+- Tipo y numero de identificacion.
+- Datos personales.
+- Fechas.
+- Telefonos.
+- Restructuracion o refinanciacion.
+- Datos del negocio.
+- Datos de radicacion.
+- Datos de referencias.
+- Producto y condiciones del credito.
+- Seguros.
+- Garantias.
+- Decision de entrevista.
+- Concepto del analista.
+- Decision del analisis.
+
+El dashboard permite seleccionar el archivo y ejecutar el conjunto completo
+una o varias veces.
+
+No deben incluirse contrasenas en el archivo de contexto ni en el repositorio.
+
+7. EVIDENCIAS, LOGS E HISTORIAL
+-------------------------------
+
+El robot genera evidencias por solicitud y por etapa. Ejemplos de nombres:
+
+- cedula_ingresada
+- consulta_exitosa
+- bloqueo_mora
+- resultado_decision
+- Validacion_analisis_cualitativo
+- 07_Seleccion_producto
+- Mensaje_validacion_seguros
+- Simulacion_credito
+- Resumen_comite
+- Identidad_Procesada
+
+Tambien registra:
+
+- Logs tecnicos de ejecucion.
+- Mensajes de etapas iniciadas y finalizadas.
+- Duracion de cada etapa.
+- Duracion de acciones instrumentadas.
+- Estado final de cada solicitud.
+- Historial de ejecuciones.
+
+8. PRECONDICIONES PARA UNA DEMOSTRACION
+----------------------------------------
+
+- Tener Java 17 instalado.
+- Tener Node.js y Appium disponibles.
+- Tener Appium con el driver uiautomator2.
+- Tener un dispositivo Android conectado con USB debugging habilitado.
+- Aceptar la autorizacion RSA del dispositivo.
+- Tener instalada la aplicacion com.kata.mobile.
+- Configurar el dispositivo en config/robot.properties.
+- Tener un archivo Excel de solicitudes.
+- No almacenar contrasenas dentro del repositorio.
+
+El dashboard puede iniciar Appium automaticamente cuando se presiona
+"Iniciar ejecucion". Si Appium ya esta activo, el dashboard reutiliza el
+servidor existente y solo detiene procesos que haya iniciado el mismo.
+
+9. GUION SUGERIDO PARA PRESENTAR EL ROBOT
+------------------------------------------
+
+1. Presentar el problema: validar manualmente una solicitud de microcredito
+   implica recorrer muchas pantallas y repetir datos.
+2. Mostrar el dashboard y explicar que una fila del Excel representa una
+   solicitud.
+3. Cargar el archivo Excel.
+4. Mostrar el numero de solicitudes detectadas.
+5. Seleccionar el numero de ejecuciones.
+6. Iniciar la corrida.
+7. Mostrar como el dashboard avanza por las seis etapas.
+8. Explicar la consulta preliminar y los tres resultados posibles:
+   aprobado, mora mayor a 30 dias o cliente en listas.
+9. Mostrar la radicacion y el diligenciamiento automatico de referencias,
+   datos del negocio y preguntas regulatorias.
+10. Mostrar el analisis financiero y cualitativo.
+11. Mostrar el registro del producto, fechas, garantias, simulacion y seguros.
+12. Mostrar la decision del analisis y el mecanismo de reintento.
+13. Mostrar la validacion de identidad como etapa obligatoria.
+14. Mostrar las evidencias y el historial final.
+15. Cerrar explicando que el robot no solo hace clicks: mide, registra,
+    captura evidencias, diferencia bloqueos de negocio y reporta errores
+    tecnicos.
+
+10. MENSAJE CENTRAL PARA LA PRESENTACION
+-----------------------------------------
+
+Kata Mobile es una plataforma de automatizacion movil orientada al proceso de
+microcredito. Convierte una hoja de solicitudes en una ejecucion controlada,
+observable y auditable sobre un dispositivo Android real. El sistema cubre el
+flujo completo, maneja escenarios de riesgo como mora y listas, valida datos
+del negocio y del cliente, procesa el producto y la decision, y finaliza con
+validacion de identidad y firma.
+
+Su valor principal esta en combinar:
+
+- Automatizacion funcional end-to-end.
+- Trazabilidad por solicitud y por etapa.
+- Evidencias visuales.
+- Manejo de errores y reintentos.
+- Diferenciacion entre bloqueos de negocio y fallos tecnicos.
+- Panel de control para usuarios no tecnicos.
+- Estadisticas historicas para identificar tiempos y cuellos de botella.
+
+11. LIMITES Y NOTAS PARA LA OTRA IA
+------------------------------------
+
+- El robot depende de textos y estructuras visuales de la aplicacion Android.
+  Cambios en labels, accesibilidad o jerarquia de vistas pueden requerir
+  actualizar localizadores.
+- La disponibilidad del dispositivo y Appium es necesaria para ejecutar las
+  pruebas reales.
+- Los mensajes exactos de la aplicacion pueden variar por ambiente.
+- Las credenciales deben suministrarse por configuracion segura y no deben
+  quedar documentadas en este contexto.
+- La validacion de identidad actualmente se ejecuta siempre en el flujo
+  completo.
+- Los escenarios de mora mayor a 30 dias y cliente en listas terminan la
+  solicitud como bloqueada y no avanzan a las siguientes etapas.
+- El archivo es un contexto tecnico y funcional para preparar una
+  presentacion; no sustituye la documentacion de instalacion ni el codigo.

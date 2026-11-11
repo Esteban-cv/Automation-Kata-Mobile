@@ -23,39 +23,98 @@ public class OrdersTest extends BaseTest {
         return ExcelUtils.getTestData(excelPath, "Hoja1");
     }
 
-    @Test(dataProvider = "excelData")
-    public void createWholeOrderFromExcel(String orderType, String personType,
-            String idType, String numberId, String country,
-            String firstName, String name, String birthDay,
-            String birthMonth, String birthYear, String numberPhone,
-            String corpDay, String corpMonth, String corpYear,
-            String longevity, String origin, String decision) {
-
-        // Conversión segura mediante BigDecimal para evitar el error de notación científica de Excel
-        long parsedId = new BigDecimal(numberId).longValue();
-        long parsedPhone = new BigDecimal(numberPhone).longValue();
-
-        // 1. Iniciar la orden usando los datos inyectados del Excel
-        ordersPage.createOrder(orderType, personType);
-
-        // 2. Ejecutar la consulta preliminar con todos los tipos de datos casteados correctamente
+    @Test(groups = "smoke")
+    public void smokeOrderTest() {
+        // 2. Consulta preliminar con los datos de prueba de Esteban
         ordersPage.preliminaryConsultation(
-                idType,
-                parsedId,
-                country,
-                firstName,
-                name,
-                Integer.parseInt(birthDay.replace(".0", "")),
-                Integer.parseInt(birthMonth.replace(".0", "")),
-                Integer.parseInt(birthYear.replace(".0", "")),
-                String.valueOf(parsedPhone),
-                Integer.parseInt(corpDay.replace(".0", "")),
-                Integer.parseInt(corpMonth.replace(".0", "")),
-                Integer.parseInt(corpYear.replace(".0", "")),
-                longevity.replace(".0", ""),
-                origin, decision);
+                "Cedula ciudadanía",
+                "36999831",
+                "COLOMBIA",
+                "Mera",
+                "Sonia",
+                10, 10, 1964, // Ajustado el año para que coincida con tus 20 años
+                "3185551310",
+                "Si",
+                17, 9, 2020,
+                "60",
+                "Gestión front o contact center");
+    }
 
-        // 3. Guardar y cerrar la orden para limpiar la pantalla de cara a la siguiente iteración
-        ordersPage.closeOrder();
+    // @Test(groups = "smoke")
+    // public void smokeTestCreacionOrden() {
+
+    // ordersPage.setScreenDensity(380);
+
+    // // 1. Iniciar la orden con parámetros fijos
+    // ordersPage.createOrder("Originación de microcrédito",
+    // "SolicitudPersonaNatural");
+
+    // // 2. Consulta preliminar con los datos de prueba de Esteban
+    // ordersPage.preliminaryConsultation(
+    // "Cedula ciudadanía",
+    // "38569302",
+    // "COLOMBIA",
+    // "Hernandez",
+    // "Naren",
+    // 10, 9, 2005, // Ajustado el año para que coincida con tus 20 años
+    // "3185551310",
+    // 17, 9, 2020,
+    // "60",
+    // "Gestión front o contact center",
+    // "Continuar");
+
+    // // 3. Cerrar la orden
+    // // ordersPage.closeOrder();
+    // }
+
+    // @Test(dataProvider = "excelData")
+    // public void createWholeOrderFromExcel(String orderType, String personType,
+    // String idType, String numberId, String country,
+    // String firstName, String name, String birthDay,
+    // String birthMonth, String birthYear, String numberPhone,
+    // String corpDay, String corpMonth, String corpYear,
+    // String longevity, String origin, String decision) {
+
+    // ordersPage.setScreenDensity(350);
+    // ordersPage.createOrder(orderType, personType);
+
+    // // Se pasan los datos pasándolos por los métodos auxiliares para limpiarlos
+    // al vuelo
+    // ordersPage.preliminaryConsultation(
+    // idType,
+    // clean(numberId),
+    // country,
+    // firstName,
+    // name,
+    // toInt(birthDay), toInt(birthMonth), toInt(birthYear),
+    // clean(numberPhone),
+    // toInt(corpDay), toInt(corpMonth), toInt(corpYear),
+    // clean(longevity),
+    // origin,
+    // decision);
+    // }
+
+    // --- MÉTODOS AUXILIARES (Ponlos al final de tu clase OrdersTest) ---
+
+    // Limpia decimales, espacios y convierte notación científica de Excel
+    private String clean(String value) {
+        if (value == null)
+            return "";
+        value = value.trim();
+
+        try {
+            // Si Excel lo mandó como notación científica (ej: 8.6065519E7)
+            if (value.toUpperCase().contains("E")) {
+                return new BigDecimal(value).toPlainString();
+            }
+        } catch (Exception e) {
+            /* Ignorado */ }
+
+        return value.replace(".0", "");
+    }
+
+    // Limpia y convierte automáticamente los números para el calendario
+    private int toInt(String value) {
+        return Integer.parseInt(clean(value));
     }
 }
