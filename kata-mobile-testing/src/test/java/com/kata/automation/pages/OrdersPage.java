@@ -1,5 +1,7 @@
 package com.kata.automation.pages;
 
+import java.time.Duration;
+
 import org.openqa.selenium.By;
 
 import com.kata.automation.utils.ExecutionTelemetry;
@@ -8,24 +10,50 @@ import io.appium.java_client.android.AndroidDriver;
 
 public class OrdersPage extends BasePage {
 
+        /**
+         * Resultado de "Consultar cliente". Los dos bloqueos detienen la solicitud en la
+         * consulta preliminar; los demás dejan continuar a la radicación.
+         */
         public enum ConsultationOutcome {
                 APPROVED,
+                NEW_CLIENT,
+                RENEWED_CLIENT,
+                MINOR_ARREARS,
                 BLOCKED_BY_LISTS,
-                BLOCKED_BY_ARREARS
+                BLOCKED_BY_ARREARS;
+
+                public boolean isBlocked() {
+                        return this == BLOCKED_BY_LISTS || this == BLOCKED_BY_ARREARS;
+                }
         }
 
         private ConsultationOutcome lastConsultationOutcome = ConsultationOutcome.APPROVED;
 
         // --- LOCALIZADORES DE ELEMENTOS ---
 
-        // ⚠️ Nota: Buscar solo por "Button" puede fallar si hay otro botón (como "Ir
-        // atrás") en pantalla. Si falla, cámbialo por texto.
-        private static final By CREATE_ORDER_BUTTON = By.xpath("//android.widget.Button");
+        // Botón del paso de confirmación (texto CREAR). Antes era el primer Button de la
+        // pantalla, que podía coincidir con otro botón.
+        private static final By CREATE_ORDER_BUTTON = By.xpath(
+                        "//android.widget.TextView[@text=\"CREAR\"]/following-sibling::android.widget.Button");
 
-        // ⚠️ Nota: XPath absoluto. Si la estructura cambia, este se romperá. Ideal
-        // pedir un testTag al equipo de desarrollo en el futuro.
-        private static final By NEW_ORDER_BUTTON = By.xpath(
-                        "//androidx.compose.ui.platform.ComposeView/android.view.View/android.view.View/android.view.View[4]/android.widget.Button");
+        // Botón flotante de la lista de órdenes, por su descripción de accesibilidad.
+        private static final By NEW_ORDER_BUTTON = AppiumBy.accessibilityId("Nueva orden");
+
+        // Paso 3 de "Crear orden": aparece directo cuando el proceso tiene un solo
+        // formulario (ej. Originación de inmueble -> SolicitudInmueblePersonaNatural).
+        private static final By ORDER_CONFIRMATION_TITLE = By.xpath(
+                        "//android.widget.TextView[@text=\"Confirmación\"]");
+
+        // --- Campos opcionales y nuevos de la consulta preliminar (versión 2026.06.22) ---
+        private static final By SECOND_SURNAME_INPUT = By.xpath(
+                        "//android.widget.TextView[@text=\"Segundo apellido solicitante\"]/following::android.widget.EditText[1]");
+        // La app lo rotula "cliente", no "solicitante".
+        private static final By SECOND_NAME_INPUT = By.xpath(
+                        "//android.widget.TextView[@text=\"Segundo nombre cliente\"]/following::android.widget.EditText[1]");
+        private static final String ELECTRONIC_SIGNATURE_LABEL = "Iniciar Firma electrónica";
+        private static final By ELECTRONIC_SIGNATURE_BUTTON = By.xpath(
+                        "//android.widget.TextView[@text=\"" + ELECTRONIC_SIGNATURE_LABEL
+                                        + "\"]/following::android.widget.Button[1]");
 
         // ✅ Corregidos a following + [1]
         private static final By OPEN_ID_TYPE_DROPDOWN = By.xpath(
@@ -69,7 +97,10 @@ public class OrdersPage extends BasePage {
         private static final By CONSULTATION_RESULT = By.xpath(
                         "//*[contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'consulta exitosa') "
                                         + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'mora mayor') "
-                                        + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'registrado en listas')]");
+                                        + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'registrado en listas') "
+                                        + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'cliente nuevo') "
+                                        + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'renovado') "
+                                        + "or contains(translate(@text, 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ', 'abcdefghijklmnopqrstuvwxyzáéíóúü'), 'mora menor')]");
         private static final By VIEW360_CONSULTED_MESSAGE = By.xpath("//*[contains(@text,'Consulta Exitosa')]");
         private static final By ACCEPT_CONSULT_CLIENT_BUTTON = By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]");
         private static final By GO_BACK = AppiumBy.accessibilityId("Ir atrás");
@@ -103,17 +134,39 @@ public class OrdersPage extends BasePage {
                 return lastConsultationOutcome;
         }
 
+        /**
+         * Crea la orden. Cuando el proceso tiene un único formulario (Originación de
+         * inmueble) la app salta directo a la confirmación y no se elige tipo de persona.
+         */
         public void createOrder(String type, String personType) {
                 click(NEW_ORDER_BUTTON);
                 click(byVisibleText(type));
-                click(byVisibleText(personType));
+                if (!isPresentWithin(ORDER_CONFIRMATION_TITLE, Duration.ofSeconds(3))) {
+                        click(byVisibleText(personType));
+                }
+                waitForVisibility(ORDER_CONFIRMATION_TITLE);
                 click(CREATE_ORDER_BUTTON);
         }
 
+        /** Consulta preliminar sin segundo nombre ni segundo apellido (compatibilidad). */
         public boolean preliminaryConsultation(String idType, String numberId, String country, String firstName,
                         String name,
-                        int birthDay, int birthMonth, int birthYear, String numberPhone,String restructuring, int corporationDay,
-                        int corporationMonth,
+                        int birthDay, int birthMonth, int birthYear, String numberPhone, String restructuring,
+                        int corporationDay, int corporationMonth,
+                        int corporationYear, String bussinessLongevity, String originOrderText) {
+                return preliminaryConsultation(idType, numberId, country, firstName, "", name, "",
+                                birthDay, birthMonth, birthYear, numberPhone, restructuring,
+                                corporationDay, corporationMonth, corporationYear, bussinessLongevity, originOrderText);
+        }
+
+        /**
+         * Consulta preliminar. El segundo apellido y el segundo nombre son opcionales:
+         * si vienen vacíos no se tocan.
+         */
+        public boolean preliminaryConsultation(String idType, String numberId, String country, String firstName,
+                        String secondSurname, String name, String secondName,
+                        int birthDay, int birthMonth, int birthYear, String numberPhone, String restructuring,
+                        int corporationDay, int corporationMonth,
                         int corporationYear, String bussinessLongevity, String originOrderText) {
 
                 lastConsultationOutcome = ConsultationOutcome.APPROVED;
@@ -137,9 +190,11 @@ public class OrdersPage extends BasePage {
                 sleep(200);
 
                 type(FIRST_NAME_INPUT, firstName);
+                typeIfPresent("Segundo apellido solicitante", SECOND_SURNAME_INPUT, secondSurname);
 
                 scrollToText("Primer nombre solicitante", 0.40);
                 type(NAME_INPUT, name);
+                typeIfPresent("Segundo nombre cliente", SECOND_NAME_INPUT, secondName);
 
                 scrollToText("Fecha de nacimiento del solicitante", 0.50);
                 clickSafely(SELECT_DATE);
@@ -158,6 +213,7 @@ public class OrdersPage extends BasePage {
                 answerQuestion("¿Autoriza el tratamiento de datos personales?", "Si");
                 answerQuestion("¿Autoriza la consulta y reporte a las centrales de información?", "Si");
                 answerQuestion("¿Acepta Autorización de canales, horarios de contacto y visitas?", "Si");
+                startElectronicSignatureIfPresent();
                 answerQuestion("¿La solicitud de crédito es una refinanciación o reestructuración?", restructuring);
 
                 scrollToText("Fecha de constitución del negocio", 0.15);
@@ -185,11 +241,10 @@ public class OrdersPage extends BasePage {
                 // IMPLEMENTAR LOGICA DE MORA, SARLAFT, CONSULTA EXITOSA O CLIENTE NUEVO
 
                 String systemMessage = getAlertMessageText().toLowerCase();
+                lastConsultationOutcome = classifyConsultation(systemMessage);
+                System.out.println("ℹ️ Resultado de la consulta: " + lastConsultationOutcome + " (" + systemMessage + ")");
 
-                if (systemMessage.contains("mora mayor") || systemMessage.contains("listas")) {
-                                lastConsultationOutcome = systemMessage.contains("listas")
-                                                ? ConsultationOutcome.BLOCKED_BY_LISTS
-                                                : ConsultationOutcome.BLOCKED_BY_ARREARS;
+                if (lastConsultationOutcome.isBlocked()) {
                         System.out.println("❌ Cliente bloqueado por políticas de riesgo (Mora mayor / SARLAFT).");
                         takeEvidence(numberId, "bloqueo_mora");
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
@@ -228,6 +283,46 @@ public class OrdersPage extends BasePage {
                         clickSafely(ACCEPT_CONSULT_CLIENT_BUTTON);
                         return true;
                 }
+        }
+
+        /** Traduce el mensaje de "Consultar cliente" al resultado del flujo. */
+        static ConsultationOutcome classifyConsultation(String message) {
+                String text = message == null ? "" : message.toLowerCase();
+                if (text.contains("listas")) {
+                        return ConsultationOutcome.BLOCKED_BY_LISTS;
+                }
+                if (text.contains("mora mayor")) {
+                        return ConsultationOutcome.BLOCKED_BY_ARREARS;
+                }
+                if (text.contains("mora menor")) {
+                        return ConsultationOutcome.MINOR_ARREARS;
+                }
+                if (text.contains("nuevo")) {
+                        return ConsultationOutcome.NEW_CLIENT;
+                }
+                if (text.contains("renovado")) {
+                        return ConsultationOutcome.RENEWED_CLIENT;
+                }
+                return ConsultationOutcome.APPROVED;
+        }
+
+        /** El botón de firma electrónica solo existe en la versión nueva; basta con tocarlo. */
+        private void startElectronicSignatureIfPresent() {
+                if (!isPresentWithin(byVisibleText(ELECTRONIC_SIGNATURE_LABEL), Duration.ofSeconds(2))) {
+                        System.out.println("ℹ️ El formulario no muestra '" + ELECTRONIC_SIGNATURE_LABEL + "'.");
+                        return;
+                }
+                scrollAndClickReliable(ELECTRONIC_SIGNATURE_LABEL, ELECTRONIC_SIGNATURE_BUTTON, 0.15);
+                sleep(500);
+        }
+
+        /** Escribe solo si hay valor; el campo es opcional en el formulario. */
+        private void typeIfPresent(String label, By input, String value) {
+                if (value == null || value.isBlank()) {
+                        return;
+                }
+                scrollToText(label, 0.20);
+                type(input, value);
         }
 
         public void closeOrder() {

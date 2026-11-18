@@ -75,6 +75,22 @@ public class BasePage {
         }
     }
 
+    /**
+     * Indica si el elemento aparece dentro del tiempo dado, sin lanzar excepción.
+     * Sirve para pasos que solo existen en algunos formularios o versiones de la app.
+     */
+    protected boolean isPresentWithin(By locator, Duration timeout) {
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        try {
+            new WebDriverWait(driver, timeout).until(ExpectedConditions.presenceOfElementLocated(locator));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(30));
+        }
+    }
+
     /** Espera hasta que un elemento sea visible. */
     protected void waitForVisibility(By locator) {
         wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -579,23 +595,35 @@ public class BasePage {
                 lastError);
     }
 
-    // Método auxiliar en BasePage o OrdersPage para leer alertas dinámicas
+    /** Fragmentos (en minúscula) de los mensajes que puede mostrar "Consultar cliente". */
+    private static final List<String> CONSULTATION_MESSAGES = List.of(
+            "consulta exitosa", "mora mayor", "mora menor", "registrado en listas",
+            "no exitoso", "cliente nuevo", "renovado");
+
+    /**
+     * Lee el mensaje que muestra la consulta del cliente. Devuelve todos los textos que
+     * coinciden, unidos, porque el tipo de cliente (nuevo/renovado) o la mora menor
+     * pueden venir en una línea distinta a "Consulta exitosa".
+     */
     public String getAlertMessageText() {
         try {
             String uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ";
             String lowercase = "abcdefghijklmnopqrstuvwxyzáéíóúü";
-            WebElement alertElement = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.xpath(
-                            "//android.widget.TextView["
-                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
-                                    + "'), 'consulta exitosa') or "
-                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
-                                    + "'), 'mora mayor') or "
-                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
-                                    + "'), 'registrado en listas') or "
-                                    + "contains(translate(@text, '" + uppercase + "', '" + lowercase
-                                    + "'), 'no exitoso')]")));
-            return alertElement.getText();
+            StringBuilder condition = new StringBuilder();
+            for (String message : CONSULTATION_MESSAGES) {
+                if (condition.length() > 0) {
+                    condition.append(" or ");
+                }
+                condition.append("contains(translate(@text, '").append(uppercase).append("', '")
+                        .append(lowercase).append("'), '").append(message).append("')");
+            }
+            By alertLocator = By.xpath("//android.widget.TextView[" + condition + "]");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(alertLocator));
+            StringBuilder text = new StringBuilder();
+            for (WebElement element : driver.findElements(alertLocator)) {
+                text.append(text.length() > 0 ? " | " : "").append(element.getText());
+            }
+            return text.toString();
         } catch (Exception e) {
             ExecutionLog.error("No se pudo leer el mensaje de consulta", e);
             return "DESCONOCIDO";

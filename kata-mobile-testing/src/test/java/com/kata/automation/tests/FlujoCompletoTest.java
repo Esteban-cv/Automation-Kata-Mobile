@@ -214,7 +214,9 @@ public class FlujoCompletoTest extends BaseTest {
                     numberId,
                     country,
                     firstName,
+                    optionalValue(scenario, "segundoApellido", "Segundo apellido"),
                     name,
+                    optionalValue(scenario, "segundoNombre", "Segundo nombre"),
                     Integer.parseInt(birthDay.replace(".0", "")),
                     Integer.parseInt(birthMonth.replace(".0", "")),
                     Integer.parseInt(birthYear.replace(".0", "")),
@@ -334,6 +336,14 @@ public class FlujoCompletoTest extends BaseTest {
 
         String successMessage = "Flujo procesado y guardado correctamente para la cédula: " + numberId;
         Reporter.log(successMessage, true);
+    }
+
+    /**
+     * Columnas opcionales del Excel. Van después de las columnas de escenario (ID caso,
+     * Tipo de prueba...) para no alterar el orden de los parámetros del DataProvider.
+     */
+    private String optionalValue(TestScenario scenario, String... columns) {
+        return scenario == null ? "" : scenario.get(columns);
     }
 
     private int parseInt(String value) {
