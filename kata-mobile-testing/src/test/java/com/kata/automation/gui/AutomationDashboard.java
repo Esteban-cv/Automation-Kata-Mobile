@@ -828,8 +828,8 @@ public final class AutomationDashboard extends JFrame {
             return;
         }
         try {
-            Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), EXCEL_SHEET);
-            loadedRows = data == null ? 0 : data.length;
+            loadedRows = (int) ExcelUtils.getScenarios(selectedFile.getAbsolutePath(), EXCEL_SHEET).stream()
+                    .filter(com.kata.automation.utils.TestScenario::shouldContinue).count();
             if (loadedRows > 0) {
                 loadedRowsLabel.setText(requestCount(loadedRows) + " en la hoja «" + EXCEL_SHEET + "»");
                 loadedRowsLabel.setForeground(Theme.SUCCESS);
@@ -945,8 +945,8 @@ public final class AutomationDashboard extends JFrame {
     }
 
     private void resetLiveMetrics(int executions) {
-        Object[][] data = ExcelUtils.getTestData(selectedFile.getAbsolutePath(), EXCEL_SHEET);
-        int requestsPerRun = data == null ? 0 : data.length;
+        int requestsPerRun = (int) ExcelUtils.getScenarios(selectedFile.getAbsolutePath(), EXCEL_SHEET).stream()
+                .filter(com.kata.automation.utils.TestScenario::shouldContinue).count();
         totalPlannedStages = requestsPerRun * executions * ExecutionTelemetry.TOTAL_STAGES;
         completedStages = 0;
         livePassedStages = 0;
@@ -1160,6 +1160,9 @@ public final class AutomationDashboard extends JFrame {
 
     private String readOrderId(ITestResult result) {
         Object[] parameters = result.getParameters();
+        if (parameters.length > 0 && parameters[0] instanceof com.kata.automation.utils.TestScenario scenario) {
+            return scenario.getNumberId().isBlank() ? "Desconocida" : scenario.getNumberId();
+        }
         return parameters.length > 3 && parameters[3] != null
                 ? String.valueOf(parameters[3])
                 : "Desconocida";

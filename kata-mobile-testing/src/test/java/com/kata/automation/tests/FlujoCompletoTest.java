@@ -3,6 +3,7 @@ package com.kata.automation.tests;
 import com.kata.automation.pages.LoginPage;
 import com.kata.automation.pages.OrdersPage;
 import com.kata.automation.pages.ProductRegistrationPage;
+import com.kata.automation.pages.RealEstateProductRegistrationPage;
 import com.kata.automation.pages.RadicationPage;
 import com.kata.automation.pages.AnalysisDecisionPage;
 import com.kata.automation.pages.AnalysisPage;
@@ -27,6 +28,7 @@ public class FlujoCompletoTest extends BaseTest {
     private OrdersPage ordersPage;
     private RadicationPage radicationPage;
     private ProductRegistrationPage productRegistrationPage;
+    private RealEstateProductRegistrationPage realEstateProductPage;
     private AnalysisPage analysisPage;
     private AnalysisDecisionPage analysisDecisionPage;
     private IdentityValidationPage identityValidationPage;
@@ -37,6 +39,7 @@ public class FlujoCompletoTest extends BaseTest {
         ordersPage = new OrdersPage(driver);
         radicationPage = new RadicationPage(driver);
         productRegistrationPage = new ProductRegistrationPage(driver);
+        realEstateProductPage = new RealEstateProductRegistrationPage(driver);
         analysisPage = new AnalysisPage(driver);
         analysisDecisionPage = new AnalysisDecisionPage(driver);
         identityValidationPage = new IdentityValidationPage(driver);
@@ -77,50 +80,82 @@ public class FlujoCompletoTest extends BaseTest {
     //     }
     // }
 
+    /**
+     * Cada fila del Excel es una solicitud. Las columnas se leen por NOMBRE (no por posición),
+     * así la plantilla puede ir ordenada por pantalla de la app: consulta preliminar,
+     * radicación, producto y decisión. Se aceptan también los nombres de la plantilla anterior.
+     */
     @DataProvider(name = "excelData", parallel = false)
     public Object[][] getData() {
         String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes.xlsx");
         String sheetName = System.getProperty("kata.excel.sheet", "Hoja1");
-        return ExcelUtils.getTestData(excelPath, sheetName);
+        return ExcelUtils.getScenarios(excelPath, sheetName).stream()
+                .filter(TestScenario::shouldContinue)
+                .map(scenario -> new Object[] { scenario })
+                .toArray(Object[][]::new);
     }
 
-        @Test(dataProvider = "excelData")
-    public void verificarCreacionDeOrdenMicrocredito(String orderType, String personType,
-            String idType, String numberId, String country,
-            String firstName, String name, String birthDay,
-            String birthMonth, String birthYear, String numberPhone, String restructuring,
-            String corpDay, String corpMonth, String corpYear,
-            String longevity, String origin, String email, String analystDept,
-            String analysCity, String analystNeighborhood,
-            String lastYearCompleted, String affiliation, String networkAccess,
-            String businessPhone,
-            String productType, String product, String amount, String term,
-            String paymentFreq, String destination, String hasFNG,
-            String hasBail, String hasRealGuarantee, String comprehensiveInsurance,
-            String coDebtors, String hasFamilyInsurance,
-            String hasHomeBussinessInsurance, String hasMicroEntrepreneursInsurance,
-            String hasLifeInsurance, String hasFuneralPlanning,
-            String disbDay, String disbMonth, String disbYear, String hasSavings,
-            String interviewPlace, String interviewResult,
-            String contractualPurpose, String extractsInfo, String analystConcept,
-            String analysisDecision) {
-
-        String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes.xlsx");
-        String sheetName = System.getProperty("kata.excel.sheet", "Hoja1");
-        TestScenario scenario = ExcelUtils.findScenario(excelPath, sheetName, numberId)
-                .orElse(null);
-
+    @Test(dataProvider = "excelData")
+    public void verificarCreacionDeOrdenMicrocredito(TestScenario s) {
+        // Si se presionó Detener, las filas que faltan no se ejecutan (antes el robot abría
+        // una sesión nueva y seguía con la siguiente solicitud).
+        if (Boolean.parseBoolean(System.getProperty("kata.stop.requested", "false"))) {
+            throw new org.testng.SkipException("Ejecución detenida por el usuario.");
+        }
+        String numberId = s.getNumberId();
         ensureDeviceReady();
-        executeOrderWithRetry(() -> processOrder(scenario, orderType, personType,
-                idType, numberId, country, firstName, name, birthDay, birthMonth, birthYear,
-                numberPhone,restructuring, corpDay, corpMonth, corpYear, longevity, origin, email, analystDept,
-                analysCity, analystNeighborhood, lastYearCompleted, affiliation, networkAccess,
-                businessPhone, productType, product, amount, term, paymentFreq, destination,
-                hasFNG, hasBail, hasRealGuarantee, comprehensiveInsurance, coDebtors,
-                hasFamilyInsurance, hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
-                hasLifeInsurance, hasFuneralPlanning, disbDay, disbMonth, disbYear, hasSavings,
-                interviewPlace, interviewResult, contractualPurpose, extractsInfo, analystConcept,
-                analysisDecision));
+        executeOrderWithRetry(() -> processOrder(s,
+                s.get("Tipo de orden", "orderType"),
+                s.get("Tipo de persona", "personType"),
+                s.get("Tipo de identificación", "idType"),
+                numberId,
+                s.get("País de origen de la identificación", "País", "country"),
+                s.get("Primer apellido", "Nombres", "firstName"),
+                s.get("Primer nombre", "Apellidos", "name"),
+                s.get("Día de nacimiento", "birthDay"),
+                s.get("Mes de nacimiento", "birthMonth"),
+                s.get("Año de nacimiento", "birthYear"),
+                s.get("Celular", "numberPhone"),
+                s.get("Refinanciación o reestructuración", "restructuring"),
+                s.get("Día constitución negocio", "corpDay"),
+                s.get("Mes constitución negocio", "corpMonth"),
+                s.get("Año constitución negocio", "corpYear"),
+                s.get("Antigüedad del negocio (meses)", "longevity"),
+                s.get("Origen de solicitud", "origin"),
+                s.get("Correo electrónico", "email"),
+                s.get("Departamento del negocio", "Departamento", "analystDept"),
+                s.get("Ciudad del negocio", "Ciudad", "analysCity"),
+                s.get("Barrio del negocio", "Barrio", "analystNeighborhood"),
+                s.get("Último año cursado", "lastYearCompleted"),
+                s.get("Afiliación", "affiliation"),
+                s.get("Acceso a internet", "networkAccess"),
+                s.get("Teléfono del negocio", "businessPhone"),
+                s.get("Tipo de producto", "productType"),
+                s.get("Producto", "product"),
+                s.get("Monto", "amount"),
+                s.get("Plazo", "term"),
+                s.get("Frecuencia de pago", "paymentFreq"),
+                s.get("Destino del crédito", "destination"),
+                s.get("Garantía FNG", "hasFNG"),
+                s.get("Fianza", "hasBail"),
+                s.get("Garantía real", "hasRealGuarantee"),
+                s.get("Seguro integral", "comprehensiveInsurance"), // no se usa en la app actual
+                s.get("Codeudores", "coDebtors"),
+                s.get("Seguro familiar", "hasFamilyInsurance"),
+                s.get("Seguro hogar y negocio", "hasHomeBussinessInsurance"),
+                s.get("Seguro microempresario", "hasMicroEntrepreneursInsurance"),
+                s.get("Seguro de vida", "hasLifeInsurance"),
+                s.get("Plan exequial", "hasFuneralPlanning"),
+                s.get("Día de desembolso", "disbDay"),
+                s.get("Mes de desembolso", "disbMonth"),
+                s.get("Año de desembolso", "disbYear"),
+                s.get("Ahorro", "hasSavings"),
+                s.get("Lugar de la entrevista", "interviewPlace"),
+                s.get("Resultado de la entrevista", "interviewResult"),
+                s.get("Propósito de la relación contractual", "contractualPurpose"),
+                s.get("Recepción de extractos", "extractsInfo"),
+                s.get("Concepto del analista", "analystConcept"),
+                s.get("Decisión de análisis", "analysisDecision")));
     }
 
     private void executeOrderWithRetry(Runnable orderExecution) {
@@ -178,6 +213,9 @@ public class FlujoCompletoTest extends BaseTest {
     }
 
     private void recoverDriverForRetry() {
+        if (Boolean.parseBoolean(System.getProperty("kata.stop.requested", "false"))) {
+            throw new org.testng.SkipException("Ejecución detenida por el usuario.");
+        }
         DriverManager.quitDriver();
         driver = DriverManager.getDriver();
         DriverManager.restartApplication();
@@ -209,6 +247,7 @@ public class FlujoCompletoTest extends BaseTest {
         long stageStarted = startStage("Consulta preliminar", 1);
         try {
             ordersPage.createOrder(orderType, personType);
+            ordersPage.setBirthCountry(optionalValue(scenario, "País de nacimiento"));
             boolean canContinueToRadication = ordersPage.preliminaryConsultation(
                     idType,
                     numberId,
@@ -246,11 +285,26 @@ public class FlujoCompletoTest extends BaseTest {
             throw exception;
         }
 
+        // El tipo de cliente lo dice la app en la consulta: un cliente nuevo no trae datos y
+        // la radicación se llena completa; renovado o con mora menor solo los campos faltantes.
+        ConsultationOutcome clientType = ordersPage.getLastConsultationOutcome();
+        boolean realEstate = isRealEstateOrder(orderType);
+        if (realEstate && scenario == null) {
+            throw new IllegalStateException("La orden de inmueble de la cédula " + numberId
+                    + " necesita las columnas con nombre del Excel (no se encontró la fila).");
+        }
+
         stageStarted = startStage("Radicación", 2);
         try {
-            radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
-                    affiliation, networkAccess, email, analystDept,
-                    analysCity, analystNeighborhood, businessPhone);
+            // Inmueble (cualquier cliente) y microcrédito con cliente nuevo: radicación que solo
+            // llena lo vacío. Microcrédito renovado sigue con su radicación parcial ya probada.
+            if (realEstate || clientType == ConsultationOutcome.NEW_CLIENT) {
+                radicationPage.completeRadicationNewClient(numberId, scenario);
+            } else {
+                radicationPage.completeRadicationExistingClient(numberId, lastYearCompleted,
+                        affiliation, networkAccess, email, analystDept,
+                        analysCity, analystNeighborhood, businessPhone);
+            }
                 finishStage("Radicación", 2, ExecutionTelemetry.StageResult.PASSED,
                     "Radicación completada", stageStarted);
         } catch (RuntimeException exception) {
@@ -278,6 +332,9 @@ public class FlujoCompletoTest extends BaseTest {
 
         stageStarted = startStage("Registro del producto", 4);
         try {
+            if (realEstate) {
+                realEstateProductPage.fillRealEstateProduct(numberId, scenario);
+            } else {
             productRegistrationPage.fillProductRegistration(
                     numberId, productType, product, amount, term, paymentFreq,
                     destination, hasFNG, hasBail, hasRealGuarantee,
@@ -285,6 +342,7 @@ public class FlujoCompletoTest extends BaseTest {
                     hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
                     hasLifeInsurance, hasFuneralPlanning,
                     parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
+            }
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
                     "Producto registrado", stageStarted);
         } catch (RuntimeException exception) {
@@ -321,6 +379,16 @@ public class FlujoCompletoTest extends BaseTest {
             throw exception;
         }
 
+        // Inmueble llega solo hasta la Decisión del análisis: la validación de identidad no
+        // está en el alcance de esa orden (se muestra como etapa omitida en el dashboard).
+        if (realEstate) {
+            long skipped = startStage("Validación de identidad y firma", 6);
+            finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.SKIPPED,
+                    "No aplica para originación de inmueble", skipped);
+            Reporter.log("Orden de inmueble procesada hasta la decisión del análisis: " + numberId, true);
+            return;
+        }
+
         long identityStageStarted = startStage("Validación de identidad y firma", 6);
         try {
             identityValidationPage.processIdentityValidation("Aprobar (En campo)", numberId);
@@ -344,6 +412,11 @@ public class FlujoCompletoTest extends BaseTest {
      */
     private String optionalValue(TestScenario scenario, String... columns) {
         return scenario == null ? "" : scenario.get(columns);
+    }
+
+    /** La columna "Tipo de orden" define el flujo: microcrédito o inmueble. */
+    static boolean isRealEstateOrder(String orderType) {
+        return orderType != null && orderType.toLowerCase().contains("inmueble");
     }
 
     private int parseInt(String value) {

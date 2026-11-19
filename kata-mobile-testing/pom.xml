@@ -17,6 +17,8 @@
         <appium.client.version>9.2.2</appium.client.version>
       <selenium.version>4.19.1</selenium.version>
         <testng.version>7.10.2</testng.version>
+        <!-- Suite a ejecutar: mvn test "-Dsuite=testng-inmueble.xml" -->
+        <suite>testng.xml</suite>
   </properties>
 
   <dependencyManagement>
@@ -82,7 +84,7 @@
                 <version>3.2.5</version>
                 <configuration>
                     <suiteXmlFiles>
-                        <suiteXmlFile>testng.xml</suiteXmlFile>
+                        <suiteXmlFile>${suite}</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
             </plugin>

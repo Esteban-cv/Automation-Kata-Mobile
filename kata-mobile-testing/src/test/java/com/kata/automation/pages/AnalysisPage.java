@@ -108,6 +108,8 @@ public class AnalysisPage extends BasePage {
         // Nota: Falta espacio antes del paréntesis en la app.
         private static final By TOTAL_FAMILY_CONTRIBUTIONS = By.xpath(
                         "//android.widget.TextView[@text=\"Total aportes familiares(según políticas)\"]/following::android.widget.EditText");
+        private static final By SOLIDARY_DEBTOR_INCOME = By.xpath(
+                        "//android.widget.TextView[@text=\"Ingresos deudor solidario\"]/following::android.widget.EditText[1]");
         private static final By FAMILY_EXPENSES = By.xpath(
                         "//android.widget.TextView[@text=\"Gastos Familiares\"]/following::android.widget.EditText");
 
@@ -302,16 +304,21 @@ public class AnalysisPage extends BasePage {
                 type(TOTAL_OTHER_INCOME, "2000000");
                 //type(OTHER_CASH_FLOW_INCOME, "0");
 
-                scrollToText("Total aportes familiares(según políticas)", 0.15);
-
-                //scrollToText("Descripción de otros ingresos", 0.15);
+                scrollToText("Descripción de otros ingresos", 0.15);
                 type(OTHER_CASH_DESCRIPTION, "Ahorros");
 
+                scrollToText("Otros ingresos fllujo de caja (según políticas)", 0.15);
                 type(OTHER_CASH_FLOW_INCOME, "1000000");
 
-                // 5. Entorno Familiar[cite: 10, 11]
-                //scrollToText("Total aportes familiares(según políticas)", 0.15);
-                type(TOTAL_FAMILY_CONTRIBUTIONS, "2000000");
+                // 5. Entorno Familiar. "Total aportes familiares" existe en microcrédito pero
+                // no en el formulario de inmueble (allí aparece "Ingresos deudor solidario").
+                if (isLabelNearby("Total aportes familiares(según políticas)")) {
+                        type(TOTAL_FAMILY_CONTRIBUTIONS, "2000000");
+                }
+                // Inmueble: "Ingresos deudor solidario" (no existe en microcrédito).
+                if (isLabelNearby("Ingresos deudor solidario")) {
+                        type(SOLIDARY_DEBTOR_INCOME, "1000000");
+                }
 
                 scrollToText("Gastos Familiares", 0.15);
                 type(FAMILY_EXPENSES, "800000"); // Gastos de manutención básicos
@@ -339,4 +346,17 @@ public class AnalysisPage extends BasePage {
 
         }
 
+
+        /** Busca la etiqueta en pantalla y un poco más abajo; si no está, deja la pantalla donde estaba. */
+        private boolean isLabelNearby(String label) {
+                if (isPresentWithin(byVisibleText(label), java.time.Duration.ofSeconds(2))) {
+                        return true;
+                }
+                scrollDownPercent(0.20);
+                if (isPresentWithin(byVisibleText(label), java.time.Duration.ofSeconds(2))) {
+                        return true;
+                }
+                scrollDownPercent(-0.20);
+                return false;
+        }
 }

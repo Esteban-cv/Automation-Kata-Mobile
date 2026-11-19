@@ -58,7 +58,8 @@ if %ERRORLEVEL% EQU 0 (
     echo [PROCESO] Instalando Appium...
     call npm install --location=global appium
 )
-call appium driver list --installed 2>&1 | findstr /i "uiautomator2" >nul
+call appium driver list --installed > "%TEMP%\kata_drivers.txt" 2>&1
+findstr /i "uiautomator2" "%TEMP%\kata_drivers.txt" >nul
 if %ERRORLEVEL% EQU 0 (
     echo [OK] Driver UiAutomator2 ya esta instalado.
 ) else (
@@ -153,9 +154,14 @@ exit /b
 set "EMULATOR_EXE=%ANDROID_HOME%\emulator\emulator.exe"
 if not exist "%EMULATOR_EXE%" (
     echo.
-    echo [ERROR] No se encontro el emulador en "%ANDROID_HOME%\emulator".
-    echo Instala Android Studio, crea un dispositivo virtual en "Device Manager"
-    echo y vuelve a ejecutar este instalador.
+    echo [AVISO] Este PC no tiene el emulador de Android.
+    choice /c SN /m "Deseas instalar Android Studio ahora (descarga grande, unos minutos)"
+    if errorlevel 2 goto :FIN
+    winget install --id Google.AndroidStudio --exact --source winget --accept-source-agreements --accept-package-agreements
+    echo.
+    echo [IMPORTANTE] Abre Android Studio UNA vez y termina el asistente inicial
+    echo ^(descarga el SDK y el emulador^). Luego vuelve a ejecutar InstalarDependencias.bat
+    echo y elige la opcion [2]: el dispositivo virtual se crea solo.
     goto :FIN
 )
 
@@ -174,6 +180,7 @@ echo.
 echo Dispositivos virtuales disponibles:
 set "AVD_COUNT=0"
 for /f "delims=" %%A in ('"%EMULATOR_EXE%" -list-avds 2^>nul') do call :AGREGAR_AVD "%%A"
+if "%AVD_COUNT%"=="0" call :CREAR_AVD
 if "%AVD_COUNT%"=="0" (
     echo [ERROR] No hay dispositivos virtuales creados. Crea uno en Android Studio ^> Device Manager.
     goto :FIN
@@ -212,6 +219,30 @@ echo  [%AVD_COUNT%] %~1
 exit /b
 
 :: -------------------------------------------------------
+:: Crea el dispositivo virtual "Kata_Emulator" (Pixel 7, Android 14, x86_64), el mismo
+:: con el que se probo el robot. Descarga la imagen del sistema si no esta (~1.5 GB).
+:: -------------------------------------------------------
+:CREAR_AVD
+set "SDKMANAGER=%ANDROID_HOME%\cmdline-tools\latest\bin\sdkmanager.bat"
+set "AVDMANAGER=%ANDROID_HOME%\cmdline-tools\latest\bin\avdmanager.bat"
+set "AVD_IMAGE=system-images;android-34;google_apis;x86_64"
+if not exist "%SDKMANAGER%" (
+    echo [AVISO] Falta "Android SDK Command-line Tools". Instalalo en Android Studio:
+    echo   Settings ^> Languages and Frameworks ^> Android SDK ^> SDK Tools ^> Command-line Tools.
+    exit /b
+)
+choice /c SN /m "No hay dispositivos virtuales. Deseas crear Kata_Emulator automaticamente"
+if errorlevel 2 exit /b
+echo [PROCESO] Aceptando licencias del SDK...
+(for /l %%N in (1,1,30) do @echo y) | call "%SDKMANAGER%" --licenses >nul 2>&1
+echo [PROCESO] Descargando la imagen del sistema, puede tardar varios minutos...
+call "%SDKMANAGER%" "emulator" "platform-tools" "platforms;android-34" "%AVD_IMAGE%"
+echo [PROCESO] Creando el dispositivo virtual Kata_Emulator...
+echo no| call "%AVDMANAGER%" create avd -n Kata_Emulator -k "%AVD_IMAGE%" -d pixel_7 --force
+for /f "delims=" %%A in ('"%EMULATOR_EXE%" -list-avds 2^>nul') do call :AGREGAR_AVD "%%A"
+exit /b
+
+:: -------------------------------------------------------
 :: Instala (o actualiza conservando datos) la app incluida en el instalador.
 :: Justo despues del arranque el gestor de paquetes puede no estar listo: un reintento.
 :: -------------------------------------------------------
@@ -246,6 +277,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "if($lines -match '^device\.name='){$lines=$lines -replace '^device\.name=.*',('device.name='+$env:DEVICE_SERIAL)}else{$lines+=('device.name='+$env:DEVICE_SERIAL)};" ^
   "Set-Content -LiteralPath $env:CONFIG_FILE -Value $lines -Encoding Default"
 echo [OK] Dispositivo configurado: %DEVICE_SERIAL%
+call :VERIFICAR
 
 :FIN
 echo.
@@ -253,6 +285,24 @@ echo Cierra esta ventana negra y ya puedes abrir el Dashboard.
 echo.
 pause
 endlocal
+exit /b
+
+:: -------------------------------------------------------
+:: Resumen: confirma que cada pieza responde antes de abrir el Dashboard.
+:: -------------------------------------------------------
+:VERIFICAR
+echo.
+echo =======================================================
+echo     VERIFICACION FINAL
+echo =======================================================
+call node -v >nul 2>&1 && (echo [OK] Node.js) || (echo [FALTA] Node.js)
+call appium -v >nul 2>&1 && (echo [OK] Appium) || (echo [FALTA] Appium: vuelve a ejecutar este instalador en una ventana nueva)
+call appium driver list --installed > "%TEMP%\kata_drivers.txt" 2>&1
+findstr /i "uiautomator2" "%TEMP%\kata_drivers.txt" >nul && (echo [OK] Driver UiAutomator2) || (echo [FALTA] Driver UiAutomator2)
+"%ADB_PATH%" -s %DEVICE_SERIAL% get-state 2>nul | findstr /i "device" >nul && (echo [OK] Dispositivo %DEVICE_SERIAL% conectado) || (echo [FALTA] Dispositivo %DEVICE_SERIAL% no responde)
+"%ADB_PATH%" -s %DEVICE_SERIAL% shell pm list packages com.kata.mobile 2>nul | findstr /i "com.kata.mobile" >nul && (echo [OK] App Kata Mobile instalada en el dispositivo) || (echo [FALTA] App Kata Mobile en el dispositivo)
+echo.
+echo Recuerda: abre Kata Mobile en el dispositivo e inicia sesion antes de ejecutar.
 exit /b
 
 :: -------------------------------------------------------

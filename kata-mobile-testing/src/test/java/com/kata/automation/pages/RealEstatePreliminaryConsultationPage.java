@@ -42,13 +42,14 @@ public class RealEstatePreliminaryConsultationPage extends OrdersPage {
      * guardada; en los demás casos deja la decisión "Continuar" para pasar a radicación.
      */
     public ConsultationOutcome completePreliminaryConsultation(TestScenario data) {
+        setBirthCountry(data.get("País de nacimiento"));
         preliminaryConsultation(
                 required(data, "Tipo de identificación", "idType"),
                 required(data, "Número de identificación", "numberId"),
-                orDefault(data, DEFAULT_COUNTRY, "País", "country"),
-                required(data, "Primer apellido", "firstName"),
+                orDefault(data, DEFAULT_COUNTRY, "País de origen de la identificación", "País", "country"),
+                required(data, "Primer apellido", "Nombres", "firstName"),
                 data.get("Segundo apellido", "segundoApellido"),
-                required(data, "Primer nombre", "name"),
+                required(data, "Primer nombre", "Apellidos", "name"),
                 data.get("Segundo nombre", "segundoNombre"),
                 number(data, "Día de nacimiento", "birthDay"),
                 number(data, "Mes de nacimiento", "birthMonth"),

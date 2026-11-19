@@ -66,6 +66,30 @@ public class BasePage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(50));
     }
 
+    /**
+     * Convierte un texto en un literal XPath seguro. Los textos de la app pueden traer
+     * comillas dobles (ej. el "Green Card") o simples; meterlos tal cual dentro de la
+     * XPath la rompía ("InvalidSelectorException").
+     */
+    protected static String xpathLiteral(String text) {
+        String value = text == null ? "" : text;
+        if (!value.contains("\"")) {
+            return "\"" + value + "\"";
+        }
+        if (!value.contains("'")) {
+            return "'" + value + "'";
+        }
+        StringBuilder concat = new StringBuilder("concat(");
+        String[] parts = value.split("\"", -1);
+        for (int i = 0; i < parts.length; i++) {
+            if (i > 0) {
+                concat.append(", '\"', ");
+            }
+            concat.append("\"").append(parts[i]).append("\"");
+        }
+        return concat.append(")").toString();
+    }
+
     /** Pausa el hilo durante la cantidad de milisegundos indicada. */
     protected void sleep(long millis) {
         try {
@@ -158,10 +182,63 @@ public class BasePage {
         driver.perform(Arrays.asList(swipe));
     }
 
+    /**
+     * Elige una opción de un desplegable ya abierto, haciendo scroll dentro de la lista
+     * si hace falta. Baja hasta el final (cuando la pantalla deja de cambiar) y, si no la
+     * encontró, sube hasta el inicio: así sirve aunque la lista abra a mitad de camino o
+     * tenga cientos de opciones (países, profesiones, actividades económicas).
+     */
+    protected void selectDropdownOption(String option) {
+        By locator = By.xpath("//*[normalize-space(@text)=" + xpathLiteral(option.trim()) + "]");
+        // Primero se espera a que la lista termine de abrir: la opción casi siempre está
+        // a la vista (ej. COLOMBIA es la primera) y se elige sin hacer scroll. Sin esta
+        // espera la lista aún no existía y el robot se ponía a hacer scroll de más.
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        try {
+            try {
+                WebElement visible = new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(250))
+                        .until(ExpectedConditions.visibilityOfElementLocated(locator));
+                if (isFullyInViewport(visible)) {
+                    visible.click();
+                    return;
+                }
+            } catch (TimeoutException notVisibleYet) {
+                // no está a la vista: se busca con scroll
+            }
+            for (double step : new double[] { 0.30, -0.30 }) {
+                String previous = "";
+                for (int i = 0; i < 120; i++) {
+                    for (WebElement element : driver.findElements(locator)) {
+                        if (element.isDisplayed() && isFullyInViewport(element)) {
+                            try {
+                                element.click();
+                            } catch (WebDriverException clickError) {
+                                driver.executeScript("mobile: clickGesture",
+                                        Map.of("elementId", ((RemoteWebElement) element).getId()));
+                            }
+                            return;
+                        }
+                    }
+                    String source = driver.getPageSource();
+                    if (source.equals(previous)) {
+                        break; // llegó al extremo de la lista
+                    }
+                    previous = source;
+                    scrollDownPercent(step);
+                    sleep(200);
+                }
+            }
+        } finally {
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
+        }
+        throw new IllegalStateException("La opción '" + option + "' no existe en la lista desplegable. "
+                + "Revise que el valor del Excel esté escrito tal como aparece en la app.");
+    }
+
     /** Busca un texto realizando scroll y deja el elemento listo para usarlo. */
     protected void scrollToTextAndClick(String text) {
-        By locator = By.xpath("//*[normalize-space(@text)=\"" + text
-            + "\" or normalize-space(@content-desc)=\"" + text + "\"]");
+        By locator = By.xpath("//*[normalize-space(@text)=" + xpathLiteral(text)
+            + " or normalize-space(@content-desc)=" + xpathLiteral(text) + "]");
         int maxScrolls = 50;
         driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
@@ -190,7 +267,7 @@ public class BasePage {
 
     /** Busca un texto realizando scroll con el porcentaje indicado por intento. */
     protected void scrollToText(String text, double jumpPercent) {
-        By locator = By.xpath("//android.widget.TextView[contains(@text, '" + text + "')]");
+        By locator = By.xpath("//android.widget.TextView[contains(@text, " + xpathLiteral(text) + ")]");
         driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
         for (int i = 0; i < 8; i++) {
@@ -233,7 +310,7 @@ public class BasePage {
      * Crea un localizador XPath para un TextView cuyo texto coincide exactamente.
      */
     protected By byVisibleText(String text) {
-        return By.xpath("//android.widget.TextView[@text=\"" + text + "\"]");
+        return By.xpath("//android.widget.TextView[@text=" + xpathLiteral(text) + "]");
     }
 
     /** Hace clic usando el mecanismo de reintentos de {@link #clickSafely(By)}. */
@@ -457,8 +534,8 @@ public class BasePage {
     protected void answerQuestion(String questionText, String decision) {
         String optionText = "SI".equalsIgnoreCase(decision) ? "Si" : "No";
         // Se usan comillas simples (') para envolver las variables en lugar de (\" )
-        By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)='" + questionText
-                + "']/..//android.widget.TextView[normalize-space(@text)='" + optionText + "']");
+        By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)=" + xpathLiteral(questionText.trim())
+                + "]/..//android.widget.TextView[normalize-space(@text)=" + xpathLiteral(optionText) + "]");
 
         int maxAttempts = 3;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -649,58 +726,146 @@ public class BasePage {
         }
     }
 
-    /** Hace hasta dos intentos y reintenta cuando la consulta no devuelve respuesta. */
+    /** Diálogo de falla del servicio del banco (BadGateway, InternalServerError, etc.). */
+    private static final By SERVICE_ERROR_DIALOG = By.xpath(
+            "//android.widget.TextView[contains(@text, 'generó el error') or contains(@text, 'RSE0')]");
+
+    /** Avisos rápidos (toast) de Android con errores de tiempo de espera o del servicio. */
+    private static final By ERROR_TOAST = By.xpath("//android.widget.Toast["
+            + "contains(@text, 'tiempo') or contains(@text, 'Tiempo') or contains(@text, 'timeout')"
+            + " or contains(@text, 'error') or contains(@text, 'Error')]");
+
+    /**
+     * Toca el botón y espera el resultado hasta 3 minutos, con hasta 3 intentos.
+     *
+     * <p>
+     * El error de tiempo de espera puede llegar como diálogo o como un aviso que aparece
+     * abajo y desaparece en uno o dos segundos. Por eso se revisa cada 200 ms y, apenas
+     * aparece, se guarda su texto y la captura antes de que se borre. Luego se cierra el
+     * mensaje (si es diálogo) y se reintenta.
+     * </p>
+     */
     protected void clickWithRetry(By buttonLocator, By resultLocator, By timeoutLocator) {
         Exception lastError = null;
+        String lastTimeoutMessage = "";
         int maxAttempts = 3;
-        driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
+        String caseId = System.getProperty("kata.current.case.id", "sin_caso");
 
-        try {
-            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                clickSafely(buttonLocator);
+
+                String[] errorText = { null };
+                driver.manage().timeouts().implicitlyWait(Duration.ZERO);
                 try {
-                    clickSafely(buttonLocator);
-
-                    WebDriverWait consultationWait = new WebDriverWait(driver, Duration.ofMinutes(3));
-                    consultationWait.until(currentDriver -> {
-                        boolean resultFound = !currentDriver.findElements(resultLocator).isEmpty();
-                        boolean timeoutFound = !currentDriver.findElements(timeoutLocator).isEmpty();
-                        return resultFound || timeoutFound;
+                    // Se espera el resultado hasta 90 s (hay consultas que tardan ~40 s). Lo que se
+                    // detecta al instante (cada 200 ms) son los errores: con un error no se espera,
+                    // se captura, se cierra y se reintenta.
+                    new WebDriverWait(driver, Duration.ofSeconds(90), Duration.ofMillis(200)).until(currentDriver -> {
+                        if (!currentDriver.findElements(resultLocator).isEmpty()) {
+                            return true;
+                        }
+                        List<WebElement> errors = currentDriver.findElements(timeoutLocator);
+                        if (errors.isEmpty()) {
+                            errors = currentDriver.findElements(ERROR_TOAST);
+                        }
+                        if (errors.isEmpty()) {
+                            // Falla del servicio en cualquier botón (Consultar cliente, Vista 360,
+                            // Procesar decisión): "RSE02: El servicio ... generó el error 'BadGateway'".
+                            errors = currentDriver.findElements(SERVICE_ERROR_DIALOG);
+                        }
+                        if (errors.isEmpty()) {
+                            return false;
+                        }
+                        // Primero el texto (es lo más rápido) y luego la captura: el aviso
+                        // inferior se borra en segundos.
+                        try {
+                            errorText[0] = errors.get(0).getText();
+                        } catch (StaleElementReferenceException gone) {
+                            errorText[0] = "(el aviso desapareció antes de leerlo)";
+                        }
+                        takeEvidence(caseId, "tiempo_espera_intento");
+                        return true;
                     });
-
-                    if (!driver.findElements(resultLocator).isEmpty()) {
-                        return;
-                    }
-                } catch (TimeoutException e) {
-                    lastError = e;
-                } catch (Exception e) {
-                    lastError = e;
+                } finally {
+                    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
                 }
 
-                if (attempt < maxAttempts) {
-                    sleep(1000);
+                if (errorText[0] == null) {
+                    return; // apareció el resultado esperado
                 }
+                lastTimeoutMessage = errorText[0];
+                ExecutionLog.error("Intento " + attempt + " de " + buttonLocator + ": " + lastTimeoutMessage);
+                dismissMessageIfPresent();
+            } catch (TimeoutException e) {
+                lastError = e;
+            } catch (Exception e) {
+                lastError = e;
             }
+
+            if (attempt < maxAttempts) {
+                sleep(300); // reintento inmediato tras el error
+            }
+        }
+
+        String detail = lastTimeoutMessage.isBlank() ? "" : " Último mensaje de la app: \"" + lastTimeoutMessage + "\".";
+        throw new RuntimeException("La app no respondió tras " + maxAttempts + " intentos de " + buttonLocator
+                + "." + detail, lastError);
+    }
+
+    /**
+     * Busca sin esperar. Las búsquedas para saber si algo NO está deben ir sin espera
+     * implícita: con la de 45 s cada consulta vacía tardaba 45 s (eso causaba las demoras
+     * después de "Actualización exitosa" y antes de reintentar un tiempo de espera).
+     */
+    protected List<WebElement> findNow(By locator) {
+        driver.manage().timeouts().implicitlyWait(Duration.ZERO);
+        try {
+            return driver.findElements(locator);
         } finally {
             driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         }
+    }
 
-        throw new RuntimeException("La consulta de cliente no devolvió resultado tras " + maxAttempts
-                + " intentos.", lastError);
+    /** Cierra el diálogo de la app (botón ACEPTAR) si está abierto. */
+    protected void dismissMessageIfPresent() {
+        List<WebElement> accept = findNow(By.xpath("//android.widget.TextView[@text=\"ACEPTAR\"]"));
+        if (!accept.isEmpty()) {
+            accept.get(0).click();
+            sleep(500);
+        }
     }
 
     public void findTextInDropDown(By locator, String location) {
         sleep(1000);
         clickComposeDropdown(locator);
-        scrollToTextAndClick(location);
+        selectDropdownOption(location);
     }
 
-    public void findTextWithSearch(By locator,By searchLocator, String text){
-        clickComposeDropdown(locator);
-        waitForVisibility(searchLocator);
-        type(searchLocator, text);
-        try {driver.hideKeyboard();} catch (Exception e) {}
-        wait.until(ExpectedConditions.visibilityOfElementLocated(byVisibleText(text)));
-        sleep(300);
-        click(byVisibleText(text));
+    /**
+     * Abre un desplegable con buscador, escribe el texto y elige la opción.
+     *
+     * <p>
+     * No se oculta el teclado: en Android eso puede enviar "atrás" y cerrar la ventana
+     * del buscador antes de elegir (la opción queda arriba, visible sobre el teclado).
+     * Si la opción no aparece, se intenta abrir el desplegable una vez más.
+     * </p>
+     */
+    public void findTextWithSearch(By locator, By searchLocator, String text) {
+        int maxAttempts = 2;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            clickComposeDropdown(locator);
+            waitForVisibility(searchLocator);
+            type(searchLocator, text);
+            if (isPresentWithin(byVisibleText(text), Duration.ofSeconds(15))) {
+                sleep(300);
+                click(byVisibleText(text));
+                return;
+            }
+            System.out.println("⚠️ No apareció '" + text + "' en el buscador (intento " + attempt + ").");
+            sleep(500);
+        }
+        throw new IllegalStateException("No se encontró '" + text + "' en el buscador de " + locator
+                + ". Revise que el valor del Excel exista en la lista de la app.");
     }
 }

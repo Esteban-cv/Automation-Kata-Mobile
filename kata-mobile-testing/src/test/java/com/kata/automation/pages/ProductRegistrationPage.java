@@ -167,10 +167,10 @@ public class ProductRegistrationPage extends BasePage {
 
                 // 1. Selección del producto y montos
                 clickComposeDropdown(PRODUCT_TYPE);
-                clickSafely(byVisibleText(productType));
+                selectDropdownOption(productType);
 
                 clickComposeDropdown(PRODUCT);
-                clickSafely(byVisibleText(product));
+                selectDropdownOption(product);
 
                 type(SUGGESTED_AMOUNT, amount);
 
@@ -181,11 +181,11 @@ public class ProductRegistrationPage extends BasePage {
 
                 scrollAndClickReliable("Frecuencia de pago sugerida", PAYMENT_FREQUENCY,
                                 0.15);
-                clickSafely(byVisibleText(paymentFreq));
+                selectDropdownOption(paymentFreq);
 
                 scrollAndClickReliable("Destino económico del crédito", ECONOMIC_DESTINATION,
                                 0.15);
-                clickSafely(byVisibleText(destination));
+                selectDropdownOption(destination);
 
                 declineAlivioDebtIfPresent(product);
 
@@ -331,13 +331,12 @@ public class ProductRegistrationPage extends BasePage {
                 answerQuestion(question, required ? "Si" : "No");
                 if (required) {
                         scrollAndClickReliable(typeLabel, dropdownBelow(typeLabel), 0.15);
-                        clickSafely(byVisibleText(guaranteeType));
+                        selectDropdownOption(guaranteeType);
                 }
         }
 
         private static By dropdownBelow(String label) {
-                return By.xpath("//android.widget.TextView[@text=\"" + label
-                                + "\"]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
+                return By.xpath("//android.widget.TextView[@text=" + xpathLiteral(label) + "]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
         }
 
         private void waitForSimulationResponse() {

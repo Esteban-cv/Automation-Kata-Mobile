@@ -29,6 +29,13 @@ public class OrdersPage extends BasePage {
 
         private ConsultationOutcome lastConsultationOutcome = ConsultationOutcome.APPROVED;
 
+        /** País de nacimiento; si está vacío se usa el mismo país de la identificación. */
+        private String birthCountry = "";
+
+        public void setBirthCountry(String birthCountry) {
+                this.birthCountry = birthCountry == null ? "" : birthCountry.trim();
+        }
+
         // --- LOCALIZADORES DE ELEMENTOS ---
 
         // Botón del paso de confirmación (texto CREAR). Antes era el primer Button de la
@@ -139,6 +146,7 @@ public class OrdersPage extends BasePage {
          * inmueble) la app salta directo a la confirmación y no se elige tipo de persona.
          */
         public void createOrder(String type, String personType) {
+                ensureOnOrdersList();
                 click(NEW_ORDER_BUTTON);
                 click(byVisibleText(type));
                 if (!isPresentWithin(ORDER_CONFIRMATION_TITLE, Duration.ofSeconds(3))) {
@@ -172,7 +180,7 @@ public class OrdersPage extends BasePage {
                 lastConsultationOutcome = ConsultationOutcome.APPROVED;
 
                 click(OPEN_ID_TYPE_DROPDOWN);
-                click(byVisibleText(idType));
+                selectDropdownOption(idType);
 
                 type(NUMBER_ID_INPUT, numberId);
                 type(NUMBER_ID_CONFIRM_INPUT, numberId);
@@ -186,7 +194,7 @@ public class OrdersPage extends BasePage {
 
                 scrollAndClickReliable("País de origen de la identificación del solicitante",
                                 OPEN_HOME_COUNTRY_DROPDOWN, 0.10);
-                click(byVisibleText(country));
+                selectDropdownOption(country);
                 sleep(200);
 
                 type(FIRST_NAME_INPUT, firstName);
@@ -203,7 +211,7 @@ public class OrdersPage extends BasePage {
                 sleep(500);
 
                 scrollAndClickReliable("País de nacimiento del solicitante", SELECT_BIRTH_CLIENT, 0.20);
-                click(byVisibleText(country));
+                selectDropdownOption(birthCountry == null || birthCountry.isBlank() ? country : birthCountry);
 
                 scrollToText("Aceptación políticas", 0.15);
                 type(NUMBER_PHONE_CLIENT, numberPhone);
@@ -224,7 +232,7 @@ public class OrdersPage extends BasePage {
                 scrollToText("Origen de solicitud", 0.15);
                 sleep(200);
                 clickComposeDropdown(ORIGIN_ORDER);
-                click(byVisibleText(originOrderText));
+                selectDropdownOption(originOrderText);
 
                 scrollToText("Consultar cliente", 0.10);
                 long consultationStarted = System.nanoTime();
@@ -323,6 +331,37 @@ public class OrdersPage extends BasePage {
                 }
                 scrollToText(label, 0.20);
                 type(input, value);
+        }
+
+        /**
+         * Deja la app en la lista de órdenes antes de crear una nueva. Si quedó abierta
+         * una orden de una ejecución anterior, la cierra con "Ir atrás" y confirma la salida.
+         */
+        public void ensureOnOrdersList() {
+                int maxSteps = 4;
+                for (int step = 0; step < maxSteps; step++) {
+                        if (isPresentWithin(NEW_ORDER_BUTTON, Duration.ofSeconds(3))) {
+                                return;
+                        }
+                        dismissMessageIfPresent(); // p. ej. "Orden guardada exitosamente" de la orden anterior
+                        if (isPresentWithin(GO_BACK, Duration.ofSeconds(1))) {
+                                click(GO_BACK);
+                        } else {
+                                driver.navigate().back();
+                        }
+                        sleep(800);
+                        // El diálogo de salida solo se busca justo después de "Ir atrás": su
+                        // XPath es genérico y en otra pantalla podría tocar un botón distinto.
+                        if (!isPresentWithin(NEW_ORDER_BUTTON, Duration.ofSeconds(2))
+                                        && isPresentWithin(YES_BUTTON_GO_BACK, Duration.ofSeconds(2))) {
+                                click(YES_BUTTON_GO_BACK);
+                                sleep(1000);
+                        }
+                }
+                if (!isPresentWithin(NEW_ORDER_BUTTON, Duration.ofSeconds(5))) {
+                        throw new IllegalStateException("La app no volvió a la lista de órdenes. "
+                                        + "Deje Kata Mobile en la pantalla 'Órdenes' y ejecute de nuevo.");
+                }
         }
 
         public void closeOrder() {

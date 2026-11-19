@@ -124,8 +124,19 @@ public final class ErrorEvidenceHandler {
                 || normalized.contains("capital indicado es menor al minimo permitido para el producto")) {
             return Category.CONTROLLED_REJECTION;
         }
+        if (normalized.contains("error de actualización en engine")
+                || normalized.contains("not exist in the catalog")) {
+            // El motor rechazó un valor del producto (dato del Excel no válido para el producto).
+            return Category.CONTROLLED_REJECTION;
+        }
+        if (normalized.contains("no corresponde al asignado")
+                || normalized.contains("no es atendido por la agencia")) {
+            // Barrio/ciudad del negocio que no pertenece al analista: dato mal digitado en el Excel.
+            return Category.CONTROLLED_REJECTION;
+        }
         if (normalized.contains("timeout") || normalized.contains("tiempo de espera")
-                || normalized.contains("internal server") || normalized.contains("connection")
+                || normalized.contains("internal server") || normalized.contains("internalservererror")
+                || normalized.contains("generó el error") || normalized.contains("connection")
                 || normalized.contains("consulta") || normalized.contains("parametr")) {
             return Category.TECHNICAL_ERROR;
         }

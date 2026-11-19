@@ -46,6 +46,14 @@ public class DriverManager {
                 options.setPlatformName("Android");
                 deviceSerial = configuration.getProperty("device.name", "RZCX10KND8P");
                 options.setDeviceName(deviceSerial);
+                // Appium usa el primer dispositivo que encuentra si no se le dice cuál. Con el
+                // celular y el emulador conectados a la vez podía correr en el equivocado: se fija
+                // el dispositivo exacto de robot.properties (udid).
+                String targetDevice = chooseDevice(deviceSerial);
+                if (targetDevice != null) {
+                    deviceSerial = targetDevice;
+                    options.setUdid(targetDevice);
+                }
                 options.setAppPackage(configuration.getProperty("app.package", "com.kata.mobile"));
                 options.setAutomationName(configuration.getProperty("automation.name", "UiAutomator2"));
 
@@ -220,6 +228,56 @@ public class DriverManager {
 
     public static String deviceSerial() {
         return deviceSerial;
+    }
+
+    /**
+     * Dispositivo en el que se ejecuta: el de robot.properties si está conectado; si no está y
+     * hay uno solo conectado, ese; si hay varios y ninguno es el configurado, se detiene con un
+     * mensaje claro. Devuelve null si ADB no responde (Appium decidirá).
+     */
+    private static String chooseDevice(String configured) {
+        List<String> attached = attachedDevices();
+        if (attached == null) {
+            return null;
+        }
+        if (configured != null && attached.contains(configured)) {
+            return configured;
+        }
+        if (attached.size() == 1) {
+            System.out.println("El dispositivo configurado (" + configured + ") no está conectado; se usa "
+                    + attached.get(0) + ".");
+            return attached.get(0);
+        }
+        if (attached.isEmpty()) {
+            throw new IllegalStateException("No hay ningún celular ni emulador conectado. Conecta el celular por USB "
+                    + "o enciende el emulador y vuelve a intentar.");
+        }
+        throw new IllegalStateException("Hay varios dispositivos conectados " + attached + " y ninguno es el "
+                + "configurado en config/robot.properties (device.name=" + configured + "). Ajusta device.name.");
+    }
+
+    /** Seriales en estado 'device' según 'adb devices', o null si ADB no se pudo ejecutar. */
+    private static List<String> attachedDevices() {
+        try {
+            Process process = new ProcessBuilder(adbExecutable(), "devices").redirectErrorStream(true).start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return null;
+            }
+            List<String> serials = new ArrayList<>();
+            for (String line : new String(process.getInputStream().readAllBytes()).split("\\R")) {
+                String[] parts = line.trim().split("\\s+");
+                if (parts.length >= 2 && "device".equals(parts[1])) {
+                    serials.add(parts[0]);
+                }
+            }
+            return serials;
+        } catch (IOException exception) {
+            return null;
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
     }
 
     private static List<String> adbCommand(List<String> arguments) {

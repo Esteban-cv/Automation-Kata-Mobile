@@ -2,6 +2,9 @@
 setlocal
 
 cd /d "%~dp0kata-mobile-testing"
+rem El compilador de VS Code escribe en la misma carpeta target y puede dejar clases
+rem rotas ("Unresolved compilation problem"); se recompila limpio con Maven.
+if exist target\test-classes rmdir /s /q target\test-classes
 call mvn -q test-compile
 if errorlevel 1 (
     echo.
