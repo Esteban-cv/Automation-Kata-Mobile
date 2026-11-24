@@ -195,7 +195,7 @@ if not defined AVD_NAME (
 )
 
 echo [PROCESO] Iniciando el emulador "%AVD_NAME%"...
-start "Emulador Android" "%EMULATOR_EXE%" -avd "%AVD_NAME%" -port 5554
+start "Emulador Android" "%EMULATOR_EXE%" -avd "%AVD_NAME%" -port 5554 -gpu auto
 set "DEVICE_SERIAL=emulator-5554"
 set "WAIT_COUNT=0"
 :ESPERAR_EMULADOR
@@ -219,13 +219,14 @@ echo  [%AVD_COUNT%] %~1
 exit /b
 
 :: -------------------------------------------------------
-:: Crea el dispositivo virtual "Kata_Emulator" (Pixel 7, Android 14, x86_64), el mismo
-:: con el que se probo el robot. Descarga la imagen del sistema si no esta (~1.5 GB).
+:: Crea el dispositivo virtual "Kata_Emulator" (Pixel 7, Android 14 con Play Store, 4 GB
+:: de RAM). Con la imagen sin Play Store la app de Kata no deja iniciar sesion, y con poca
+:: RAM el emulador va lento y la app muestra "Error de conexion". Descarga ~1.5 GB.
 :: -------------------------------------------------------
 :CREAR_AVD
 set "SDKMANAGER=%ANDROID_HOME%\cmdline-tools\latest\bin\sdkmanager.bat"
 set "AVDMANAGER=%ANDROID_HOME%\cmdline-tools\latest\bin\avdmanager.bat"
-set "AVD_IMAGE=system-images;android-34;google_apis;x86_64"
+set "AVD_IMAGE=system-images;android-34;google_apis_playstore;x86_64"
 if not exist "%SDKMANAGER%" (
     echo [AVISO] Falta "Android SDK Command-line Tools". Instalalo en Android Studio:
     echo   Settings ^> Languages and Frameworks ^> Android SDK ^> SDK Tools ^> Command-line Tools.
@@ -239,6 +240,12 @@ echo [PROCESO] Descargando la imagen del sistema, puede tardar varios minutos...
 call "%SDKMANAGER%" "emulator" "platform-tools" "platforms;android-34" "%AVD_IMAGE%"
 echo [PROCESO] Creando el dispositivo virtual Kata_Emulator...
 echo no| call "%AVDMANAGER%" create avd -n Kata_Emulator -k "%AVD_IMAGE%" -d pixel_7 --force
+set "AVD_CONFIG=%USERPROFILE%\.androidvd\Kata_Emulator.avd\config.ini"
+if exist "%AVD_CONFIG%" powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$c=Get-Content -LiteralPath $env:AVD_CONFIG;" ^
+  "$c=@($c | Where-Object { $_ -notmatch '^(hw.ramSize|vm.heapSize|hw.cpu.ncore)\s*=' });" ^
+  "$c+='hw.ramSize = 4096'; $c+='vm.heapSize = 512'; $c+='hw.cpu.ncore = 4';" ^
+  "Set-Content -LiteralPath $env:AVD_CONFIG -Value $c"
 for /f "delims=" %%A in ('"%EMULATOR_EXE%" -list-avds 2^>nul') do call :AGREGAR_AVD "%%A"
 exit /b
 

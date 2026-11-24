@@ -35,6 +35,8 @@ MICRO_PRODUCTS = ["Crédito productivo urbano360", "Crédito prod mayor monto360
                   "Credito popular productivo rural360", "Credito productivo rural360",
                   "Credito popular productivo rural quincenal360", "Credito popular productivo rural semanal360",
                   "Credito Inmediato"]
+MICROPYME_DESTINOS = ["Capital de Trabajo", "Activos fijos para el negocio (mobiliarios)",
+                      "Vehículos con destino productivo", "Remodelación del local comercial"]
 MICRO_DESTINOS = ["Capital de Trabajo", "Activo Fijo", "Yo construyo Estructura y Obra Negra", "Ola Invernal"]
 
 # (columna, etapa, lista, completa, nota)
@@ -44,10 +46,11 @@ CONSULTA, RADICACION, PRODUCTO, DECISION, CONTROL = (
 SCHEMA = [
     ("ID caso", CONTROL, None, False, "Identificador del caso (evidencias)."),
     # --- Consulta preliminar ---
-    ("Tipo de orden", CONSULTA, ["Originación de microcrédito", "Originación de inmueble"], True,
-     "Define el flujo: microcrédito o inmueble."),
-    ("Tipo de persona", CONSULTA, ["SolicitudPersonaNatural"], False,
-     "Solo microcrédito (inmueble tiene un único formulario)."),
+    ("Tipo de orden", CONSULTA, ["Originación de microcrédito", "Originación de inmueble",
+                                 "Originación de micropyme"], True,
+     "Define el flujo: microcrédito, inmueble o micropyme (micropyme = microcrédito sin validación de identidad)."),
+    ("Tipo de persona", CONSULTA, ["SolicitudPersonaNatural", "SolicitudMicroPymePersonaNatural"], False,
+     "Formulario: microcrédito SolicitudPersonaNatural, micropyme SolicitudMicroPymePersonaNatural (inmueble tiene un único formulario)."),
     ("Tipo de identificación", CONSULTA, APP["Tipo de identificación"], True, None),
     ("Número de identificación", CONSULTA, None, False, None),
     ("País de origen de la identificación", CONSULTA, PAISES, True, None),
@@ -79,6 +82,9 @@ SCHEMA = [
     ("Grupo étnico", RADICACION, APP["Grupo étnico del solicitante"], True, "Solo cliente nuevo."),
     ("Estado civil", RADICACION, ["Soltero(a)", "Casado(a)", "Separado(a)", "Unión Libre", "Viudo(a)",
                                   "Divorciado(a)"], True, "Solo cliente nuevo."),
+    ("Cónyuge", RADICACION, "CONYUGE", True,
+     "Solo con Casado(a) o Unión Libre. Número de identificación de un cónyuge de la hoja 'Datos conyuge'. "
+     "Vacío = el primero de esa hoja."),
     ("Nivel de educación", RADICACION, ["Primaria", "Secundaria", "Profesional", "Técnico", "Sin estudios",
                                         "Tecnológico"], True, "Solo cliente nuevo."),
     ("Último año cursado", RADICACION, None, False, None),
@@ -130,7 +136,9 @@ SCHEMA = [
     ("Garantía real", PRODUCTO, ["Si", "No", "hipoteca"], True, "Microcrédito: Si/No. Inmueble: hipoteca."),
     ("Valor de la garantía", PRODUCTO, None, False, "Solo inmueble."),
     ("Seguro todo riesgo", PRODUCTO, SI_NO, True, "Solo inmueble."),
-    ("Seguro deudores", PRODUCTO, SI_NO, True, "Solo inmueble."),
+    ("Seguro deudores", PRODUCTO, SI_NO, True, "Solo inmueble. Con codeudor se responde Si (así la app muestra el botón Codeudor(es))."),
+    ("Codeudor", PRODUCTO, "CODEUDOR", True,
+     "Opcional. Número de identificación de un codeudor de la hoja 'Datos codeudor'. Vacío = sin codeudor."),
     ("Comisión Data Crédito", PRODUCTO, SI_NO, True, "Solo inmueble."),
     ("Comisión Cifin", PRODUCTO, SI_NO, True, "Solo inmueble."),
     ("Comisión MiPyme", PRODUCTO, SI_NO, True, "Solo inmueble."),
@@ -148,9 +156,16 @@ SCHEMA = [
 ]
 DEPENDENT = {
     "Tipo de producto": {"Microcrédito": MICRO_PRODUCTS,
-                         "Cartera comercial": ["Inmueble Productivo", "Inmueble Productivo Remodelación"]},
+                         "Cartera comercial": ["Inmueble Productivo", "Inmueble Productivo Remodelación",
+                                               "Micropyme - Tasa Variable", "Micropyme - Garantia Real",
+                                               "Micropyme - Tasa Fija"]},
     "Producto": {**{p: MICRO_DESTINOS for p in MICRO_PRODUCTS},
                  "Inmueble Productivo": ["Compra de Inmueble"],
+                 # Micropyme (capturado de la app el 2026-11-23)
+                 "Micropyme - Tasa Variable": MICROPYME_DESTINOS,
+                 "Micropyme - Tasa Fija": MICROPYME_DESTINOS,
+                 "Micropyme - Garantia Real": ["Capital de Trabajo", "Activo fijo", "Yo construyo Instalaciones Técnicas",
+                                               "Yo construyo Estructura y Obra Negra", "Ola Invernal"],
                  "Inmueble Productivo Remodelación": ["Capital de Trabajo", "Activo fijo",
                                                       "Yo construyo Instalaciones Técnicas",
                                                       "Yo construyo Estructura y Obra Negra", "Ola Invernal"]},
@@ -181,7 +196,9 @@ def read_rows(path):
 
 
 original, output = sys.argv[1], sys.argv[2]
-rows = read_rows(original)
+# KATA_SOLO_EXTRA=1: la hoja queda solo con las filas de los archivos extra (sirve para
+# reemplazar los casos sin perder hojas, listas ni rangos de la plantilla original).
+rows = [] if os.environ.get("KATA_SOLO_EXTRA") == "1" else read_rows(original)
 for extra in sys.argv[3:]:
     for row in read_rows(extra):
         # Filas del Excel de inmueble (no traían "Tipo de orden").
@@ -245,7 +262,11 @@ for col, (name, stage, source, complete, _) in enumerate(SCHEMA, start=1):
         continue
     target = f"{L(col)}2:{L(col)}{LAST}"
     style = "stop" if complete else "warning"
-    if source in ("FNG", "FIANZA"):
+    if source == "CONYUGE":
+        formula = "'Datos conyuge'!$F$2:$F$200"
+    elif source == "CODEUDOR":
+        formula = "'Datos codeudor'!$B$2:$B$200"
+    elif source in ("FNG", "FIANZA"):
         formula = "ListaGarantiaFNG" if source == "FNG" else "ListaFianza"
     elif isinstance(source, tuple):
         parent = source[1]
@@ -269,6 +290,144 @@ for col, (name, stage, source, complete, _) in enumerate(SCHEMA, start=1):
                                else "El valor no está en la lista capturada; verifique que exista en la app."))
     ws.add_data_validation(dv)
     dv.add(target)
+
+SPOUSE_HEADERS = ["Primer apellido", "Segundo apellido", "Primer nombre", "Segundo nombre",
+                  "Tipo de identificación", "Número de identificación", "País de origen de la identificación",
+                  "Ocupación", "Celular"]
+if "Datos conyuge" not in wb.sheetnames:
+    sp = wb.create_sheet("Datos conyuge")
+    sp.append(SPOUSE_HEADERS)
+    # Personas que ya pasaron las validaciones de listas en QA.
+    sp.append(["COLORADO", "VARGAS", "ESTEBAN", None, "Cedula ciudadanía", 1116070669, "COLOMBIA", "EMPLEADO", 3185551310])
+    sp.append(["MOSQUERA", None, "LUIS", None, "Cedula ciudadanía", 94512378, "COLOMBIA", "INDEPENDIENTE INFORMAL", 3104455662])
+    for c, _ in enumerate(SPOUSE_HEADERS, start=1):
+        cell = sp.cell(1, c)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor=STAGE_FILL[RADICACION])
+        sp.column_dimensions[L(c)].width = 24
+    sp.cell(1, 6).comment = Comment("Use cédulas de personas SIN listas ni mora: la app valida al cónyuge "
+                                    "contra listas restrictivas en la Decisión del análisis.", "Robot Kata")
+    for col, opts in ((5, APP["Tipo de identificación"]), (7, PAISES), (8, APP["Ocupación del cónyuge"])):
+        c = write_list("Cónyuge: " + SPOUSE_HEADERS[col - 1], opts)
+        dv = DataValidation(type="list", formula1=f"=ListasApp!${L(c)}$2:${L(c)}${len(opts) + 1}", allow_blank=True)
+        sp.add_data_validation(dv)
+        dv.add(f"{L(col)}2:{L(col)}200")
+
+# --- Codeudores: hoja aparte, cada solicitud elige uno en la columna "Codeudor" ---
+# (encabezado, valor de ejemplo, lista). Las columnas vacías toman el valor por defecto del robot.
+GENEROS = ["Masculino", "Femenino", "No binario", "Transgénero"]
+ESTADOS_CIVILES = ["Soltero(a)", "Casado(a)", "Separado(a)", "Unión Libre", "Viudo(a)", "Divorciado(a)"]
+EDUCACION = ["Primaria", "Secundaria", "Profesional", "Técnico", "Sin estudios", "Tecnológico"]
+CODEBTOR_COLUMNS = [
+    ("Tipo de identificación", "Cedula ciudadanía", APP["Tipo de identificación"]),
+    ("Número de identificación", 94512378, None),
+    ("País de origen de la identificación", "COLOMBIA", PAISES),
+    ("Primer apellido", "MOSQUERA", None),
+    ("Segundo apellido", "RIVAS", None),
+    ("Primer nombre", "LUIS", None),
+    ("Segundo nombre", None, None),
+    ("Día de nacimiento", 15, None),
+    ("Mes de nacimiento", 11, None),
+    ("Año de nacimiento", 1985, None),
+    ("País de nacimiento", "COLOMBIA", PAISES),
+    ("Celular", 3157778899, None),
+    ("Departamento de nacimiento", "VALLE DEL CAUCA", DEPARTAMENTOS),
+    ("Ciudad de nacimiento", "CALI", None),
+    ("Día de expedición", 1, None),
+    ("Mes de expedición", 6, None),
+    ("Año de expedición", 2005, None),
+    ("Departamento de expedición", "VALLE DEL CAUCA", DEPARTAMENTOS),
+    ("Ciudad de expedición", "CALI", None),
+    ("Nacionalidad", "COLOMBIA", PAISES),
+    ("Género", "Masculino", GENEROS),
+    ("Grupo étnico", "Ningún grupo étnico", APP["Grupo étnico del solicitante"]),
+    ("Estado civil", "Soltero(a)", ESTADOS_CIVILES),
+    ("Nivel de educación", "Secundaria", EDUCACION),
+    ("Último año cursado", 11, None),
+    ("Profesión", "Administrador", APP["Profesión del solicitante"]),
+    ("Ocupación", "MICROEMPRESARIO", APP["Ocupación del solicitante"]),
+    ("Es cónyuge del cliente", "No", SI_NO),
+    ("Número de hijos", 0, None),
+    ("Personas a cargo", 0, None),
+    ("Correo electrónico", "codeudor.prueba@gmail.com", None),
+    ("Teléfono fijo", 3334455, None),
+    ("Contacto alternativo", 3001112233, None),
+    ("Zona de residencia", "Urbano", APP["Zona de residencia del solicitante"]),
+    ("País de residencia", "COLOMBIA", PAISES),
+    ("Departamento de residencia", "VALLE DEL CAUCA", DEPARTAMENTOS),
+    ("Ciudad de residencia", "CALI", None),
+    ("Barrio de residencia", "LA INDEPENDENCIA", None),
+    ("Dirección de residencia", "CALLE 15 # 30 40", None),
+    ("Referencia de la residencia", "CASA DE DOS PISOS", None),
+    ("Estrato", "Estrato 2", APP["Estrato"]),
+    ("Tipo de vivienda", "Familiar", APP["Tipo de vivienda"]),
+    ("Nombre del negocio", "TIENDA DON LUIS", None),
+    ("Ubicación del negocio", "Local Comercial",
+     ["Ambulante", "Campo", "Intinerante", "Local Comercial", "Plaza de Mercado", "Residencia"]),
+    ("País del negocio", "COLOMBIA", PAISES),
+    ("Departamento del negocio", "VALLE DEL CAUCA", DEPARTAMENTOS),
+    ("Ciudad del negocio", "CALI", None),
+    ("Barrio del negocio", "LA INDEPENDENCIA", None),
+    ("Dirección del negocio", "CARRERA 8 # 12 20", None),
+    ("Referencia del negocio", "FRENTE AL PARQUE", None),
+    ("Tipo de local", "Familiar", APP["Tipo de vivienda"]),
+    ("Nombre del arrendador", "PEDRO PEREZ", None),
+    ("Celular del arrendador", 3205556677, None),
+    ("Canon de arrendamiento", 800000, None),
+    ("Teléfono fijo del negocio", 4445566, None),
+    ("Celular del negocio", 3168889900, None),
+    ("Registro de cámara y comercio", "No", SI_NO),
+    ("Día de constitución del negocio", 1, None),
+    ("Mes de constitución del negocio", 3, None),
+    ("Año de constitución del negocio", 2015, None),
+    ("Sector actividad económica", "SERVICIOS", APP["Sector actividad económica principal"]),
+    ("Actividad económica", "COMERCIALIZACIÓN DE ENERGÍA ELÉCTRICA", None),
+    ("País de origen de los recursos", "Colombia", ["Colombia", "Otro"]),
+    ("Total ventas", 40000000, None),
+    ("Total compras", 12000000, None),
+    ("Gastos del negocio", 1000000, None),
+    ("Gastos financieros", 0, None),
+    ("Total otros ingresos", 0, None),
+    ("Otros ingresos fllujo de caja (según políticas)", 0, None),
+    ("Ingresos deudor solidario", 0, None),
+    ("Gastos familiares", 1500000, None),
+    ("Total bienes del negocio", 80000000, None),
+    ("Pasivos del negocio", 0, None),
+    ("Cuentas W", 0, None),
+    ("Total activos", 120000000, None),
+    ("Pasivos totales", 0, None),
+    ("Concepto del analista", "Codeudor con capacidad de pago y buenas referencias", None),
+    ("Decisión sobre el codeudor", "Aprobar codeudor", ["Aprobar codeudor", "Rechazar codeudor"]),
+    ("Lugar de entrevista", "Negocio del Cliente", ["Negocio del Cliente", "Oficina Banco", "Otro"]),
+    ("Resultado de la entrevista", "Satisfactorio", ["Satisfactorio", "No Satisfactorio"]),
+    ("Propósito de la relación contractual", "Capital de trabajo",
+     ["Capital de trabajo", "Compra de inventario/mercancía", "Compra de materia prima",
+      "Compra de maquinaria y equipos", "Compra de herramientas", "Adecuación o mejora del local"]),
+]
+if "Datos codeudor" not in wb.sheetnames:
+    cd = wb.create_sheet("Datos codeudor")
+    cd.append([c[0] for c in CODEBTOR_COLUMNS])
+    cd.append([c[1] for c in CODEBTOR_COLUMNS])
+    for c, _ in enumerate(CODEBTOR_COLUMNS, start=1):
+        cell = cd.cell(1, c)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor=STAGE_FILL[PRODUCTO])
+        cell.alignment = Alignment(wrap_text=True, vertical="center")
+        cd.column_dimensions[L(c)].width = 22
+    cd.freeze_panes = "C2"
+    cd.cell(1, 2).comment = Comment("Use cédulas de personas SIN listas ni mora: la app consulta al codeudor en "
+                                    "centrales y listas. El celular debe ser distinto al celular del negocio del "
+                                    "cliente.", "Robot Kata")
+else:
+    cd = wb["Datos codeudor"]
+    cd.data_validations.dataValidation = []  # se regeneran abajo, sin duplicarlas
+for col, (header, _, opts) in enumerate(CODEBTOR_COLUMNS, start=1):
+    if not opts:
+        continue
+    c = write_list("Codeudor: " + header, opts)
+    dv = DataValidation(type="list", formula1=f"=ListasApp!${L(c)}$2:${L(c)}${len(opts) + 1}", allow_blank=True)
+    cd.add_data_validation(dv)
+    dv.add(f"{L(col)}2:{L(col)}200")
 
 wb.save(output)
 print(f"Plantilla: {len(columns)} columnas, {len(rows)} filas -> {output}")

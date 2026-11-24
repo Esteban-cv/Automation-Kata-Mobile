@@ -2,6 +2,7 @@ package com.kata.automation.pages;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
@@ -77,6 +78,8 @@ public class RealEstateProductRegistrationPage extends BasePage {
         LocalDate firstInstallment = disbursement.plusMonths(1);
         selectDate("Fecha de desembolso", disbursement);
         selectDate("Fecha de primera cuota", firstInstallment);
+        // Micropyme (y algunas versiones de inmueble) preguntan si el desembolso va a ahorros.
+        answerIfPresent("¿El desembolso sería a cuenta de ahorros?", value(data, "No", "Ahorro"));
 
         // --- Garantías y seguros ---
         scrollAndClickReliable("Validar garantías y seguros", VALIDATE_GUARANTEES_BTN, 0.15);
@@ -84,6 +87,21 @@ public class RealEstateProductRegistrationPage extends BasePage {
         takeEvidence(numberId, "Mensaje_validacion_garantias");
         click(ACCEPT_BUTTON);
         sleep(2000); // la app marca sola FNG y garantía real
+
+        // FNG: en inmueble la app suele decidirlo sola al validar (la pregunta queda
+        // deshabilitada). "Si" intenta marcarla; un tipo (p. ej. RECONSTRUYE, micropyme) además
+        // lo elige en "Garantía FNG". Si la app no lo deja, se respeta lo que decidió.
+        String fng = value(data, "No", "Garantía FNG");
+        if (!"no".equalsIgnoreCase(fng)) {
+            answerIfPresent("¿Requiere garantía FNG", "Si");
+            if (!"si".equalsIgnoreCase(fng)) {
+                try {
+                    selectOption("Garantía FNG", fng);
+                } catch (RuntimeException notShown) {
+                    System.out.println("ℹ️ La app no mostró el tipo de garantía FNG para elegir '" + fng + "'.");
+                }
+            }
+        }
 
         // Columna compartida con microcrédito (Si/No). En inmueble "Si" equivale a la única
         // garantía real que ofrece la app: hipoteca.
@@ -97,7 +115,10 @@ public class RealEstateProductRegistrationPage extends BasePage {
         }
 
         answerIfPresent("¿Requiere Seguro todo riesgo?", value(data, "No", "Seguro todo riesgo"));
-        answerIfPresent("¿Requiere seguro Deudores:", value(data, "No", "Seguro deudores"));
+        // Con codeudor (columna "Codeudor") el seguro deudores va en Si: así la app muestra
+        // el botón "Codeudor(es)".
+        answerIfPresent("¿Requiere seguro Deudores:",
+                CodebtorPage.requested(data) ? "Si" : value(data, "No", "Seguro deudores"));
         answerIfPresent("¿Requiere comision Data Crédito?", value(data, "No", "Comisión Data Crédito"));
         answerIfPresent("¿Requiere comisión Cifin:", value(data, "No", "Comisión Cifin"));
         answerIfPresent("¿Requiere comisión MiPyme:", value(data, "No", "Comisión MiPyme"));
@@ -108,6 +129,9 @@ public class RealEstateProductRegistrationPage extends BasePage {
         waitForSimulationResponse();
         takeEvidence(numberId, "simulacion_credito_respuesta");
         click(ACCEPT_BUTTON);
+
+        // --- Codeudor (hoja "Datos codeudor"), si la solicitud lo trae ---
+        new CodebtorPage(driver).registerCodebtor(numberId, data);
     }
 
     private void selectDate(String label, LocalDate date) {
@@ -147,7 +171,11 @@ public class RealEstateProductRegistrationPage extends BasePage {
             System.out.println("ℹ️ El formulario no muestra la pregunta '" + question + "'.");
             return;
         }
-        answerQuestion(question, answer);
+        // Se usa el texto real de la etiqueta: varía entre productos (p. ej. "¿Requiere
+        // garantía FNG?" en inmueble y "¿Requiere garantía FNG" sin "?" en micropyme).
+        List<WebElement> label = findNow(By.xpath("//android.widget.TextView[contains(@text, "
+                + xpathLiteral(question) + ")]"));
+        answerQuestion(label.isEmpty() ? question : label.get(0).getText(), answer);
     }
 
     private void selectOption(String label, String option) {

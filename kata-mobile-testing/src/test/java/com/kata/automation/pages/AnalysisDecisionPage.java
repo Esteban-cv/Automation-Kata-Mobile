@@ -48,9 +48,15 @@ public class AnalysisDecisionPage extends BasePage {
         private static final By DECISION_PROCESSED_MESSAGE = By.xpath(
                         "//*[contains(@text, \"Validación exitosa y procesamiento exitoso.\") or contains(@text, \"Decisión procesada\")]");
 
-        // Diálogo de rechazo del motor de crédito al procesar la decisión.
+        private static final By DECISION_PROCESSED_OR_SAVED = By.xpath(
+            "//*[contains(@text, \"Validación exitosa y procesamiento exitoso.\")"
+                    + " or contains(@text, \"Decisión procesada\")"
+                    + " or contains(@text, \"Orden guardada exitosamente\")]");
+
+    // Diálogo de rechazo del motor de crédito al procesar la decisión.
         private static final By ENGINE_ERROR_DIALOG = By.xpath(
-                        "//android.widget.TextView[starts-with(@text, \"Error de actualización en Engine\")]");
+                        "//android.widget.TextView[starts-with(@text, \"Error de actualización en Engine\")"
+                    + " or contains(@text, \"no cumple validaciones\")]");
 
         private static final By TIMEOUT_ERROR_MESSAGE = By.xpath(
                         "//*[contains(translate(@text, \"ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜ\", "
@@ -111,14 +117,22 @@ public class AnalysisDecisionPage extends BasePage {
                 By anyResponse = By.xpath("//*[contains(@text, \"Validación exitosa y procesamiento exitoso.\")"
                                 + " or contains(@text, \"Decisión procesada\")"
                                 + " or contains(@text, \"Orden guardada exitosamente\")"
-                                + " or contains(@text, \"Error de actualización en Engine\")]");
+                                + " or contains(@text, \"Error de actualización en Engine\")"
+                                + " or contains(@text, \"no cumple validaciones\")] | "
+                                + BUSINESS_REJECTION_DIALOG.toString().replace("By.xpath: ", ""));
                 clickWithRetry(PROCESS_DECISION_BTN, anyResponse, TIMEOUT_ERROR_MESSAGE);
+                if (findNow(ENGINE_ERROR_DIALOG).isEmpty() && findNow(DECISION_PROCESSED_OR_SAVED).isEmpty()
+                                && !findNow(BUSINESS_REJECTION_DIALOG).isEmpty()) {
+                        String message = visibleDialogText();
+                        takeEvidence(numberId, "decision_rechazada");
+                        throw new IllegalStateException("La app rechazó la decisión del análisis: \"" + message + "\".");
+                }
                 java.util.List<org.openqa.selenium.WebElement> engineError = findNow(ENGINE_ERROR_DIALOG);
                 if (!engineError.isEmpty()) {
                         String message = engineError.get(0).getText();
                         takeEvidence(numberId, "decision_rechazada_engine");
                         throw new IllegalStateException("La app rechazó la decisión del análisis: \"" + message
-                                        + "\". Revise en el Excel los datos del producto (por ejemplo el destino económico).");
+                                        + "\". " + (message.contains("listas") ? "Algún dato de la solicitud (p. ej. la cédula del cónyuge) está en listas restrictivas: use otra en el Excel." : "Revise en el Excel los datos del producto (por ejemplo el destino económico)."));
                 }
 
                 // Normalmente aquí salta un pop-up de confirmación, así que agregamos un sleep

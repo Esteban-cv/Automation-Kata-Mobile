@@ -19,7 +19,7 @@ public class OrdersTest extends BaseTest {
 
     @DataProvider(name = "excelData")
     public Object[][] getData() {
-        String excelPath = "src/test/resources/datos_solicitudes.xlsx";
+        String excelPath = "src/test/resources/datos_solicitudes_configurado.xlsx";
         return ExcelUtils.getTestData(excelPath, "Hoja1");
     }
 

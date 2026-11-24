@@ -124,6 +124,14 @@ public final class ErrorEvidenceHandler {
                 || normalized.contains("capital indicado es menor al minimo permitido para el producto")) {
             return Category.CONTROLLED_REJECTION;
         }
+        if (normalized.contains("no cumple con los criterios") || normalized.contains("rechazó")) {
+            // Reglas de negocio de la app (p. ej. criterios de microempresario).
+            return Category.CONTROLLED_REJECTION;
+        }
+        if (normalized.contains("no cumple validaciones")) {
+            // Validaciones de SARLAFT / listas en la decisión (p. ej. cónyuge registrado en listas).
+            return Category.CONTROLLED_REJECTION;
+        }
         if (normalized.contains("error de actualización en engine")
                 || normalized.contains("not exist in the catalog")) {
             // El motor rechazó un valor del producto (dato del Excel no válido para el producto).

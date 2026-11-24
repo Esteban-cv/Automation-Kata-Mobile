@@ -370,6 +370,10 @@ public class RadicationPage extends BasePage {
                 selectOption("Acceso a internet del solicitante", value(data, "Hogar", "Acceso a internet"));
                 answerIfEmpty("¿El solicitante tiene propiedad Raiz?", "No");
 
+                // --- Cónyuge: la app la muestra (y la exige para la Vista 360) cuando el estado
+                // civil es Casado(a) o Unión Libre ---
+                fillSpouseSectionIfPresent(data);
+
                 // --- Información familiar: solo si la app pide al menos un familiar ---
                 scrollToText("Composición familiar", 0.15);
                 if (isPresentWithin(FAMILY_REQUIRED_WARNING, java.time.Duration.ofSeconds(2))) {
@@ -501,7 +505,8 @@ public class RadicationPage extends BasePage {
         // Mensajes de la app que rechazan la radicación por datos del Excel.
         private static final By RADICATION_REJECTION_MESSAGE = By.xpath(
                         "//android.widget.TextView[contains(@text, 'no corresponde al asignado')"
-                                        + " or contains(@text, 'no es atendido por la agencia')]");
+                                        + " or contains(@text, 'no es atendido por la agencia')"
+                                        + " or contains(@text, 'Error de actualización en Engine')]");
 
         /**
          * Toca "Procesar la decisión" y espera la respuesta. Si la app rechaza la
@@ -510,18 +515,30 @@ public class RadicationPage extends BasePage {
          * evidencia de error lo capture.
          */
         private void processRadicationDecision(String numberId) {
-                By anyResponse = By.xpath("//*[@text=\"Actualización exitosa\"]"
+                // Respuesta = éxito o cualquier mensaje de rechazo de la app (incluye los que
+                // aún no conocemos, p. ej. "no cumple con los criterios… microempresario").
+                By anyResponse = By.xpath("//*[@text=\"Actualización exitosa\"] | "
+                                + BUSINESS_REJECTION_DIALOG.toString().replace("By.xpath: ", "")
+                                + " | //*[@text=\"Actualización exitosa\"]"
                                 + " | //android.widget.TextView[contains(@text, 'no corresponde al asignado')"
-                                + " or contains(@text, 'no es atendido por la agencia')]");
+                                + " or contains(@text, 'no es atendido por la agencia')"
+                                + " or contains(@text, 'Error de actualización en Engine')]");
                 clickWithRetry(PROCCESS_DECISION, anyResponse, RADICATION_RETRYABLE_ERROR);
 
                 java.util.List<org.openqa.selenium.WebElement> rejection = findNow(RADICATION_REJECTION_MESSAGE);
+                if (rejection.isEmpty() && findNow(By.xpath("//*[@text=\"Actualización exitosa\"]")).isEmpty()
+                                && !findNow(BUSINESS_REJECTION_DIALOG).isEmpty()) {
+                        String message = visibleDialogText();
+                        takeEvidence(numberId, "radicacion_rechazada");
+                        throw new IllegalStateException("La app rechazó la radicación: \"" + message + "\".");
+                }
                 if (!rejection.isEmpty()) {
                         String message = rejection.get(0).getText();
                         takeEvidence(numberId, "radicacion_rechazada");
-                        throw new IllegalStateException("La app rechazó la radicación: \"" + message
-                                        + "\". Revise el departamento, la ciudad y el barrio del negocio en el Excel"
-                                        + " (deben corresponder al analista).");
+                        String hint = message.contains("Engine")
+                                        ? "El motor de crédito rechazó un dato de la radicación (posible falla de la app o del catálogo)."
+                                        : "Revise el departamento, la ciudad y el barrio del negocio en el Excel (deben corresponder al analista).";
+                        throw new IllegalStateException("La app rechazó la radicación: \"" + message + "\". " + hint);
                 }
                 takeEvidence(numberId, "decision_radicacion");
                 waitForVisibility(ACCEPT_CONSULT_CLIENT_BUTTON);
@@ -530,6 +547,45 @@ public class RadicationPage extends BasePage {
 
         /** Valor del grupo étnico cuando el Excel no trae la columna "Grupo étnico". */
         private static final String ETHNIC_GROUP_DEFAULT = "Ningún grupo étnico";
+
+        private static final By SPOUSE_SECTION = By.xpath(
+                        "//android.widget.TextView[@text=\"Información del cónyuge del cliente\"]");
+
+        /**
+         * Llena "Información del cónyuge del cliente" si la app la muestra. Toma las columnas
+         * "... cónyuge" del Excel; lo que la app ya traiga (cliente renovado) no se toca.
+         */
+        private void fillSpouseSectionIfPresent(TestScenario data) {
+                if (!isPresentWithin(SPOUSE_SECTION, java.time.Duration.ofSeconds(2))) {
+                        scrollDownPercent(0.20);
+                        if (!isPresentWithin(SPOUSE_SECTION, java.time.Duration.ofSeconds(2))) {
+                                scrollDownPercent(-0.20);
+                                return; // soltero(a), viudo(a), etc.: la sección no aparece
+                        }
+                }
+                // Datos del cónyuge: hoja "Datos conyuge" del Excel (columna "Cónyuge" de la
+                // solicitud, o el primero de la hoja). Si no hay hoja, valores por defecto.
+                java.util.Map<String, String> spouse = com.kata.automation.utils.SpouseCatalog.forScenario(data);
+                System.out.println("Estado civil con cónyuge: se diligencia la sección del cónyuge "
+                                + spouseValue(spouse, "Número de identificación", "1116070669") + ".");
+                typeField("Primer apellido cónyuge", spouseValue(spouse, "Primer apellido", "COLORADO"));
+                typeField("Segundo apellido cónyuge", spouseValue(spouse, "Segundo apellido", ""));
+                typeField("Primer nombre cónyuge", spouseValue(spouse, "Primer nombre", "ESTEBAN"));
+                typeField("Segundo nombre cónyuge", spouseValue(spouse, "Segundo nombre", ""));
+                selectOption("Tipo de identificación del cónyuge",
+                                spouseValue(spouse, "Tipo de identificación", "Cedula ciudadanía"));
+                typeField("Número de identificación del cónyuge",
+                                spouseValue(spouse, "Número de identificación", "1116070669"));
+                selectOption("País de origen de la identificación del cónyuge",
+                                spouseValue(spouse, "País de origen de la identificación", "COLOMBIA"));
+                selectOption("Ocupación del cónyuge", spouseValue(spouse, "Ocupación", "EMPLEADO"));
+                typeField("Celular del cónyuge", spouseValue(spouse, "Celular", "3185551310"));
+        }
+
+        private static String spouseValue(java.util.Map<String, String> spouse, String column, String defaultValue) {
+                String value = com.kata.automation.utils.SpouseCatalog.get(spouse, column).replaceAll("\\.0$", "");
+                return value.isBlank() ? defaultValue : value;
+        }
 
         // Advertencia que muestra la app cuando la composición familiar está vacía.
         private static final By FAMILY_REQUIRED_WARNING = By.xpath(
@@ -547,7 +603,7 @@ public class RadicationPage extends BasePage {
                         "¿El solicitante es persona expuesta políticamente (PEP)?" };
 
         /** Abre el desplegable debajo de la etiqueta y elige la opción (con scroll si la lista es larga). */
-        private void selectOption(String label, String option) {
+        protected void selectOption(String label, String option) {
                 scrollToText(label, 0.15);
                 if (dropdownFilled(label)) {
                         return;
@@ -566,14 +622,35 @@ public class RadicationPage extends BasePage {
         private static final java.util.Set<String> EMPTY_TEXT_VALUES = java.util.Set.of(
                         "", "$0", "Selecciona una fecha.", "01/01/0001");
 
+        /**
+         * Vacío o valor de relleno de la app. Las fechas sin diligenciar la app las muestra con
+         * el día de hoy en 1927 (ej. 20/11/1927): se toman como vacías, no como dato precargado.
+         */
+        protected static boolean isEmptyValue(String value) {
+                String v = value == null ? "" : value.trim();
+                if (EMPTY_TEXT_VALUES.contains(v)) {
+                        return true;
+                }
+                java.util.regex.Matcher date = java.util.regex.Pattern.compile("^\\d{2}/\\d{2}/(\\d{4})$").matcher(v);
+                if (!date.matches()) {
+                        return false;
+                }
+                // Relleno de la app: el día de hoy en otro año (1927 en la radicación del cliente,
+                // hace 30 años en la fecha de constitución del negocio del codeudor).
+                java.time.LocalDate today = java.time.LocalDate.now();
+                boolean todayInAnotherYear = v.startsWith(String.format("%02d/%02d/", today.getDayOfMonth(),
+                                today.getMonthValue())) && Integer.parseInt(date.group(1)) < today.getYear();
+                return Integer.parseInt(date.group(1)) < 1940 || todayInAnotherYear;
+        }
+
         /** Valor que muestra el desplegable de la etiqueta (la etiqueta debe estar en pantalla). */
-        private String dropdownValue(String label) {
+        protected String dropdownValue(String label) {
                 java.util.List<org.openqa.selenium.WebElement> value = findNow(By.xpath(
                                 "//android.widget.TextView[@text=" + xpathLiteral(label) + "]/following::android.widget.TextView[1]"));
                 return value.isEmpty() ? "" : value.get(0).getText().trim();
         }
 
-        private boolean dropdownFilled(String label) {
+        protected boolean dropdownFilled(String label) {
                 String value = dropdownValue(label);
                 boolean filled = !value.isEmpty() && !"Seleccionar".equals(value);
                 if (filled) {
@@ -582,10 +659,10 @@ public class RadicationPage extends BasePage {
                 return filled;
         }
 
-        private boolean textFilled(String label) {
+        protected boolean textFilled(String label) {
                 java.util.List<org.openqa.selenium.WebElement> field = findNow(textBelow(label));
                 String value = field.isEmpty() ? "" : field.get(0).getText().trim();
-                boolean filled = !EMPTY_TEXT_VALUES.contains(value);
+                boolean filled = !isEmptyValue(value);
                 if (filled) {
                         System.out.println("Ya diligenciado: " + label + " = " + value);
                 }
@@ -600,7 +677,7 @@ public class RadicationPage extends BasePage {
         private void fillWithConfirmation(String label, By field, String confirmLabel, By confirmField,
                         String excelValue) {
                 String current = currentText(field);
-                String value = EMPTY_TEXT_VALUES.contains(current) ? excelValue : current;
+                String value = isEmptyValue(current) ? excelValue : current;
                 if (value == null || value.isBlank()) {
                         throw new IllegalArgumentException("Falta el valor de '" + label + "' en el Excel y la app no lo trae.");
                 }
@@ -615,16 +692,17 @@ public class RadicationPage extends BasePage {
                 hideKeyboardQuietly();
         }
 
-        private String currentText(By field) {
+        protected String currentText(By field) {
                 java.util.List<org.openqa.selenium.WebElement> found = findNow(field);
                 return found.isEmpty() ? "" : found.get(0).getText().trim();
         }
 
         /** Responde Si/No solo si la pregunta aun no tiene ninguna opcion marcada. */
-        private void answerIfEmpty(String question, String answer) {
+        protected void answerIfEmpty(String question, String answer) {
                 scrollToText(question, 0.20);
                 boolean answered = !findNow(By.xpath("//android.widget.TextView[normalize-space(@text)="
-                                + xpathLiteral(question.trim()) + "]/..//android.widget.RadioButton[@checked=\"true\"]")).isEmpty();
+                                + xpathLiteral(question.trim())
+                                + "]/following::android.widget.RadioButton[position() <= 2][@checked=\"true\"]")).isEmpty();
                 if (answered) {
                         System.out.println("Ya respondida: " + question);
                         return;
@@ -633,7 +711,7 @@ public class RadicationPage extends BasePage {
         }
 
         /** Escribe en el campo de texto que está debajo de la etiqueta. Si no hay valor, no lo toca. */
-        private void typeField(String label, String text) {
+        protected void typeField(String label, String text) {
                 if (text == null || text.isBlank()) {
                         return;
                 }
@@ -643,9 +721,39 @@ public class RadicationPage extends BasePage {
                 }
                 type(textBelow(label), text);
                 hideKeyboardQuietly();
+                verifyTyped(label, text);
         }
 
-        private void selectDate(String label, int day, int month, int year) {
+        /**
+         * Confirma que el campo quedó con el valor. Un campo que quedó vacío (p. ej. Ventas brutas)
+         * no daba error al escribir, pero la app luego rechazaba la radicación ("no cumple los
+         * criterios para ser categorizado como microempresario"). Se reintenta una vez y, si
+         * sigue vacío, se falla aquí con el nombre del campo.
+         */
+        protected void verifyTyped(String label, String expected) {
+                String digitsExpected = expected.replaceAll("[^0-9]", "");
+                for (int attempt = 1; attempt <= 2; attempt++) {
+                        java.util.List<org.openqa.selenium.WebElement> field = findNow(textBelow(label));
+                        String current = field.isEmpty() ? "" : field.get(0).getText().trim();
+                        boolean ok = digitsExpected.length() == expected.trim().length()
+                                        ? current.replaceAll("[^0-9]", "").equals(digitsExpected)
+                                        : !isEmptyValue(current);
+                        if (ok) {
+                                return;
+                        }
+                        System.out.println("El campo '" + label + "' quedó como '" + current + "'; se escribe de nuevo.");
+                        scrollToText(label, 0.15);
+                        type(textBelow(label), expected);
+                        hideKeyboardQuietly();
+                }
+                java.util.List<org.openqa.selenium.WebElement> field = findNow(textBelow(label));
+                String current = field.isEmpty() ? "" : field.get(0).getText().trim();
+                if (isEmptyValue(current)) {
+                        throw new IllegalStateException("No se pudo llenar el campo '" + label + "' con '" + expected + "'.");
+                }
+        }
+
+        protected void selectDate(String label, int day, int month, int year) {
                 scrollToText(label, 0.15);
                 if (textFilled(label)) {
                         return;
@@ -654,27 +762,27 @@ public class RadicationPage extends BasePage {
                 selectDateInCalendar(day, month, year);
         }
 
-        private void hideKeyboardQuietly() {
+        protected void hideKeyboardQuietly() {
                 try {
                         driver.hideKeyboard();
                 } catch (Exception e) {
                         /* el teclado no estaba abierto */ }
         }
 
-        private static By dropdownBelow(String label) {
+        protected static By dropdownBelow(String label) {
                 return By.xpath("//android.widget.TextView[@text=" + xpathLiteral(label) + "]/following::android.view.View[@content-desc=\"Menú desplegable\"][1]");
         }
 
-        private static By textBelow(String label) {
+        protected static By textBelow(String label) {
                 return By.xpath("//android.widget.TextView[@text=" + xpathLiteral(label) + "]/following::android.widget.EditText[1]");
         }
 
-        private static String value(TestScenario data, String defaultValue, String... columns) {
+        protected static String value(TestScenario data, String defaultValue, String... columns) {
                 String value = data == null ? "" : data.get(columns);
                 return value.isBlank() ? defaultValue : value.replaceAll("\\.0$", "");
         }
 
-        private static int number(TestScenario data, int defaultValue, String... columns) {
+        protected static int number(TestScenario data, int defaultValue, String... columns) {
                 String value = value(data, "", columns);
                 return value.isBlank() ? defaultValue : Integer.parseInt(value);
         }

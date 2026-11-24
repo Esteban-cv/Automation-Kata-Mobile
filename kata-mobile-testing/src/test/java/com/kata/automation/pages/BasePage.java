@@ -188,6 +188,9 @@ public class BasePage {
      * encontró, sube hasta el inicio: así sirve aunque la lista abra a mitad de camino o
      * tenga cientos de opciones (países, profesiones, actividades económicas).
      */
+    /** Textos vistos en la última lista recorrida (para el mensaje de error). */
+    private final java.util.Set<String> seenOptions = new java.util.LinkedHashSet<>();
+
     protected void selectDropdownOption(String option) {
         By locator = By.xpath("//*[normalize-space(@text)=" + xpathLiteral(option.trim()) + "]");
         // Primero se espera a que la lista termine de abrir: la opción casi siempre está
@@ -205,6 +208,7 @@ public class BasePage {
             } catch (TimeoutException notVisibleYet) {
                 // no está a la vista: se busca con scroll
             }
+            seenOptions.clear();
             for (double step : new double[] { 0.30, -0.30 }) {
                 String previous = "";
                 for (int i = 0; i < 120; i++) {
@@ -220,19 +224,55 @@ public class BasePage {
                         }
                     }
                     String source = driver.getPageSource();
+                    java.util.regex.Matcher seen = java.util.regex.Pattern
+                            .compile("<android\\.widget\\.TextView [^>]*?text=\"([^\"]+)\"").matcher(source);
+                    while (seen.find()) {
+                        seenOptions.add(seen.group(1));
+                    }
                     if (source.equals(previous)) {
                         break; // llegó al extremo de la lista
                     }
                     previous = source;
-                    scrollDownPercent(step);
-                    sleep(200);
+                    scrollListWithoutFling(step > 0);
+                    sleep(300);
                 }
             }
         } finally {
             driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(45));
         }
         throw new IllegalStateException("La opción '" + option + "' no existe en la lista desplegable. "
-                + "Revise que el valor del Excel esté escrito tal como aparece en la app.");
+                + "Revise que el valor del Excel esté escrito tal como aparece en la app. Opciones vistas: "
+                + seenOptions);
+    }
+
+    /**
+     * Desplaza una lista despacio y sostiene el dedo antes de soltar, para que no quede
+     * "lanzada" (fling): con el swipe rápido la lista de profesiones pasaba de largo
+     * decenas de opciones entre una revisión y otra y nunca encontraba la buscada.
+     */
+    private void scrollListWithoutFling(boolean down) {
+        // Se desplaza DENTRO de la lista abierta: tocar fuera de ella la cierra (las listas
+        // cortas, como Grupo étnico, se abren como una ventana pequeña sobre el campo).
+        Dimension size = screenSize();
+        int x = size.width / 2;
+        int top = (int) (size.height * 0.40);
+        int bottom = (int) (size.height * 0.70);
+        List<WebElement> lists = driver.findElements(By.xpath("//*[@scrollable='true']"));
+        if (!lists.isEmpty()) {
+            Rectangle area = lists.get(0).getRect();
+            x = area.getX() + area.getWidth() / 2;
+            top = area.getY() + (int) (area.getHeight() * 0.20);
+            bottom = area.getY() + (int) (area.getHeight() * 0.80);
+        }
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence swipe = new Sequence(finger, 1);
+        swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), x, down ? bottom : top));
+        swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        swipe.addAction(new Pause(finger, Duration.ofMillis(150)));
+        swipe.addAction(finger.createPointerMove(Duration.ofMillis(800), PointerInput.Origin.viewport(), x, down ? top : bottom));
+        swipe.addAction(new Pause(finger, Duration.ofMillis(300)));
+        swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+        driver.perform(Arrays.asList(swipe));
     }
 
     /** Busca un texto realizando scroll y deja el elemento listo para usarlo. */
@@ -535,7 +575,10 @@ public class BasePage {
         String optionText = "SI".equalsIgnoreCase(decision) ? "Si" : "No";
         // Se usan comillas simples (') para envolver las variables en lugar de (\" )
         By dynamicLocator = By.xpath("//android.widget.TextView[normalize-space(@text)=" + xpathLiteral(questionText.trim())
-                + "]/..//android.widget.TextView[normalize-space(@text)=" + xpathLiteral(optionText) + "]");
+                + "]/following::android.widget.TextView[normalize-space(@text)=" + xpathLiteral(optionText) + "][1]");
+        // Por "following" (la opción Si/No más cercana debajo de la pregunta) y no por el
+        // contenedor padre: en algunos formularios (p. ej. el del codeudor) el padre agrupa
+        // varias preguntas y se marcaba la opción de otra.
 
         int maxAttempts = 3;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -726,6 +769,35 @@ public class BasePage {
         }
     }
 
+    /**
+     * Cualquier mensaje de la app con botón ACEPTAR que NO sea una falla temporal del servicio
+     * (esas se reintentan). Tras "Procesar decisión", si no salió el mensaje de éxito, este
+     * diálogo es un rechazo de negocio (listas, criterios de microempresario, motor, etc.):
+     * no se espera ni se reintenta.
+     */
+    protected static final By BUSINESS_REJECTION_DIALOG = By.xpath(
+            "//android.widget.TextView[@text='ACEPTAR' and not(//*[contains(@text, 'generó el error')"
+                    + " or contains(@text, 'RSE0') or contains(@text, 'iempo de espera')"
+                    + " or contains(@text, 'iempo excedido') or contains(@text, 'timeout')"
+                    + " or contains(@text, 'Actualización exitosa') or contains(@text, 'procesamiento exitoso')"
+                    + " or contains(@text, 'Orden guardada exitosamente') or contains(@text, 'Decisión procesada')])]");
+
+    /** Texto del mensaje en pantalla (todas las líneas menos el botón), para el error y la evidencia. */
+    protected String visibleDialogText() {
+        StringBuilder text = new StringBuilder();
+        for (WebElement element : findNow(By.xpath("//android.widget.TextView"))) {
+            String value = element.getText();
+            if (value != null && !value.isBlank() && !"ACEPTAR".equals(value.trim())) {
+                text.append(text.length() > 0 ? " " : "").append(value.trim());
+            }
+        }
+        return text.toString();
+    }
+
+    /** Diálogo "Campos requeridos": la app no deja ejecutar la acción hasta llenarlos. */
+    private static final By REQUIRED_FIELDS_DIALOG = By.xpath(
+            "//android.widget.TextView[@text='Campos requeridos']");
+
     /** Diálogo de falla del servicio del banco (BadGateway, InternalServerError, etc.). */
     private static final By SERVICE_ERROR_DIALOG = By.xpath(
             "//android.widget.TextView[contains(@text, 'generó el error') or contains(@text, 'RSE0')]");
@@ -774,6 +846,19 @@ public class BasePage {
                             // Procesar decisión): "RSE02: El servicio ... generó el error 'BadGateway'".
                             errors = currentDriver.findElements(SERVICE_ERROR_DIALOG);
                         }
+                        if (errors.isEmpty() && !currentDriver.findElements(REQUIRED_FIELDS_DIALOG).isEmpty()) {
+                            // La app pide completar campos antes de ejecutar la acción: reintentar
+                            // no sirve. Se guarda la evidencia y se falla con el detalle.
+                            StringBuilder detail = new StringBuilder();
+                            for (WebElement text : currentDriver.findElements(By.xpath("//android.widget.TextView"))) {
+                                String value = text.getText();
+                                if (value != null && !value.isBlank() && !"ACEPTAR".equals(value)) {
+                                    detail.append(detail.length() > 0 ? " | " : "").append(value.trim());
+                                }
+                            }
+                            takeEvidence(caseId, "campos_requeridos");
+                            throw new IllegalStateException("La app pide completar campos: " + detail);
+                        }
                         if (errors.isEmpty()) {
                             return false;
                         }
@@ -799,6 +884,8 @@ public class BasePage {
                 dismissMessageIfPresent();
             } catch (TimeoutException e) {
                 lastError = e;
+            } catch (IllegalStateException fatal) {
+                throw fatal; // "Campos requeridos": no se reintenta
             } catch (Exception e) {
                 lastError = e;
             }

@@ -87,7 +87,7 @@ public class FlujoCompletoTest extends BaseTest {
      */
     @DataProvider(name = "excelData", parallel = false)
     public Object[][] getData() {
-        String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes.xlsx");
+        String excelPath = System.getProperty("kata.excel.path", "src/test/resources/datos_solicitudes_configurado.xlsx");
         String sheetName = System.getProperty("kata.excel.sheet", "Hoja1");
         return ExcelUtils.getScenarios(excelPath, sheetName).stream()
                 .filter(TestScenario::shouldContinue)
@@ -332,7 +332,9 @@ public class FlujoCompletoTest extends BaseTest {
 
         stageStarted = startStage("Registro del producto", 4);
         try {
-            if (realEstate) {
+            // Inmueble y micropyme son "Cartera comercial": mismo formulario de producto (sin
+            // seguros voluntarios ni ahorro, con FNG, garantía real, seguro deudores y comisiones).
+            if (realEstate || isMicroSmeOrder(orderType)) {
                 realEstateProductPage.fillRealEstateProduct(numberId, scenario);
             } else {
             productRegistrationPage.fillProductRegistration(
@@ -342,6 +344,8 @@ public class FlujoCompletoTest extends BaseTest {
                     hasHomeBussinessInsurance, hasMicroEntrepreneursInsurance,
                     hasLifeInsurance, hasFuneralPlanning,
                     parseInt(disbDay), parseInt(disbMonth), parseInt(disbYear), hasSavings);
+                // Codeudor de la hoja "Datos codeudor" (en inmueble lo hace la página de producto).
+                new com.kata.automation.pages.CodebtorPage(driver).registerCodebtor(numberId, scenario);
             }
                 finishStage("Registro del producto", 4, ExecutionTelemetry.StageResult.PASSED,
                     "Producto registrado", stageStarted);
@@ -381,6 +385,14 @@ public class FlujoCompletoTest extends BaseTest {
 
         // Inmueble llega solo hasta la Decisión del análisis: la validación de identidad no
         // está en el alcance de esa orden (se muestra como etapa omitida en el dashboard).
+        // Micropyme: igual que microcrédito pero sin validación de identidad.
+        if (isMicroSmeOrder(orderType)) {
+            long skipped = startStage("Validación de identidad y firma", 6);
+            finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.SKIPPED,
+                    "No aplica para originación de micropyme", skipped);
+            Reporter.log("Orden de micropyme procesada hasta la decisión del análisis: " + numberId, true);
+            return;
+        }
         if (realEstate) {
             long skipped = startStage("Validación de identidad y firma", 6);
             finishStage("Validación de identidad y firma", 6, ExecutionTelemetry.StageResult.SKIPPED,
@@ -412,6 +424,12 @@ public class FlujoCompletoTest extends BaseTest {
      */
     private String optionalValue(TestScenario scenario, String... columns) {
         return scenario == null ? "" : scenario.get(columns);
+    }
+
+    /** Micropyme: mismo flujo de microcrédito, sin la etapa de validación de identidad. */
+    static boolean isMicroSmeOrder(String orderType) {
+        String type = orderType == null ? "" : orderType.toLowerCase().replace(" ", "");
+        return type.contains("micropyme") || type.contains("mipyme");
     }
 
     /** La columna "Tipo de orden" define el flujo: microcrédito o inmueble. */
